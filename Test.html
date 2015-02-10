@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+          "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <script type="text/javascript" src="js/phaser.min.js"></script>
+        <script type="text/javascript" src="js/Mode.js"></script>
+        <title>The Scarlet Witch</title>
+    </head>
+    <script type="text/javascript">
+        var modeLucy = new Mode(null,
+		[
+		  ["level", 99],  // For now, it's equivalent to Lucy's level as I
+		                  // haven't done Hero for now, but next, it could be
+		                  // the mode's level(it could have experience too !).
+		  ["health", 30],
+		  ["special", 50],
+		  ["attaque", 2],
+		  ["defense", 0],
+		  ["esquive", 5],
+		  ["criticalRate", 1],
+		  ["attackSpeed", 1000],
+		  ["endurance", 0],
+		  ["strength", 0],
+		  ["intelligence", 0],
+		  ["agility", 0]
+		],
+		
+		[
+		  ["health",
+		    ["level", 5],
+		    ["endurance", 2]
+		  ],
+		  ["attaque",
+		    ["level", 1],
+		    ["intelligence", 0.3]
+		  ],
+		  ["defense",
+		    ["level", 0.125],
+		    ["endurance", 0.1]
+		  ],
+		  ["esquive",
+		    ["level", 0.1],
+		    ["agility", 0.5]
+		  ],
+		  ["criticalRate",
+		    ["level", 0.25],
+		    ["agility", 0.3]
+		  ],
+		  ["attackSpeed",
+		    ["level", -4],
+		    ["agility", -2]
+		  ],
+		  ["special",
+		    ["level", 5],
+		    ["intelligence", 5]
+		  ]
+		]);
+
+		modeLucy.computeBasicStats();
+		modeLucy.computeStats(1);
+
+		console.log(modeLucy);
+    </script>
+</html>
