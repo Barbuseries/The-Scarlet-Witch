@@ -26,6 +26,7 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '',
 
 function preload(){
 	game.load.image("ground", "assets/platform.png");
+	game.load.image("ground2", "assets/platform2.png");
 	game.load.image("sky", "assets/background0_2.png");
 	game.load.spritesheet("lucy", "assets/Lucy/SaraFullSheet.png", 64, 64);
 	game.load.spritesheet("azra", "assets/dude.png", 32, 48);
@@ -33,29 +34,36 @@ function preload(){
 
 function create(){
 	ground = game.add.sprite(0, 525, "ground");
+	ground.scale.setTo(2, 1);
 
 	sky = game.add.tileSprite(0, 0, 2000, game.cache.getImage('sky').height, 'sky');
 	sky.scale.setTo(1, 0.5);
 
-	lucy = new Lucy(99, 50, 100);
-	lucy.scale.setTo(1);
-	lucy.maxIntelligence = 200;
-	lucy.intelligence = 200;
-	lucy.levelUp(0);
+	textBox = new TextBox(0, 0, 800, 100, "ground2", "ground");
+	textBox.outerBox.alpha = 0.5;
+	textBox.innerBox.alpha = 1;
 
-	azra = new Azra(99, 100, 50);
-	azra.maxStrength = 200;
-	azra.strength = 200;
-	azra.levelUp(0);
-	azra.special = 0;
+	textBox.setMarginV(10);
+	textBox.setMarginH(10);
 
-	console.log(lucy);
-	console.log(azra);
 
-	game.add.existing(lucy);
-	game.add.existing(azra);
+	textBox.setY(500);
+	textBox.setX(0);
+
+	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", -1, MOOD_NORMAL, -1, 12);
+
+	sentence.textSpeedFactor = 10;
+//	sentence.phaserText.align = "center";
+	
+	textBox.toggle(0);
+	textBox.addSentence(sentence);
+	textBox.nextLine();
 }
 
 function update(){
+	textBox.update();
 	
+	/*if (textBox.displayState == TEXTBOX_TOGGLED){
+		textBox.close(1500);
+	}*/
 }
