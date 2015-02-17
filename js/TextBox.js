@@ -191,6 +191,8 @@ var TextBox = function(x, y, width, height, outerSprite, innerSprite){
 	this.visible = false;
 	this.displayState = TEXTBOX_CLOSED;
 	this.alpha = 0;
+
+	this.verticalScrollAnimation = null;
 }
 
 TextBox.prototype = Object.create(Phaser.Group.prototype);
@@ -391,6 +393,8 @@ TextBox.prototype.setMarginV = function(marginTop, marginBottom){
 }
 
 TextBox.prototype.setX = function(x){
+	if (typeof(x) != "number") return;
+
     var deltaX = x - this.x;
 
     this.outerBox.mask.x += deltaX;
@@ -401,6 +405,8 @@ TextBox.prototype.setX = function(x){
 
 
 TextBox.prototype.setY = function(y){
+	if (typeof(y) != "number") return;
+
     var deltaY = y - this.y;
 
     this.outerBox.mask.y += deltaY;
@@ -408,6 +414,13 @@ TextBox.prototype.setY = function(y){
 
     this.y += deltaY;
 };
+
+TextBox.prototype.setPosition = function(x, y){
+	if (typeof(y) != "number") y = x;
+
+	this.setX(x);
+	this.setY(y);
+}
 
 TextBox.prototype.addSentence = function(sentence, index){
 	if (typeof(sentence) != "object") return;
@@ -433,10 +446,31 @@ TextBox.prototype.update = function(){
 		if (this.indexCurrentSentence >= 0){
 			var i  = this.indexCurrentSentence;
 			
-			if (this.allSentences[i].isReading){
+			if (this.allSentences[i].readingState == SENTENCE_READING){
 				this.allSentences[i].update();
+
+				if (this.allSentences[i].y + this.allSentences[i].phaserText.height >
+					1.2 * this.innerBox.height){		
+					if (this.verticalScrollAnimation == null){
+						this.verticalScrollAnimation = game.add.tween(this.allSentences[i])
+							.to({}, 2500 / this.allSentences[i].textSpeedFactor)
+							.to({y: this.allSentences[i].y - this.innerBox.height}, 2000);
+
+						this.verticalScrollAnimation._lastChild.onComplete.add(this.resetVerticalScroll,
+																	this);
+						
+						this.verticalScrollAnimation.start();
+					}
+				}
 			}
 		}
+	}
+}
+
+TextBox.prototype.resetVerticalScroll = function(){
+	if (this.verticalScrollAnimation != null){
+		this.verticalScrollAnimation.stop();
+		this.verticalScrollAnimation = null;
 	}
 }
 
@@ -522,7 +556,12 @@ Sentence.prototype.addLetterDisplay = function(){
 	}
 
 	for(var i = this.oldIndexCurrentLetter + 1; i <= this.indexCurrentLetter; i++){
-		this.phaserText.text += this.wholeText[i];
+		if (i == 0){
+			this.phaserText.text = this.wholeText[i];
+		}
+		else{
+			this.phaserText.text += this.wholeText[i];
+		}
 	}
 
 	this.oldIndexCurrentLetter = i - 1;

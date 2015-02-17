@@ -40,30 +40,30 @@ function create(){
 	sky.scale.setTo(1, 0.5);
 
 	textBox = new TextBox(0, 0, 800, 100, "ground2", "ground");
-	textBox.outerBox.alpha = 0.5;
-	textBox.innerBox.alpha = 1;
+	textBox.outerBox.alpha = 0.4;
+//	textBox.innerBox.alpha = 0;
 
 	textBox.setMarginV(10);
-	textBox.setMarginH(10);
+	textBox.setMarginH(20);
 
 
 	textBox.setY(500);
 	textBox.setX(0);
 
-	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", -1, MOOD_NORMAL, -1, 12);
+	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", -1, MOOD_NORMAL, -1, 24);
 
-	sentence.textSpeedFactor = 10;
+	sentence.textSpeedFactor = 20;
 //	sentence.phaserText.align = "center";
 	
-	textBox.toggle(0);
+	textBox.toggle(5000);
 	textBox.addSentence(sentence);
-	textBox.nextLine();
+//	textBox.nextLine();
 }
 
 function update(){
 	textBox.update();
 	
-	/*if (textBox.displayState == TEXTBOX_TOGGLED){
+/*	if (textBox.displayState == TEXTBOX_TOGGLED){
 		textBox.close(1500);
 	}*/
 }
