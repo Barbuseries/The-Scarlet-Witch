@@ -1,5 +1,8 @@
-// FIXME: Trouver un moyen de centrer/mettre a droite la premiere ligne de texte qui est affichee.
+// FIXME: Trouver un moyen de centrer/mettre a droite la premiere ligne de texte qui est
+//        affichee.
 //        (align ne fonctionne que quand un texte est sur plusieurs lignes)
+
+// FIXME: Faire fonctionner le scroll avec un textSpeedFactor nul ou négatif.
 
 /*******/
 /* Box */
@@ -200,7 +203,7 @@ var TextBox = function(x, y, width, height, outerSprite, innerSprite){
     this.displayState = TEXTBOX_CLOSED;
     this.alpha = 0;
 
-    this.delayNextSentence = null;
+    this.timerNextSentence = null;
 }
 
 TextBox.prototype = Object.create(Phaser.Group.prototype);
@@ -242,7 +245,7 @@ TextBox.prototype.toggle = function(time, alpha, duration){
         if (typeof(alpha) != "number"){
             this.displayState = TEXTBOX_TOGGLED;
             this.alpha = 1;
-			this.nextSentence();
+            this.nextSentence();
             return;
         }
     }
@@ -252,31 +255,31 @@ TextBox.prototype.toggle = function(time, alpha, duration){
         alpha = 1;
     }
 
-	if (typeof(duration) == "number"){
-		this.closeAnimation = game.add.tween(this)
-			.to({}, time + duration);
+    if (typeof(duration) == "number"){
+        this.closeAnimation = game.add.tween(this)
+            .to({}, time + duration);
 
-		this.closeAnimation.onComplete.add(this.close, this);
+        this.closeAnimation.onComplete.add(this.close, this);
 
-		this.closeAnimation.start();
-	}
+        this.closeAnimation.start();
+    }
 
     // If the time is negative or zero, automatically toggle the TextBox.
     if (time <= 0){
 
         this.displayState = TEXTBOX_TOGGLED;
         this.alpha = alpha;
-		this.nextSentence();
+        this.nextSentence();
 
         return;
     }
 
-	// Otherwhise, create a tween which will update the TextBox's alpha.
-	this.toggleAnimation = game.add.tween(this)
-		.to({alpha: alpha}, time);
+    // Otherwhise, create a tween which will update the TextBox's alpha.
+    this.toggleAnimation = game.add.tween(this)
+        .to({alpha: alpha}, time);
 
     this.toggleAnimation.onComplete.add(this.fixTogglingState, this);
-	this.toggleAnimation.onComplete.add(this.nextSentence, this);
+    this.toggleAnimation.onComplete.add(this.nextSentence, this);
 
     this.toggleAnimation.start();
 
@@ -291,14 +294,14 @@ TextBox.prototype.close = function(time){
         return;
     }
 
-	if (typeof(this.allSentences[this.indexCurrentSentence]) != "undefined"){
-		this.allSentences[this.indexCurrentSentence].stopReading(true);
-	}
+    if (typeof(this.allSentences[this.indexCurrentSentence]) != "undefined"){
+        this.allSentences[this.indexCurrentSentence].stopReading(true);
+    }
 
     if (typeof(time) != "number" || time <= 0){
         this.displayState = TEXTBOX_CLOSED;
         this.visible = false;
-		this.clear();
+        this.clear();
 
         this.alpha = 0;
 
@@ -309,7 +312,7 @@ TextBox.prototype.close = function(time){
         .to({alpha: 0}, time);
 
     this.closeAnimation.onComplete.add(this.fixTogglingState, this);
-	this.closeAnimation.onComplete.add(this.clear, this);
+    this.closeAnimation.onComplete.add(this.clear, this);
 
     this.closeAnimation.start();
 
@@ -341,20 +344,24 @@ TextBox.prototype.setMarginBottom = function(marginBottom, isPercentage){
 }
 
 TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
+	if (this.displayState != TEXTBOX_CLOSED){
+		return;
+	}
+
     if ((typeof(marginLeft) != "number") &&
         (typeof(marginRight) != "number")) return;
 
-	if ((typeof(isPercentage) != "number") &&
-		(typeof(isPercentage) != "boolean")){
-		isPercentage = false;
-	}
+    if ((typeof(isPercentage) != "number") &&
+        (typeof(isPercentage) != "boolean")){
+        isPercentage = false;
+    }
 
-	var width = this.innerBox.width;
+    var width = this.innerBox.width;
 
     if (typeof(marginLeft) === "number"){
-		if (isPercentage){
-			marginLeft *= width * 0.01;
-		}
+        if (isPercentage){
+            marginLeft *= width * 0.01;
+        }
 
         if (marginLeft < 0){
             marginLeft = 0;
@@ -374,9 +381,9 @@ TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
     }
 
     if (typeof(marginRight) === "number"){
-		if (isPercentage){
-			marginRight *= width * 0.01;
-		}
+        if (isPercentage){
+            marginRight *= width * 0.01;
+        }
 
         if (marginRight < 0){
             marginRight = 0;
@@ -391,24 +398,33 @@ TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
     this.updateMarginH()
 
     this.innerBox.updateMask();
+
+	for(var i = 0; i < this.allSentences.length; i++) {
+		this.allSentences[i].x = this.innerBox.x;
+		this.allSentences[i].y = this.innerBox.y;
+	}
 }
 
 
 TextBox.prototype.setMarginV = function(marginTop, marginBottom){
+	if (this.displayState != TEXTBOX_CLOSED){
+		return;
+	}
+
     if ((typeof(marginTop) != "number") &&
         (typeof(marginBottom) != "number")) return;
 
-	if ((typeof(isPercentage) != "number") &&
-		(typeof(isPercentage) != "boolean")){
-		isPercentage = false;
-	}
+    if ((typeof(isPercentage) != "number") &&
+        (typeof(isPercentage) != "boolean")){
+        isPercentage = false;
+    }
 
-	var height = this.innerBox.height;
+    var height = this.innerBox.height;
 
     if (typeof(marginTop) === "number"){
-		if (isPercentage){
-			marginTop *= height * 0.01;
-		}
+        if (isPercentage){
+            marginTop *= height * 0.01;
+        }
 
         if (marginTop < 0){
             marginTop = 0;
@@ -428,9 +444,9 @@ TextBox.prototype.setMarginV = function(marginTop, marginBottom){
     }
 
     if (typeof(marginBottom) === "number"){
-		if (isPercentage){
-			marginBottom *= height * 0.01;
-		}
+        if (isPercentage){
+            marginBottom *= height * 0.01;
+        }
         if (marginBottom < 0){
             marginBottom = 0;
         }
@@ -445,6 +461,84 @@ TextBox.prototype.setMarginV = function(marginTop, marginBottom){
     this.updateMarginV();
 
     this.innerBox.updateMask();
+	
+	for(var i = 0; i < this.allSentences.length; i++) {
+		this.allSentences[i].x = this.innerBox.x;
+		this.allSentences[i].y = this.innerBox.y;
+	}
+}
+
+TextBox.prototype.setHeight = function(height, conserveMargin){
+	if (this.displayState != TEXTBOX_CLOSED){
+		return;
+	}
+
+	var oldHeight = this.height;
+	
+	if (oldHeight == height){
+		return;
+	}
+
+	var marginTop = this.marginTop;
+	var marginBottom = this.marginBottom;
+
+	if (conserveMargin == 0){
+		marginTop = 0;
+		marginBottom = 0;
+	}
+	else if (conserveMargin == 2){
+		var factor = height / oldHeight;
+
+		marginTop *= factor;
+		marginBottom *= factor;
+	}
+
+	this.height = height;
+	this.outerBox.setHeight(height);
+	this.innerBox.setHeight(height);
+
+	this.setMarginV(marginTop, marginBottom);
+}
+
+TextBox.prototype.setWidth = function(width, conserveMargin){
+	if (this.displayState != TEXTBOX_CLOSED){
+		return;
+	}
+
+	var oldWidth = this.width;
+	
+	if (oldWidth == width){
+		return;
+	}
+
+	var marginLeft = this.marginLeft;
+	var marginRight = this.marginRight;
+
+	if (conserveMargin == 0){
+		marginLeft = 0;
+		marginRight = 0;
+	}
+	else if (conserveMargin == 2){
+		var factor = width / oldWidth;
+
+		marginLeft *= factor;
+		marginRight *= factor;
+	}
+
+	this.width = width;
+	this.outerBox.setWidth(width);
+	this.innerBox.setWidth(width);
+
+	this.setMarginH(marginLeft, marginRight);
+
+	for(var i = 0; i < this.allSentences.length; i++) {
+		this.allSentences[i].setWordWrap(true, this.innerBox.width);
+		this.allSentences[i].phaserText.text = this.allSentences[i].wholeText;
+		this.allSentences[i].heightLeft = this.allSentences[i].phaserText.height;
+		this.allSentences[i].maxHeight = this.allSentences[i].heightLeft;
+		
+		this.allSentences[i].phaserText.text = "";
+	}
 }
 
 TextBox.prototype.setX = function(x){
@@ -481,18 +575,19 @@ TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
     if (typeof(sentence) != "object") return;
     if (typeof(delay) != "number") delay = -1;
     if ((typeof(toClear) != "number") &&
-		(typeof(toClear) != "boolean")) toClear = false;
+        (typeof(toClear) != "boolean")) toClear = false;
     if (typeof(index) != "number") index = this.allSentences.length;
 
-	sentence.x = this.innerBox.x;
+    sentence.x = this.innerBox.x;
     sentence.y = this.innerBox.y;
     sentence.mask = this.innerBox.mask;
     sentence.setWordWrap(true, this.innerBox.width);
 
-	sentence.phaserText.text = sentence.wholeText;
-	sentence.heightLeft = sentence.phaserText.height;
+    sentence.phaserText.text = sentence.wholeText;
+    sentence.heightLeft = sentence.phaserText.height;
+	sentence.maxHeight = sentence.heightLeft;
 
-	sentence.phaserText.text = "";
+    sentence.phaserText.text = "";
 
     this.allSentences.splice(index, 0, sentence);
     this.allDelays.splice(index, 0, delay);
@@ -500,50 +595,41 @@ TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
     this.add(sentence);
 }
 
+// Called every frame.
 TextBox.prototype.update = function(){
+    // If the TextBox is not completely toggled, do nothing.
     if (this.displayState == TEXTBOX_TOGGLED){
-        if (this.indexCurrentSentence >= 0){
+        // If the index of the current sentence is valid,
+        if (validIndex(this.indexCurrentSentence, this.allSentences)){
             var i  = this.indexCurrentSentence;
-			var currentSentence = this.allSentences[i];
+            var currentSentence = this.allSentences[i];
 
-            if (i < this.allSentences.length){
-                if (currentSentence.readingState == SENTENCE_READING){
-                    currentSentence.update();
+            // If the current sentence is being read or is paused,
+            if (currentSentence.readingState == SENTENCE_READING ||
+                currentSentence.readingState == SENTENCE_PAUSED){
+                currentSentence.update();
 
-                    for(var j = 0; j <= i; j++) {
-						var sentence = this.allSentences[j];
-
-                        if (currentSentence.y + currentSentence.phaserText.height >
-                            this.innerBox.y + this.innerBox.height + currentSentence.phaserText.fontSize){
-                            if (sentence.verticalScrollAnimation == null){
-								var deltaHeight = Math.min(currentSentence.heightLeft, this.innerBox.height);
-								sentence.heightLeft -= deltaHeight;
-                                sentence.verticalScrollAnimation = game.add.tween(sentence)
-                                    .to({}, 2500 / currentSentence.textSpeedFactor)
-                                    .to({y: sentence.y - deltaHeight}, 2000);
-
-                                sentence.verticalScrollAnimation._lastChild.onComplete.add(sentence.resetVerticalScroll,
-																									   sentence);
-
-                                sentence.verticalScrollAnimation.start();
-                            }
-                        }
-                    }
+                this.handleVerticalOverflow();
+            }
+            // Otherwhise, prepare te display of the next sentence.
+            else{
+                // If the delay until the next sentence is negative, wait until
+                // user's input.
+                if (this.allDelays[i] < 0){
+                    console.log("PRESS A KEY TO CONTINUE !");
                 }
-                else{
-                    if (this.allDelays[i] < 0){
-                        console.log("PRESS A KEY TO CONTINUE !");
-                    }
-                    else if (this.delayNextSentence == null){
-                        this.delayNextSentence = game.add.tween(this)
-                            .to({}, this.allDelays[i]);
+                // Otherwhise, wait the given time to start reading the next sentence.
+                else if (this.timerNextSentence == null){
+					var delay = this.allDelays[i];
+					
+                    this.timerNextSentence = game.time.create(false);
+                    this.timerNextSentence.add(this.allDelays[i],
+											   this.nextSentence, this);
 
-                        this.delayNextSentence.onComplete.add(this.nextSentence, this);
-
-                        this.delayNextSentence.start();
-                    }
+					this.timerNextSentence.start();
                 }
             }
+
         }
     }
 }
@@ -554,35 +640,36 @@ TextBox.prototype.nextSentence = function(){
 
     if (this.allSentences.length < 1) return;
 
-	var i = this.indexCurrentSentence;
-	var sentence = this.allSentences[i];
-	var nextSentence = this.allSentences[i + 1];
+    var i = this.indexCurrentSentence;
 
-    if (i >= 0){
-        if (i < this.allSentences.length){
-            sentence.stopReading();
+    if (validIndex(i, this.allSentences)){
+		var	currentSentence = this.allSentences[i];
+		var nextSentence = this.allSentences[i + 1];
 
-            if (this.allClears[i]){
-                this.clear();
-            }
-			else{
-				if (typeof(nextSentence) != "undefined"){
-					nextSentence.y = sentence.y + sentence.phaserText.height;
-				}
-			}
-			this.indexCurrentSentence++;
+        currentSentence.stopReading();
 
+        if (this.allClears[i]){
+            this.clear();
+        }
+        else{
             if (typeof(nextSentence) != "undefined"){
-				nextSentence.startReading();
-
-                return true;
-            }
-            else{
-                return false;
+                nextSentence.y = currentSentence.y + currentSentence.phaserText.height;
             }
         }
+
+        this.indexCurrentSentence++;
+
+        if (typeof(nextSentence) != "undefined"){
+            nextSentence.startReading();
+
+            return true;
+        }
+        else{
+			this.indexCurrentSentence--;
+            return false;
+        }
     }
-    else{
+    else if(i == -1){
         this.indexCurrentSentence = 0;
 
         this.allSentences[0].startReading();
@@ -595,8 +682,8 @@ TextBox.prototype.clear = function(){
     var sentencesToDestroy = this.allSentences.slice(0, this.indexCurrentSentence + 1);
 
     this.allSentences = this.allSentences.slice(this.indexCurrentSentence + 1);
-	this.allDelays = this.allDelays.slice(this.indexCurrentSentence + 1);
-	this.allClears = this.allClears.slice(this.indexCurrentSentence + 1);
+    this.allDelays = this.allDelays.slice(this.indexCurrentSentence + 1);
+    this.allClears = this.allClears.slice(this.indexCurrentSentence + 1);
 
     for(var i = 0; i < sentencesToDestroy.length; i++) {
         sentencesToDestroy[i].stopReading(true);
@@ -604,10 +691,96 @@ TextBox.prototype.clear = function(){
         this.remove(sentencesToDestroy[i]);
 
         sentencesToDestroy[i].phaserText.destroy();
-		sentencesToDestroy[i].kill();
+        sentencesToDestroy[i].kill();
     }
 
     this.indexCurrentSentence = -1;
+};
+
+TextBox.prototype.handleVerticalOverflow = function(){
+    var i = this.indexCurrentSentence;
+    var currentSentence = this.allSentences[i];
+
+    for(var j = 0; j <= i; j++) {
+        var sentence = this.allSentences[j];
+
+        if (currentSentence.y + currentSentence.phaserText.height >
+            this.innerBox.y + this.innerBox.height + currentSentence.phaserText.fontSize){
+            if (sentence.verticalScrollAnimation == null){
+                var deltaHeight = Math.min(currentSentence.heightLeft,
+                                           this.innerBox.height);
+
+                sentence.heightLeft -= deltaHeight;
+
+                var tween = game.add.tween(sentence)
+                    .to({}, 1000)
+                    .to({y: sentence.y - deltaHeight}, 2000);
+
+                tween._lastChild.onComplete.add(sentence.resetVerticalScroll,
+                                                sentence);
+
+                if (j == i){
+                    sentence.pause();
+                    tween.onComplete.add(sentence.unpause, sentence);
+                }
+
+                sentence.verticalScrollAnimation = tween;
+
+                sentence.verticalScrollAnimation.start();
+            }
+        }
+    }
+};
+
+// Change the TextBox's height to match the height of the given sentence with the given
+// width.
+// In BETA...
+TextBox.prototype.fitHeightToSentence = function(indexSentence, width, conserveMargin){
+	if (this.displayState != TEXTBOX_CLOSED){
+		return;
+	}
+
+	if ((typeof(width) != "number") ||
+		(typeof(indexSentence) != "number")){
+		return;
+	}
+
+	if (typeof(conserveMargin) != "number"){
+		conserveMargin = 2;
+	}
+
+	if (!validIndex(indexSentence, this.allSentences)){
+		return;
+	}
+
+	this.setWidth(width, conserveMargin);
+	this.setWidth(this.width + this.marginLeft + this.marginRight, conserveMargin);
+	this.setHeight(this.allSentences[indexSentence].maxHeight, conserveMargin);
+	this.setHeight(this.height + this.marginTop + this.marginBottom, conserveMargin);
+
+	console.log(this.innerBox.width);
+}
+
+TextBox.prototype.fitWidthToSentence = function(indexSentence, height, conserveMargin){
+	if (this.displayState != TEXTBOX_CLOSED){
+		return;
+	}
+
+	if (typeof(indexSentence) != "number"){
+		return;
+	}
+
+	if (!validIndex(indexSentence, this.allSentences)){
+		return;
+	}
+	
+	var oldHeight = this.allSentences[indexSentence].maxHeight;
+	var newWidth = this.width * oldHeight / height;
+ 
+	this.setHeight(height, conserveMargin);
+	this.setHeight(this.height + this.marginTop + this.marginBottom, conserveMargin);
+	this.setWidth(newWidth, conserveMargin);
+	this.setWidth(this.width + this.marginLeft + this.marginRight, conserveMargin);
 };
 /******************************************************************************/
 /* TextBox */
@@ -626,7 +799,8 @@ var MOOD_JOYFUL = 5;
 
 var SENTENCE_NOT_READING = 0;
 var SENTENCE_READING = 1;
-var SENTENCE_FINISHED_READING = 2;
+var SENTENCE_PAUSED = 2;
+var SENTENCE_FINISHED_READING = 3;
 
 var Sentence = function(text, speaker, mood, font, fontSize, fill){
     if (typeof(text) === "undefined") text = "";
@@ -655,8 +829,8 @@ var Sentence = function(text, speaker, mood, font, fontSize, fill){
 
     this.readingState = SENTENCE_NOT_READING;
 
-	this.verticalScrollAnimation = null;
-	this.horizontalScrollAnimation = null;
+    this.verticalScrollAnimation = null;
+    this.horizontalScrollAnimation = null;
 }
 
 Sentence.prototype = Object.create(Phaser.Sprite.prototype);
@@ -703,12 +877,13 @@ Sentence.prototype.startReading = function(){
 
 Sentence.prototype.stopReading = function(forceStop){
     if ((typeof(forceStop) != "number") &&
-		(typeof(forceStop) != "boolean")) forceStop = false;
+        (typeof(forceStop) != "boolean")) forceStop = false;
 
-    if (this.readingState == SENTENCE_READING || forceStop){
-		if (this.textDisplayAnimation != null){
-			this.textDisplayAnimation.stop();
-		}
+    if (this.readingState == SENTENCE_READING ||
+		forceStop){
+        if (this.textDisplayAnimation != null){
+            this.textDisplayAnimation.stop();
+        }
 
         this.phaserText.text = this.wholeText;
 
@@ -719,6 +894,26 @@ Sentence.prototype.stopReading = function(forceStop){
     }
 }
 
+Sentence.prototype.pause = function(){
+    if (this.readingState != SENTENCE_READING){
+        return;
+    }
+
+    this.textDisplayAnimation.pause();
+    this.readingState = SENTENCE_PAUSED;
+};
+
+Sentence.prototype.unpause = function(){
+    if (this.readingState != SENTENCE_PAUSED){
+        return;
+    }
+
+    this.textDisplayAnimation.resume();
+    this.readingState = SENTENCE_READING;
+};
+
+
+
 Sentence.prototype.update = function(){
     if (this.readingState == SENTENCE_READING){
     }
@@ -728,7 +923,7 @@ Sentence.prototype.update = function(){
 
 Sentence.prototype.setWordWrap = function(enable, width){
     if ((typeof(enable) != "number") &&
-		(typeof(enable) != "boolean")) enable = true;
+        (typeof(enable) != "boolean")) enable = true;
 
     this.phaserText.wordWrap = enable;
 
@@ -746,3 +941,9 @@ Sentence.prototype.resetVerticalScroll = function(){
 /******************************************************************************/
 /* Sentence */
 /************/
+
+
+function validIndex(index, array){
+    return (index < 0) ? 0 :
+        (index >= array.length) ? 0 : 1;
+}

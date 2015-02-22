@@ -43,27 +43,29 @@ function create(){
 	textBox.outerBox.alpha = 0.4;
 	textBox.innerBox.alpha = 1;
 
-	textBox.setMarginV(10, 10, 1);
-	textBox.setMarginH(5, 5, 1);
+	textBox.setMarginV(5, 5, 1);
+	textBox.setMarginH(1, 1, 1);
 
-	textBox.setY(500);
-	textBox.setX(0);
+	textBox.setY(100);
+	textBox.setX(50);
 
 	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", -1, MOOD_NORMAL, -1, 24);
 	
 	sentence2 = new Sentence("Ceci est un tout nouveau test !", -1, MOOD_NORMAL, -1, 24);
 
-	sentence.textSpeedFactor = 20;
-	sentence2.textSpeedFactor = 15;
-	//sentence.phaserText.align = "center";
+	sentence.textSpeedFactor = 30;
+	sentence2.textSpeedFactor = 10;
+//	sentence.phaserText.align = "center";
 	
-	textBox.addSentence(sentence, 2000, 0);
+	textBox.addSentence(sentence, 2000, 1);
 	textBox.addSentence(sentence2);
+
+	textBox.fitHeightToSentence(1, 250);
 	textBox.toggle();
 }
 
 function update(){
-	textBox.update();
+//	textBox.update();
 	
 /*	if (textBox.displayState == TEXTBOX_CLOSED){
 //		textBox.clear();
