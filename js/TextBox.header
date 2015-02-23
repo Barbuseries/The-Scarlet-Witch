@@ -1,0 +1,126 @@
+Object Box{
+
+    Attributs{
+        x;
+        y;
+        width;
+        height;
+        sprite;
+        mask;
+    }
+
+    Methods{
+        // Create a box at (x, y) with the given width and height.
+        // If the Box has a mask, everything going out of it will be cropped.
+        Box(x, y, width, height, sprite, hasMask);
+
+        // Set the Box's width at the given width.
+        // Update the Box's mask's width if there's any.
+        setWidth(width);
+
+        // Set the Box's height at the given height.
+        // Update the Box's mask's height if there's any.
+        setHeight(height);
+
+        // Set the Box's dimensions (width and height) at the given dimensions.
+        // If only the first value is correct, both dimensions will
+        // be set to this one.
+        // (Example : Calling the function with only one parameter)
+        // Update the Box's mask's width and height if there's any.
+        setDimensions(width, height);
+
+        // Set the Box's x at the given x.
+        // Update the Box's mask's x if there's any.
+        setX(x);
+
+        // Set the Box's y at the given y.
+        // Update the Box's mask's y if there's any.
+        setY(y):
+
+        // Set the Box's position at the given position.
+        // If only the first value is correct, x and y will be set to
+        // the same value.
+        // (Example : Calling the function with only one parameter)
+        // Update the Box's mask's position if there's any.
+        setPosition(x, y);
+    }
+}
+
+
+Object TextBox{
+
+    Attributs{
+        x;
+        y;
+        width;
+        height;
+        outerBox;
+        innerBox;
+    }
+
+    Methods{
+
+        TextBox(x, y, width, height, outerSprite, innerSprite);
+
+        setWidth(width, conserveMargin);
+        setHeight(height, conserverMargin);
+
+        setX(x);
+        setY(y);
+
+        setPosition(x, y);
+
+        setMarginLeft(marginLeft, isPercentage);
+        setMarginRight(marginRight, isPercentage);
+        setMarginTop(marginTop, isPercentage);
+        setMarginBottom(marginBottom, isPercentage);
+
+        setMarginH(marginLeft, marginRight, isPercentage);
+        setMarginV(marginTop, marginBottom, isPercentage);
+
+        // delay : delay untill the next Sentence
+        // toClear : to clear the TextBox before displaying the next Sentence.
+        addSentence(sentence, delay, toClear, index);
+
+        createVertialToggle(time, alpha, direction, easing);
+        createHorizontalToggle(time, alpha, direction, easing);
+        createBasicToggle(time, alpha, easing);
+
+        createToggleTimer(time);
+        createCloseTimer(time);
+
+        toggle(duration);
+
+		// Clear the TextBox before closing.
+        close(time);
+
+        // Empty the TextBox and KILL the sentences.
+        clear();
+
+        // Change the TextBox's height to match the height of the given
+        // sentence with the given width.
+        // In BETA...
+        fitHeightToSentence(indexSentence, width, conserveMargin);
+
+        fitWidthToSentence(indexSentence, height, conserveMargin);
+    }
+}
+
+Object Sentence{
+
+    Attributs{
+		phaserText;
+		mood;
+		wholeText;
+		textSpeedFactor;
+		speaker;
+		speakerAlign; // For the DialogueBox : "right", "left", "center"
+		              // or "dynamic" (from the speaker's position compared to the
+		              // middle of the screen).
+	}
+
+	Methods{
+		
+		Sentence(text, mood, font, fontSize, fill);
+	}
+}

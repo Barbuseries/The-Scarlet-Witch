@@ -1,13 +1,14 @@
-// FIXME: Trouver un moyen de centrer/mettre a droite la premiere ligne de texte qui est
-//        affichee.
+// FIXME: Trouver un moyen de centrer/mettre a droite la premiere ligne de texte qui
+//        est affichee.
 //        (align ne fonctionne que quand un texte est sur plusieurs lignes)
 
 // FIXME: Faire fonctionner le scroll avec un textSpeedFactor nul ou négatif.
 
+
 /*******/
 /* Box */
 /*******************************************************************************/
-// Creates a box at (x, y) with the given width and height.
+// Create a box at (x, y) with the given width and height.
 // If the Box has a mask, everything going out of it will be cropped.
 var Box = function(x, y, width, height, sprite, hasMask){
     if (typeof(hasMask) != "number") hasMask = true;
@@ -201,9 +202,15 @@ var TextBox = function(x, y, width, height, outerSprite, innerSprite){
 
     this.visible = false;
     this.displayState = TEXTBOX_CLOSED;
-    this.alpha = 0;
+    this.alpha = 1;
 
     this.timerNextSentence = null;
+	
+	this.toggleAnimation = null;
+	this.closeAnimation = null;
+
+	this.toggleTimer = null;
+	this.closeTimer = null;
 }
 
 TextBox.prototype = Object.create(Phaser.Group.prototype);
@@ -226,12 +233,209 @@ TextBox.prototype.fixTogglingState = function(){
     }
 }
 
+TextBox.prototype.createVerticalToggle = function(time, alpha, direction, easing){
+	// If there's already a toggle animation, do nothing.
+	// It's up to you to deal with the old one and then set a new one.
+	if (this.toggleAnimation != null){
+		return;
+	}
+
+	// By default, the animation takes 500 milliseconds.
+	if (typeof(time) != "number"){
+		time = 500;
+	}
+	// If the time is negative or zero, no need to do an animation :
+	// It won't be seen anyway...
+	else if (time <= 0){
+		return;
+	}
+
+	// By default, the final alpha is set to 1.
+	if (typeof(alpha) != "number"){
+		alpha = 1;
+	}
+	// If the alpha is negative, it's set to the TextBox's current alpha (make sure
+	// to change it as, by default, it's equal to 1).
+	else if (alpha < 0){
+		alpha = this.alpha;
+	}
+
+	// By default, the direction is from up to bottom.
+	if ((typeof(direction) != "number") &&
+		(typeof(direction) != "boolean")){
+		direction = 0;
+	}
+
+	// By default, the animation is linear.
+	if (typeof(easing) != "function"){
+		easing = Phaser.Easing.Linear.None;
+	}
+
+	var y = this.y;
+
+	if (direction){
+		this.y += this.height;
+	}
+	else{
+		this.y -= this.height;
+	}
+
+	this.alpha = 0;
+
+	this.toggleAnimation = game.add.tween(this)
+		.to({y: y, alpha: alpha}, time, easing);
+
+	this.normalizeToggleAnimation();
+}
+
+TextBox.prototype.createHorizontalToggle = function(time, alpha, direction, easing){
+	// If there's already a toggle animation, do nothing.
+	// It's up to you to deal with the old one and then set a new one.
+	if (this.toggleAnimation != null){
+		return;
+	}
+
+	// By default, the animation takes 500 milliseconds.
+	if (typeof(time) != "number"){
+		time = 500;
+	}
+	// If the time is negative or zero, no need to do an animation :
+	// It won't be seen anyway...
+	else if (time <= 0){
+		return;
+	}
+
+	// By default, the final alpha is set to 1.
+	if (typeof(alpha) != "number"){
+		alpha = 1;
+	}
+	// If the alpha is negative, it's set to the TextBox's current alpha (make sure
+	// to change it as, by default, it's equal to 1).
+	else if (alpha < 0){
+		alpha = this.alpha;
+	}
+
+	// By default, the direction is from up to bottom.
+	if ((typeof(direction) != "number") &&
+		(typeof(direction) != "boolean")){
+		direction = 0;
+	}
+
+	// By default, the animation is linear.
+	if (typeof(easing) != "function"){
+		easing = Phaser.Easing.Linear.None;
+	}
+
+	var x = this.x;
+
+	if (direction){
+		this.x += this.width;
+	}
+	else{
+		this.x -= this.width;
+	}
+
+	this.alpha = 0;
+
+	this.toggleAnimation = game.add.tween(this)
+		.to({x: x, alpha: alpha}, time, easing);
+
+	this.normalizeToggleAnimation();
+}
+
+TextBox.prototype.createBasicToggle = function(time, alpha, easing){
+	// If there's already a toggle animation, do nothing.
+	// It's up to you to deal with the old one and then set a new one.
+	if (this.toggleAnimation != null){
+		return;
+	}
+
+	// By default, the animation takes 500 milliseconds.
+	if (typeof(time) != "number"){
+		time = 500;
+	}
+	// If the time is negative or zero, no need to do an animation :
+	// It won't be seen anyway...
+	else if (time <= 0){
+		return;
+	}
+
+	// By default, the final alpha is set to 1.
+	if (typeof(alpha) != "number"){
+		alpha = 1;
+	}
+	// If the alpha is negative, it's set to the TextBox's current alpha (make sure
+	// to change it as, by default, it's equal to 1).
+	else if (alpha < 0){
+		alpha = this.alpha;
+	}
+
+	// By default, the animation is linear.
+	if (typeof(easing) != "function"){
+		easing = Phaser.Easing.Linear.None;
+	}
+
+	this.alpha = 0;
+
+	this.toggleAnimation = game.add.tween(this)
+		.to({alpha: alpha}, time, easing);
+
+	this.normalizeToggleAnimation();
+}
+
+TextBox.prototype.normalizeToggleAnimation = function(){
+	if (this.toggleAnimation == null){
+		return;
+	}
+
+	this.toggleAnimation._lastChild.onComplete.add(this.fixTogglingState, this);
+	this.toggleAnimation._lastChild.onComplete.add(this.nextSentence, this);
+}
+
+TextBox.prototype.createToggleTimer = function(time){
+	if (this.toggleTimer != null){
+		return;
+	}
+
+	// By default, the timer waits 500 milliseconds.
+	if (typeof(time) != "number"){
+		time = 500;
+	}
+	// If the time is negative or zero, no need to do create a timer.
+	else if (time <= 0){
+		return;
+	}
+
+	this.toggleTimer = game.time.create(false);
+
+	this.toggleTimer.add(time, this.toggle, this);
+}
+
+TextBox.prototype.createCloseTimer = function(time){
+	if (this.closeTimer != null){
+		return;
+	}
+
+	// By default, the timer waits 500 milliseconds.
+	if (typeof(time) != "number"){
+		time = 500;
+	}
+	// If the time is negative or zero, no need to do create a timer.
+	else if (time <= 0){
+		return;
+	}
+
+	this.closeTimer = game.time.create(false);
+
+	this.closeTimer.add(time, this.close, this);
+}
+
 // Make the TextBox appear in the given time with the given alpha.
 // If time is undefined, negative or zero, the TextBox will be displayed instantly.
 // If no alpha is passed, the TextBox's alpha is set to 1.
 // TODO: add delay and a corresponding tween to make the TextBox only appear
 // for delay milliseconds.
-TextBox.prototype.toggle = function(time, alpha, duration){
+TextBox.prototype.toggle = function(duration){
     if ((this.displayState == TEXTBOX_TOGGLING) ||
         (this.displayState == TEXTBOX_TOGGLED)){
         return;
@@ -239,51 +443,25 @@ TextBox.prototype.toggle = function(time, alpha, duration){
 
     this.visible = true;
 
-    // If not time nor alpha are specified, automatically toggle the TextBox and
-    // set it's alpha to 1.
-    if (typeof(time) != "number"){
-        if (typeof(alpha) != "number"){
-            this.displayState = TEXTBOX_TOGGLED;
-            this.alpha = 1;
-            this.nextSentence();
-            return;
-        }
-    }
-
-    // If only the time is specified, alpha is set to 1.
-    if (typeof(alpha) != "number"){
-        alpha = 1;
-    }
-
-    if (typeof(duration) == "number"){
-        this.closeAnimation = game.add.tween(this)
-            .to({}, time + duration);
-
-        this.closeAnimation.onComplete.add(this.close, this);
-
-        this.closeAnimation.start();
-    }
-
-    // If the time is negative or zero, automatically toggle the TextBox.
-    if (time <= 0){
-
+	// If there's no toggle animation, just start reading...
+    if (this.toggleAnimation == null){
         this.displayState = TEXTBOX_TOGGLED;
-        this.alpha = alpha;
+		
         this.nextSentence();
-
-        return;
     }
+	else{
+		// Otherwhise, start the animation and only start reading once it's finished.
+		this.toggleAnimation.start();
 
-    // Otherwhise, create a tween which will update the TextBox's alpha.
-    this.toggleAnimation = game.add.tween(this)
-        .to({alpha: alpha}, time);
+		this.displayState = TEXTBOX_TOGGLING;
+	}
 
-    this.toggleAnimation.onComplete.add(this.fixTogglingState, this);
-    this.toggleAnimation.onComplete.add(this.nextSentence, this);
+	// If the TextBox must be closed after a given time,
+	if (typeof(duration) == "number" && duration > 0){
+		this.createCloseTimer(duration);
 
-    this.toggleAnimation.start();
-
-    this.displayState = TEXTBOX_TOGGLING;
+		this.closeTimer.start();
+    }
 }
 
 // Close the TextBox in the given time.
@@ -308,8 +486,11 @@ TextBox.prototype.close = function(time){
         return;
     }
 
-    this.closeAnimation = game.add.tween(this)
-        .to({alpha: 0}, time);
+	if (this.closeAnimation == null){
+		this.closeAnimation = game.add.tween(this)
+			.to({alpha: 0}, time);
+		
+	}
 
     this.closeAnimation.onComplete.add(this.fixTogglingState, this);
     this.closeAnimation.onComplete.add(this.clear, this);
@@ -611,7 +792,7 @@ TextBox.prototype.update = function(){
 
                 this.handleVerticalOverflow();
             }
-            // Otherwhise, prepare te display of the next sentence.
+            // Otherwhise, prepare the display of the next sentence.
             else{
                 // If the delay until the next sentence is negative, wait until
                 // user's input.
@@ -640,6 +821,10 @@ TextBox.prototype.nextSentence = function(){
 
     if (this.allSentences.length < 1) return;
 
+	if (this.timerNextSentence){
+		this.timerNextSentence = null;
+	}
+
     var i = this.indexCurrentSentence;
 
     if (validIndex(i, this.allSentences)){
@@ -660,8 +845,10 @@ TextBox.prototype.nextSentence = function(){
         this.indexCurrentSentence++;
 
         if (typeof(nextSentence) != "undefined"){
-            nextSentence.startReading();
+			this.handleMood();
 
+			nextSentence.startReading();
+			
             return true;
         }
         else{
@@ -671,6 +858,8 @@ TextBox.prototype.nextSentence = function(){
     }
     else if(i == -1){
         this.indexCurrentSentence = 0;
+
+		this.handleMood();
 
         this.allSentences[0].startReading();
 
@@ -705,7 +894,7 @@ TextBox.prototype.handleVerticalOverflow = function(){
         var sentence = this.allSentences[j];
 
         if (currentSentence.y + currentSentence.phaserText.height >
-            this.innerBox.y + this.innerBox.height + currentSentence.phaserText.fontSize){
+            this.innerBox.y + this.innerBox.height + 0.5 * currentSentence.phaserText.fontSize){
             if (sentence.verticalScrollAnimation == null){
                 var deltaHeight = Math.min(currentSentence.heightLeft,
                                            this.innerBox.height);
@@ -714,7 +903,8 @@ TextBox.prototype.handleVerticalOverflow = function(){
 
                 var tween = game.add.tween(sentence)
                     .to({}, 1000)
-                    .to({y: sentence.y - deltaHeight}, 2000);
+                    .to({y: sentence.y - deltaHeight},
+						15000 / currentSentence.textSpeedFactor);
 
                 tween._lastChild.onComplete.add(sentence.resetVerticalScroll,
                                                 sentence);
@@ -757,8 +947,6 @@ TextBox.prototype.fitHeightToSentence = function(indexSentence, width, conserveM
 	this.setWidth(this.width + this.marginLeft + this.marginRight, conserveMargin);
 	this.setHeight(this.allSentences[indexSentence].maxHeight, conserveMargin);
 	this.setHeight(this.height + this.marginTop + this.marginBottom, conserveMargin);
-
-	console.log(this.innerBox.width);
 }
 
 TextBox.prototype.fitWidthToSentence = function(indexSentence, height, conserveMargin){
@@ -782,10 +970,53 @@ TextBox.prototype.fitWidthToSentence = function(indexSentence, height, conserveM
 	this.setWidth(newWidth, conserveMargin);
 	this.setWidth(this.width + this.marginLeft + this.marginRight, conserveMargin);
 };
+
+TextBox.prototype.handleMood = function(){
+	var currentSentence = this.allSentences[this.indexCurrentSentence];
+	var tween = null;
+
+	function setY(){
+		this.setY(this.toto);
+	}
+
+	switch(currentSentence.mood){
+	case MOOD_ANGRY:
+		this.toto = this.y;
+		tween = game.add.tween(this)
+			.to({ toto: this.y -10 }, 40,
+				Phaser.Easing.Linear.None, false, 0, 5, true)
+			.to({ toto: this.y + 10 }, 40,
+				Phaser.Easing.Linear.None, false, 0, 5, true);
+
+		tween.onUpdateCallback(setY, this);
+	//	tween._lastChild.onComplete(this.reset)
+
+		currentSentence.textSpeedFactor = 40;
+		break;
+	case MOOD_DYING:
+		currentSentence.textSpeedFactor = 2;
+		break;
+	default:
+		break;
+	}
+	
+	this.moodAnimation = tween;
+
+	if (tween != null){
+		this.moodAnimation.start();
+	}
+}
 /******************************************************************************/
 /* TextBox */
 /***********/
 
+/***************/
+/* DialogueBox */
+/******************************************************************************/
+
+/******************************************************************************/
+/* DialogueBox */
+/***************/
 
 /************/
 /* Sentence */
@@ -802,10 +1033,9 @@ var SENTENCE_READING = 1;
 var SENTENCE_PAUSED = 2;
 var SENTENCE_FINISHED_READING = 3;
 
-var Sentence = function(text, speaker, mood, font, fontSize, fill){
+var Sentence = function(text, mood, font, fontSize, fill){
     if (typeof(text) === "undefined") text = "";
     if (typeof(text) === "number") text = text.toString();
-    if (typeof(speaker) != "object") speaker = null;
     if (typeof(mood) != "number") mood = MOOD_NORMAL;
     if (typeof(font) != "string") font = "Arial";
     if (typeof(fontSize) != "number") fontSize = 12;
@@ -818,11 +1048,12 @@ var Sentence = function(text, speaker, mood, font, fontSize, fill){
     this.phaserText.fontSize = fontSize;
     this.phaserText.fill = fill;
 
+	this.mood = mood;
+
     this.addChild(this.phaserText);
 
     this.wholeText = text;
     this.textSpeedFactor = 1;
-    this.speaker = speaker;
 
     this.indexCurrentLetter = 0;
     this.oldIndexCurrentLetter = -1;
@@ -831,6 +1062,9 @@ var Sentence = function(text, speaker, mood, font, fontSize, fill){
 
     this.verticalScrollAnimation = null;
     this.horizontalScrollAnimation = null;
+
+	this.speaker = null;
+	this.speakerAlign = "right";
 }
 
 Sentence.prototype = Object.create(Phaser.Sprite.prototype);

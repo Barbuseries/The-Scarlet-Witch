@@ -43,25 +43,37 @@ function create(){
 	textBox.outerBox.alpha = 0.4;
 	textBox.innerBox.alpha = 1;
 
-	textBox.setMarginV(5, 5, 1);
-	textBox.setMarginH(1, 1, 1);
+	textBox.setMarginV(10, 10, 1);
+	textBox.setMarginH(5, 5, 1);
 
-	textBox.setY(100);
-	textBox.setX(50);
+	textBox.setY(500);
+	textBox.setX(0);
 
-	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", -1, MOOD_NORMAL, -1, 24);
+	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
 	
-	sentence2 = new Sentence("Ceci est un tout nouveau test !", -1, MOOD_NORMAL, -1, 24);
+	sentence2 = new Sentence("Je suis en colère ! Agrrr !", MOOD_ANGRY, -1, 24);
+	sentence3 = new Sentence("Moi aussi !", MOOD_ANGRY, -1, 24);
+	sentence4 = new Sentence("Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...", MOOD_DYING, -1, 24);
 
-	sentence.textSpeedFactor = 30;
+	sentence.textSpeedFactor = 100;
 	sentence2.textSpeedFactor = 10;
 //	sentence.phaserText.align = "center";
 	
 	textBox.addSentence(sentence, 2000, 1);
-	textBox.addSentence(sentence2);
+	textBox.addSentence(sentence2, 1000, 0);
+	textBox.addSentence(sentence3, 1000, 1);
+	textBox.addSentence(sentence4);
+	
+	textBox.createHorizontalToggle(1000, -1, 0, Phaser.Easing.Bounce.Out);
+	textBox.createToggleTimer(2000);
+	textBox.toggleTimer.start()
 
-	textBox.fitHeightToSentence(1, 250);
-	textBox.toggle();
+	/*timer = game.time.create(false);
+	timer.add(1000, textBox.toggle, textBox);*/
+//	timer.start();
+
+//	textBox.fitHeightToSentence(1, 250);
+	//textBox.toggle(5000);
 }
 
 function update(){
