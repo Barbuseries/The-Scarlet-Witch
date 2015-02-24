@@ -39,7 +39,7 @@ function create(){
 	sky = game.add.tileSprite(0, 0, 2000, game.cache.getImage('sky').height, 'sky');
 	sky.scale.setTo(1, 0.5);
 
-	textBox = new TextBox(0, 0, 500, 100, "ground2", "ground");
+	textBox = new TextBox(0, 0, 500, 100, "ground2", "ground", true);
 	textBox.outerBox.alpha = 0.4;
 	textBox.innerBox.alpha = 1;
 
@@ -51,28 +51,30 @@ function create(){
 
 	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
 	
-	sentence2 = new Sentence("Je suis en colère ! Agrrr !", MOOD_ANGRY, -1, 24);
+	sentence2 = new Sentence("Ca marche !", MOOD_JOYFUL, -1, 24);
 	sentence3 = new Sentence("Moi aussi !", MOOD_ANGRY, -1, 24);
 	sentence4 = new Sentence("Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...", MOOD_DYING, -1, 24);
-	sentence5 = new Sentence("Hey ! C'est pas la classe ça ?!", MOOD_NORMAL, -1, 24);
+	sentence5 = new Sentence("Hey ! C'est pas la classe ?!", MOOD_NORMAL, -1, 24);
 
 	sentence.setTextSpeedFactor(40);
 	sentence2.setTextSpeedFactor(10);
-//	sentence5.phaserText.align = "center";
+//	sentence5.phaserText.align = "right";
 	sentence5.setTextSpeedFactor(20);
 	
-	textBox.addSentence(sentence5);
-	textBox.fitDurationToSentence(0, 2000);
+	textBox.addSentence(sentence);
 	textBox.fitHeightToSentence(0, -1, 1);
 
-	//textBox.addSentence(sentence2, 1000, 0);
+//	textBox.addSentence(sentence);
 	//textBox.addSentence(sentence3, 1000, 1);
 	//textBox.addSentence(sentence4);
 	
-	textBox.createVerticalToggle(1000, -1, 0, Phaser.Easing.Bounce.Out);
-	textBox.createVerticalClose(1000, 0, Phaser.Easing.Bounce.Out);
+	textBox.createAnimation("toggle", "right", "bottom", 2000, 1, Phaser.Easing.Cubic.InOut);
+	textBox.createAnimation("close", "left", "top", 2000, 1, Phaser.Easing.Cubic.InOut);
 
-	textBox.createToggleTimer(2000);
+	//textBox.fitDurationToSentence(0, 1000);
+	//textBox.createVerticalClose(1000, 0, Phaser.Easing.Bounce.Out);
+
+	textBox.createToggleTimer(1);
 
 	textBox.toggleTimer.start();
 }

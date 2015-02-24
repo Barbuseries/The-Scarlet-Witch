@@ -3,15 +3,19 @@
 //        (align ne fonctionne que quand un texte est sur plusieurs lignes)
 // FIXED !
 
+// TODO: Faire passer le nombre de fonctions pour l'animation de l'ouverture et de
+//       la fermeture d'une TextBox à 2 (au lieu de 6 (!) actuellement).
+// DONE !
+
 
 // FIXME: Afficher le texte centré/à droite quand il ne fait qu'une ligne et qu'il
 // possède un textSpeedFactor négatif.
+//
+// FIXED ! (???)
 
 // FIXME: Faire fonctionner le scroll avec un textSpeedFactor nul ou négatif.
-
-// TODO: Faire passer le nombre de fonctions pour l'animation de l'ouverture et de
-//       la fermeture d'une TextBox à 2 (au lieu de 6 (!) actuellement).
-
+//
+// FIXED ! (???)
 
 /*******/
 /* Box */
@@ -170,13 +174,14 @@ var TEXTBOX_TOGGLED = 2;
 var TEXTBOX_CLOSING = 3;
 
 
-var TextBox = function(x, y, width, height, outerSprite, innerSprite){
+var TextBox = function(x, y, width, height, outerSprite, innerSprite, egoist){
     if (typeof(x) != "number") x = 0;
     if (typeof(y) != "number") y = 0;
     if (typeof(width) != "number") width = 0;
     if (typeof(height) != "number") height = 0;
     if (typeof(outerSprite) != "string") outerSprite = "";
     if (typeof(innerSprite) != "string") innerSprite = "";
+    if ((typeof(egoist) != "number") && (typeof(egoist) != "boolean")) egoist = false;
 
     Phaser.Group.call(this, game);
 
@@ -212,6 +217,13 @@ var TextBox = function(x, y, width, height, outerSprite, innerSprite){
     this.displayState = TEXTBOX_CLOSED;
     this.alpha = 1;
 
+    this.egoist = egoist;
+
+    if (this.egoist){
+        this.innerBox.inputEnabled = true;
+        this.innerBox.events.onInputDown.add(this.handleUserInput, this);
+    }
+
     this.timerNextSentence = null;
 
     this.toggleAnimation = null;
@@ -241,11 +253,25 @@ TextBox.prototype.fixTogglingState = function(){
     }
 }
 
-TextBox.prototype.createVerticalToggle = function(time, alpha, direction, easing){
-    // If there's already a toggle animation, do nothing.
-    // It's up to you to deal with the old one and then set a new one.
-    if (this.toggleAnimation != null){
+TextBox.prototype.createAnimation = function(type, directionH, directionV,
+                                             time, alpha, easing){
+    if ((type != "toggle") &&
+        (type != "close")){
         return;
+    }
+
+    if (type == "toggle"){
+        // If there's already a toggle animation, do nothing.
+        // It's up to you to deal with the old one and then set a new one.
+        if (this.toggleAnimation != null){
+            return;
+        }
+    }
+    else{
+        // The same goes for a close animation.
+        if (this.closeAnimation != null){
+            return;
+        }
     }
 
     // By default, the animation takes 500 milliseconds.
@@ -258,69 +284,25 @@ TextBox.prototype.createVerticalToggle = function(time, alpha, direction, easing
         return;
     }
 
-    // By default, the final alpha is set to 1.
-    if (typeof(alpha) != "number"){
-        alpha = 1;
-    }
-    // If the alpha is negative, it's set to the TextBox's current alpha (make sure
-    // to change it as, by default, it's equal to 1).
-    else if (alpha < 0){
-        alpha = this.alpha;
-    }
-
-    // By default, the direction is from up to bottom.
-    if ((typeof(direction) != "number") &&
-        (typeof(direction) != "boolean")){
-        direction = 0;
+    // Alpha is ignored if it's a close animation.
+    if (type == "toggle"){
+        // By default, the final alpha is set to the TextBox's current alpha (make sure
+        // to change it as, by default, it's equal to 1).
+        if ((typeof(alpha) != "number") ||
+            (alpha < 0)){
+            alpha = this.alpha;
+        }
     }
 
-    // By default, the animation is linear.
-    if (typeof(easing) != "function"){
-        easing = Phaser.Easing.Linear.None;
+
+    if ((directionH != "right") &&
+        (directionH != "left")){
+        directionH = "none";
     }
 
-    var y = this.y;
-	var height = this.height;
-
-    this.toggleAnimation = game.add.tween(this)
-	// Init the toggle first (1 ms 'cause 0 doesn't do anything).
-		.to({y: y - height + 2 * height * direction, alpha: 0}, 1)
-        .to({y: y, alpha: alpha}, time, easing);
-
-    this.normalizeToggleAnimation();
-}
-
-TextBox.prototype.createHorizontalToggle = function(time, alpha, direction, easing){
-    // If there's already a toggle animation, do nothing.
-    // It's up to you to deal with the old one and then set a new one.
-    if (this.toggleAnimation != null){
-        return;
-    }
-
-    // By default, the animation takes 500 milliseconds.
-    if (typeof(time) != "number"){
-        time = 500;
-    }
-    // If the time is negative or zero, no need to do an animation :
-    // It won't be seen anyway...
-    else if (time <= 0){
-        return;
-    }
-
-    // By default, the final alpha is set to 1.
-    if (typeof(alpha) != "number"){
-        alpha = 1;
-    }
-    // If the alpha is negative, it's set to the TextBox's current alpha (make sure
-    // to change it as, by default, it's equal to 1).
-    else if (alpha < 0){
-        alpha = this.alpha;
-    }
-
-    // By default, the direction is from top to bottom.
-    if ((typeof(direction) != "number") &&
-        (typeof(direction) != "boolean")){
-        direction = 0;
+    if ((directionV != "bottom") &&
+        (directionV != "top")){
+        directionV = "none";
     }
 
     // By default, the animation is linear.
@@ -329,179 +311,65 @@ TextBox.prototype.createHorizontalToggle = function(time, alpha, direction, easi
     }
 
     var x = this.x;
-	var width = this.width;
-
-    this.toggleAnimation = game.add.tween(this)
-		.to({x: x - width + 2 * width * direction, alpha: 0}, 1)
-        .to({x: x, alpha: alpha}, time, easing);
-
-    this.normalizeToggleAnimation();
-}
-
-TextBox.prototype.createVerticalClose = function(time, direction, easing){
-    // If there's already a close animation, do nothing.
-    // It's up to you to deal with the old one and then set a new one.
-    if (this.closeAnimation != null){
-        return;
-    }
-
-    // By default, the animation takes 500 milliseconds.
-    if (typeof(time) != "number"){
-        time = 500;
-    }
-    // If the time is negative or zero, no need to do an animation :
-    // It won't be seen anyway...
-    else if (time <= 0){
-        return;
-    }
-
-
-    // By default, the direction is from top to bottom.
-    if ((typeof(direction) != "number") &&
-        (typeof(direction) != "boolean")){
-        direction = 0;
-    }
-
-    // By default, the animation is linear.
-    if (typeof(easing) != "function"){
-        easing = Phaser.Easing.Linear.None;
-    }
-
     var y = this.y;
-	var height = this.height;
-	var alpha = this.alpha;
 
-    function reset(){
-        this.y = y;
-		this.alpha = alpha;
+    var width = this.width;
+    var height = this.height;
+
+    var initX = x;
+    var initY = y;
+    var initAlpha = this.alpha;
+
+    switch (directionH){
+    case "right":
+        initX -= width * (type == "toggle") - width * (type == "close");
+        break;
+
+    case "left":
+        initX += width * (type == "toggle") - width * (type == "close");
+        break;
+
+    default:
+        break;
     }
 
-    this.closeAnimation = game.add.tween(this)
-        .to({y: y - height +  2 * height * direction, alpha: 0}, time, easing);
+    switch (directionV){
+    case "bottom":
+        initY -= height * (type == "toggle") - height * (type == "close");
+        break;
 
-	this.closeAnimation._lastChild.onComplete.add(reset, this);
+    case "top":
+        initY += height * (type == "toggle") - height * (type == "close");
+        break;
 
-    this.normalizeCloseAnimation();
-}
-
-TextBox.prototype.createHorizontalClose = function(time, direction, easing){
-    // If there's already a close animation, do nothing.
-    // It's up to you to deal with the old one and then set a new one.
-    if (this.closeAnimation != null){
-        return;
+    default:
+        break;
     }
-
-    // By default, the animation takes 500 milliseconds.
-    if (typeof(time) != "number"){
-        time = 500;
-    }
-    // If the time is negative or zero, no need to do an animation :
-    // It won't be seen anyway...
-    else if (time <= 0){
-        return;
-    }
-
-
-    // By default, the direction is from left to right.
-    if ((typeof(direction) != "number") &&
-        (typeof(direction) != "boolean")){
-        direction = 0;
-    }
-
-    // By default, the animation is linear.
-    if (typeof(easing) != "function"){
-        easing = Phaser.Easing.Linear.None;
-    }
-
-    var x = this.x;
-	var width = this.width;
-	var alpha = this.alpha;
 
     function reset(){
         this.x = x;
-		this.alpha = alpha;
+        this.y = y;
+        this.alpha = initAlpha;
     }
 
-    this.closeAnimation = game.add.tween(this)
-        .to({x: x - width + 2 * width * direction, alpha: 0}, time, easing);
+    var tween = game.add.tween(this);
 
-	this.closeAnimation._lastChild.onComplete.add(reset, this);
+    if (type == "toggle"){
+        tween.to({x: initX, y: initY, alpha: 0}, 1);
+        tween.to({x: x, y: y, alpha: alpha}, time, easing);
 
-    this.normalizeCloseAnimation();
-}
+        this.toggleAnimation = tween;
 
-TextBox.prototype.createBasicToggle = function(time, alpha, easing){
-    // If there's already a toggle animation, do nothing.
-    // It's up to you to deal with the old one and then set a new one.
-    if (this.toggleAnimation != null){
-        return;
+        this.normalizeToggleAnimation();
     }
+    else{
+        tween.to({x : initX, y: initY, alpha: 0}, time, easing);
+        tween._lastChild.onComplete.add(reset, this);
 
-    // By default, the animation takes 500 milliseconds.
-    if (typeof(time) != "number"){
-        time = 500;
+        this.closeAnimation = tween;
+
+        this.normalizeCloseAnimation();
     }
-    // If the time is negative or zero, no need to do an animation :
-    // It won't be seen anyway...
-    else if (time <= 0){
-        return;
-    }
-
-    // By default, the final alpha is set to 1.
-    if (typeof(alpha) != "number"){
-        alpha = 1;
-    }
-    // If the alpha is negative, it's set to the TextBox's current alpha (make sure
-    // to change it as, by default, it's equal to 1).
-    else if (alpha < 0){
-        alpha = this.alpha;
-    }
-
-    // By default, the animation is linear.
-    if (typeof(easing) != "function"){
-        easing = Phaser.Easing.Linear.None;
-    }
-
-    this.toggleAnimation = game.add.tween(this)
-        .to({alpha: alpha}, time, easing);
-
-    this.normalizeToggleAnimation();
-}
-
-TextBox.prototype.createBasicClose = function(time, easing){
-    // If there's already a close animation, do nothing.
-    // It's up to you to deal with the old one and then set a new one.
-    if (this.closeAnimation != null){
-        return;
-    }
-
-    // By default, the animation takes 500 milliseconds.
-    if (typeof(time) != "number"){
-        time = 500;
-    }
-    // If the time is negative or zero, no need to do an animation :
-    // It won't be seen anyway...
-    else if (time <= 0){
-        return;
-    }
-
-    // By default, the animation is linear.
-    if (typeof(easing) != "function"){
-        easing = Phaser.Easing.Linear.None;
-    }
-
-	var alpha = this.alpha;
-
-	function reset(){
-		this.alpha = alpha;
-	}
-
-    this.closeAnimation = game.add.tween(this)
-        .to({alpha: 0}, time, easing);
-
-	this.closeAnimation._lastChild.onComplete.add(reset, this);
-
-    this.normalizeCloseAnimation();
 }
 
 TextBox.prototype.normalizeToggleAnimation = function(){
@@ -531,7 +399,7 @@ TextBox.prototype.createToggleTimer = function(time){
     if (typeof(time) != "number"){
         time = 500;
     }
-    // If the time is negative or zero, no need to do create a timer.
+    // If the time is negative or zero, no need to create a timer.
     else if (time <= 0){
         return;
     }
@@ -550,9 +418,13 @@ TextBox.prototype.createCloseTimer = function(time){
     if (typeof(time) != "number"){
         time = 500;
     }
-    // If the time is negative or zero, no need to do create a timer.
+    // If the time is negative or zero, no need to create a timer.
     else if (time <= 0){
         return;
+    }
+
+    if (this.toggleAnimation != null){
+        time += this.toggleAnimation._lastChild._duration;
     }
 
     this.closeTimer = game.time.create(false);
@@ -571,13 +443,13 @@ TextBox.prototype.toggle = function(duration){
         return;
     }
 
-	function setVisible(){
-		this.visible = true;
-	}
+    function setVisible(){
+        this.visible = true;
+    }
 
     // If there's no toggle animation, just start reading...
     if (this.toggleAnimation == null){
-		this.visible = true;
+        this.visible = true;
 
         this.displayState = TEXTBOX_TOGGLED;
 
@@ -589,12 +461,21 @@ TextBox.prototype.toggle = function(duration){
     }
     else{
         if (this.closeTimer != null){
-            this.closeTimer.start(this.toggleAnimation.totalDuration);
+            // What I'd like to do would be to start close timer once the toggle
+            // animation has finished, but on complete doesn't want to work with a
+            // timer. The total duration of the toggle animation is not defined either
+            // ...
+            // So... I get the aniation's last child's duration... Yep...
+            // Well... that doesn't work either...
+            // Go look at createCloseTimer for the "solution".
+            //this.closeTimer.start(this.toggleAnimation._lastChild._duration);
+
+            this.closeTimer.start();
         }
-		
-		// Kind of a hack : wait until toggleAnimation has finished to init to set
-		// the TextBox to visible, otherwhise, it's quite ugly.
-		this.toggleAnimation.onComplete.add(setVisible, this);
+
+        // Kind of a hack : wait until toggleAnimation has finished to init to set
+        // the TextBox to visible, otherwhise, it's quite ugly.
+        this.toggleAnimation.onComplete.add(setVisible, this);
 
         // Otherwhise, start the animation and only start reading once it's finished.
         this.toggleAnimation.start();
@@ -913,14 +794,28 @@ TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
 
     sentence.x = this.innerBox.x;
     sentence.y = this.innerBox.y;
-    sentence.mask = this.innerBox.mask;
-    sentence.setWordWrap(true, this.innerBox.width);
+
+	sentence.setWordWrap(true, this.innerBox.width);
 
     sentence.phaserText.text = sentence.wholeText;
     sentence.heightLeft = sentence.phaserText.height;
     sentence.maxHeight = sentence.heightLeft;
+	sentence.maxWidth = sentence.phaserText.width;
 
     sentence.phaserText.text = "";
+
+	switch (sentence.phaserText.align){
+		case "center":
+		sentence.x += this.innerBox.width / 2 - sentence.maxWidth / 2;
+		break;
+
+		case "right":
+		sentence.x += this.innerBox.width / 2 - sentence.maxWidth;
+
+		default:
+		break;
+	}
+    sentence.mask = this.innerBox.mask;
 
     this.allSentences.splice(index, 0, sentence);
     this.allDelays.splice(index, 0, delay);
@@ -937,30 +832,32 @@ TextBox.prototype.update = function(){
             var i  = this.indexCurrentSentence;
             var currentSentence = this.allSentences[i];
 
+            if (currentSentence.phaserText.height <
+                2 * currentSentence.phaserText.fontSize){
+                switch (currentSentence.phaserText.align){
+                case "center":
+                    currentSentence.x = this.innerBox.x + this.innerBox.width / 2 -
+                        currentSentence.phaserText.width / 2;
+                    break;
+
+                case "right":
+                    currentSentence.x = this.innerBox.x + this.innerBox.width -
+                        currentSentence.phaserText.width;
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
+
+            this.handleVerticalOverflow();
+
             // If the current sentence is being read or is paused,
             if (currentSentence.readingState == SENTENCE_READING ||
                 currentSentence.readingState == SENTENCE_PAUSED){
                 currentSentence.update();
 
-				if (currentSentence.phaserText.height <
-                        2 * currentSentence.phaserText.fontSize){
-					switch (currentSentence.phaserText.align){
-						case "center":
-						currentSentence.x = this.innerBox.x + this.innerBox.width / 2 -
-                            currentSentence.phaserText.width / 2;
-						break;
-
-						case "right":
-						currentSentence.x = this.innerBox.x + this.innerBox.width -
-							currentSentence.phaserText.width;
-						break;
-						
-						default:
-						break;
-					}
-				}
-
-                this.handleVerticalOverflow();
             }
             // Otherwhise, prepare the display of the next sentence.
             else{
@@ -973,7 +870,7 @@ TextBox.prototype.update = function(){
                 else if (this.timerNextSentence == null){
                     var delay = this.allDelays[i];
 
-                    this.timerNextSentence = game.time.create(false);
+                    this.timerNextSentence = game.time.create(true);
                     this.timerNextSentence.add(this.allDelays[i],
                                                this.nextSentence, this);
 
@@ -992,6 +889,7 @@ TextBox.prototype.nextSentence = function(){
     if (this.allSentences.length < 1) return;
 
     if (this.timerNextSentence){
+        this.timerNextSentence.stop();
         this.timerNextSentence = null;
     }
 
@@ -1001,6 +899,12 @@ TextBox.prototype.nextSentence = function(){
         var currentSentence = this.allSentences[i];
         var nextSentence = this.allSentences[i + 1];
 
+        if (currentSentence.readingState == SENTENCE_READING){
+            currentSentence.stopReading();
+
+            return;
+        }
+
         currentSentence.stopReading();
 
         if (this.allClears[i]){
@@ -1009,6 +913,9 @@ TextBox.prototype.nextSentence = function(){
         else{
             if (typeof(nextSentence) != "undefined"){
                 nextSentence.y = currentSentence.y + currentSentence.phaserText.height;
+            }
+            else{
+                this.close();
             }
         }
 
@@ -1074,18 +981,20 @@ TextBox.prototype.handleVerticalOverflow = function(){
                 var tween = game.add.tween(sentence)
                     .to({}, 1000)
                     .to({y: sentence.y - deltaHeight},
-                        15000 / currentSentence.textSpeedFactor);
+                        Math.max(15000 / currentSentence.textSpeedFactor, 2500));
 
                 tween._lastChild.onComplete.add(sentence.resetVerticalScroll,
                                                 sentence);
 
                 if (j == i){
                     sentence.pause();
-                    this.closeTimer.pause();
                     tween.onComplete.add(sentence.unpause, sentence);
 
-                    // Should work but doesn't...
-                    tween.onComplete.add(this.closeTimer.resume, this);
+                    if (this.closeTimer != null){
+                        this.closeTimer.pause();
+                        // Should work but doesn't...
+                        tween.onComplete.add(this.closeTimer.resume, this);
+                    }
                 }
 
                 sentence.verticalScrollAnimation = tween;
@@ -1189,11 +1098,8 @@ TextBox.prototype.handleMood = function(){
 
         tween.onUpdateCallback(setY, this);
         //  tween._lastChild.onComplete(this.reset)
-
-        currentSentence.setTextSpeedFactor(40);
         break;
     case MOOD_DYING:
-        currentSentence.setTextSpeedFactor(2);
         break;
     default:
         break;
@@ -1204,6 +1110,21 @@ TextBox.prototype.handleMood = function(){
     if (tween != null){
         this.moodAnimation.start();
     }
+}
+
+TextBox.prototype.handleUserInput = function(){
+    if (this.timerNextSentence != null){
+        return;
+    }
+
+    if (validIndex(this.indexCurrentSentence, this.allSentences)){
+        if (this.allSentences[this.indexCurrentSentence].verticalScrollAnimation != null){
+
+            return;
+        }
+    }
+
+    this.nextSentence();
 }
 /******************************************************************************/
 /* TextBox */
@@ -1247,12 +1168,14 @@ var Sentence = function(text, mood, font, fontSize, fill){
     this.phaserText.fontSize = fontSize;
     this.phaserText.fill = fill;
 
-    this.mood = mood;
-
-    this.addChild(this.phaserText);
-
     this.wholeText = text;
     this.textSpeedFactor = 1;
+
+    this.readingEasing = Phaser.Easing.Linear.None;
+
+    this.setMood(mood);
+
+    this.addChild(this.phaserText);
 
     this.indexCurrentLetter = 0;
     this.oldIndexCurrentLetter = -1;
@@ -1265,7 +1188,7 @@ var Sentence = function(text, mood, font, fontSize, fill){
     this.speaker = null;
     this.speakerAlign = "right";
 
-    this.totalReadingTime = 1000.0 * this.wholeText.length;
+    this.totalReadingTime = 1000.0 * this.wholeText.length / this.textSpeedFactor;
 }
 
 Sentence.prototype = Object.create(Phaser.Sprite.prototype);
@@ -1286,6 +1209,40 @@ Sentence.prototype.setTextSpeedFactor = function(factor){
     this.textSpeedFactor = factor;
 }
 
+Sentence.prototype.setMood = function(mood){
+    switch (mood){
+    case MOOD_NORMAL:
+        this.mood = mood;
+        break;
+
+    case MOOD_ANGRY:
+        this.mood = mood;
+        this.readingEasing = Phaser.Easing.Cubic.In;
+        this.setTextSpeedFactor(40);
+        break;
+
+    case MOOD_SAD:
+        this.mood = mood;
+        break;
+
+    case MOOD_FRIGHTENED:
+        this.mood = mood;
+        break;
+
+    case MOOD_DYING:
+        this.mood = mood;
+        this.setTextSpeedFactor(2);
+        break;
+
+    case MOOD_JOYFUL:
+        this.mood = mood;
+        break;
+
+    default:
+        break;
+    }
+}
+
 Sentence.prototype.addLetterDisplay = function(){
     if (this.oldIndexCurrentLetter == Math.floor(this.indexCurrentLetter)){
         return;
@@ -1296,7 +1253,9 @@ Sentence.prototype.addLetterDisplay = function(){
             this.phaserText.text = this.wholeText[i];
         }
         else{
-            this.phaserText.text += this.wholeText[i];
+            if (validIndex(i, this.wholeText)){
+                this.phaserText.text += this.wholeText[i];
+            }
         }
     }
 
@@ -1308,7 +1267,7 @@ Sentence.prototype.startReading = function(){
         if (this.textSpeedFactor > 0){
             this.textDisplayAnimation = game.add.tween(this)
                 .to({indexCurrentLetter: this.wholeText.length - 1},
-                    this.totalReadingTime)
+                    this.totalReadingTime, this.readingEasing)
                 .onUpdateCallback(this.addLetterDisplay, this);
 
             this.textDisplayAnimation.onComplete.add(this.stopReading, this);
