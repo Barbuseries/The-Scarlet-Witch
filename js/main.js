@@ -47,7 +47,7 @@ function create(){
 	textBox.setMarginH(10, 10);
 
 	textBox.setY(300);
-	textBox.setX(250);
+	textBox.setX(150);
 
 	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
 	
@@ -56,15 +56,15 @@ function create(){
 	sentence4 = new Sentence("Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...", MOOD_DYING, -1, 24);
 	sentence5 = new Sentence("Hey ! C'est pas la classe ?!", MOOD_NORMAL, -1, 24);
 
-	sentence.setTextSpeedFactor(40);
+	sentence.setTextSpeedFactor(100);
 	sentence2.setTextSpeedFactor(10);
-//	sentence5.phaserText.align = "right";
+//	sentence5.phaserText.align = "center";
 	sentence5.setTextSpeedFactor(20);
 	
 	textBox.addSentence(sentence);
 	textBox.fitHeightToSentence(0, -1, 1);
 
-//	textBox.addSentence(sentence);
+	textBox.addSentence(sentence5);
 	//textBox.addSentence(sentence3, 1000, 1);
 	//textBox.addSentence(sentence4);
 	
@@ -74,18 +74,21 @@ function create(){
 	//textBox.fitDurationToSentence(0, 1000);
 	//textBox.createVerticalClose(1000, 0, Phaser.Easing.Bounce.Out);
 
-	textBox.createToggleTimer(1);
+	textBox.createToggleTimer(1000);
+
+	textBox.onEndClose.add(textBox.reset, textBox);
 
 	textBox.toggleTimer.start();
 }
 
 function update(){
-/*	if (textBox.displayState == TEXTBOX_CLOSED){
+	/*if (textBox.displayState == TEXTBOX_CLOSED){
+		console.log(textBox.toggleTimer.running);
+		textBox.toggleTimer.resume();*/
+/*		textBox.clear();
 		textBox.toggle();
-		textBox.clear();
-		textBox.toggle();
-		textBox.setY(250);
-	}
-*/
+		textBox.setY(250);*/
+	//}
+
 //	textBox.clear();
 }

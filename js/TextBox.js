@@ -1,21 +1,4 @@
-// FIXME: Trouver un moyen de centrer/mettre a droite la premiere ligne de texte qui
-//        est affichee.
-//        (align ne fonctionne que quand un texte est sur plusieurs lignes)
-// FIXED !
-
-// TODO: Faire passer le nombre de fonctions pour l'animation de l'ouverture et de
-//       la fermeture d'une TextBox à 2 (au lieu de 6 (!) actuellement).
-// DONE !
-
-
-// FIXME: Afficher le texte centré/à droite quand il ne fait qu'une ligne et qu'il
-// possède un textSpeedFactor négatif.
-//
-// FIXED ! (???)
-
-// FIXME: Faire fonctionner le scroll avec un textSpeedFactor nul ou négatif.
-//
-// FIXED ! (???)
+// TODO: Permettre d'effacer la TextBox sans avoir à détruire les Sentences.
 
 /*******/
 /* Box */
@@ -231,6 +214,19 @@ var TextBox = function(x, y, width, height, outerSprite, innerSprite, egoist){
 
     this.toggleTimer = null;
     this.closeTimer = null;
+
+	this.onStartToggle = new Phaser.Signal();
+	this.onEndToggle = new Phaser.Signal();
+
+	this.onUpdate = new Phaser.Signal();
+
+	this.onStartClose = new Phaser.Signal();
+	this.onEndClose = new Phaser.Signal();
+
+	this.onEndToggle.add(this.fixTogglingState, this);
+	this.onEndToggle.add(this.nextSentence, this);
+
+	this.onEndClose.add(this.fixTogglingState, this);
 }
 
 TextBox.prototype = Object.create(Phaser.Group.prototype);
@@ -359,35 +355,13 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
         tween.to({x: x, y: y, alpha: alpha}, time, easing);
 
         this.toggleAnimation = tween;
-
-        this.normalizeToggleAnimation();
     }
     else{
         tween.to({x : initX, y: initY, alpha: 0}, time, easing);
         tween._lastChild.onComplete.add(reset, this);
 
         this.closeAnimation = tween;
-
-        this.normalizeCloseAnimation();
     }
-}
-
-TextBox.prototype.normalizeToggleAnimation = function(){
-    if (this.toggleAnimation == null){
-        return;
-    }
-
-    this.toggleAnimation._lastChild.onComplete.add(this.fixTogglingState, this);
-    this.toggleAnimation._lastChild.onComplete.add(this.nextSentence, this);
-}
-
-TextBox.prototype.normalizeCloseAnimation = function(){
-    if (this.closeAnimation == null){
-        return;
-    }
-
-    this.closeAnimation._lastChild.onComplete.add(this.fixTogglingState, this);
-    this.closeAnimation._lastChild.onComplete.add(this.clear, this);
 }
 
 TextBox.prototype.createToggleTimer = function(time){
@@ -406,7 +380,7 @@ TextBox.prototype.createToggleTimer = function(time){
 
     this.toggleTimer = game.time.create(false);
 
-    this.toggleTimer.add(time, this.toggle, this);
+    this.toggleTimer.loop(time, this.toggle, this);
 }
 
 TextBox.prototype.createCloseTimer = function(time){
@@ -423,21 +397,13 @@ TextBox.prototype.createCloseTimer = function(time){
         return;
     }
 
-    if (this.toggleAnimation != null){
-        time += this.toggleAnimation._lastChild._duration;
-    }
-
     this.closeTimer = game.time.create(false);
 
-    this.closeTimer.add(time, this.close, this);
+    this.closeTimer.loop(time, this.close, this);
 }
 
-// Make the TextBox appear in the given time with the given alpha.
-// If time is undefined, negative or zero, the TextBox will be displayed instantly.
-// If no alpha is passed, the TextBox's alpha is set to 1.
-// TODO: add delay and a corresponding tween to make the TextBox only appear
-// for delay milliseconds.
-TextBox.prototype.toggle = function(duration){
+// Make the TextBox appear.
+TextBox.prototype.toggle = function(){
     if ((this.displayState == TEXTBOX_TOGGLING) ||
         (this.displayState == TEXTBOX_TOGGLED)){
         return;
@@ -447,58 +413,38 @@ TextBox.prototype.toggle = function(duration){
         this.visible = true;
     }
 
+	this.onStartToggle.dispatch(this);
+
+	if (this.toggleTimer != null){
+		this.toggleTimer.pause();
+	}
+
+	if (this.closeTimer != null){
+			this.onEndToggle.add(this.closeTimer.start, this.closeTimer);
+    }
+
     // If there's no toggle animation, just start reading...
     if (this.toggleAnimation == null){
         this.visible = true;
 
         this.displayState = TEXTBOX_TOGGLED;
 
-        if (this.closeTimer != null){
-            this.closeTimer.start();
-        }
-
-        this.nextSentence();
+		this.onEndToggle.dispatch(this);
     }
     else{
-        if (this.closeTimer != null){
-            // What I'd like to do would be to start close timer once the toggle
-            // animation has finished, but on complete doesn't want to work with a
-            // timer. The total duration of the toggle animation is not defined either
-            // ...
-            // So... I get the aniation's last child's duration... Yep...
-            // Well... that doesn't work either...
-            // Go look at createCloseTimer for the "solution".
-            //this.closeTimer.start(this.toggleAnimation._lastChild._duration);
-
-            this.closeTimer.start();
-        }
-
         // Kind of a hack : wait until toggleAnimation has finished to init to set
         // the TextBox to visible, otherwhise, it's quite ugly.
         this.toggleAnimation.onComplete.add(setVisible, this);
-
-        // Otherwhise, start the animation and only start reading once it's finished.
-        this.toggleAnimation.start();
-
+		this.toggleAnimation._lastChild.onComplete.add(this.onEndToggle.dispatch,
+													   this);
+		this.toggleAnimation.start();
         this.displayState = TEXTBOX_TOGGLING;
-    }
-
-    // If the TextBox must be closed after a given time,
-    if (typeof(duration) == "number" && duration > 0){
-        this.createCloseTimer(duration);
-
-        if (this.toggleAnimation != null){
-            this.closeTimer.start(this.toggleAnimation.totalDuration);
-        }
-        else{
-            this.closeTimer.start();
-        }
     }
 }
 
-// Close the TextBox in the given time.
+// Close the TextBox.
 // If no time is specified, the TextBox will be automatically closed.
-TextBox.prototype.close = function(time){
+TextBox.prototype.close = function(){
     if ((this.displayState == TEXTBOX_CLOSING) ||
         (this.displayState == TEXTBOX_CLOSED)){
         return;
@@ -508,25 +454,22 @@ TextBox.prototype.close = function(time){
         this.allSentences[this.indexCurrentSentence].stopReading(true);
     }
 
+	this.onStartClose.dispatch(this);
+
+	if (this.closeTimer != null){
+		this.closeTimer.pause();
+	}
 
     if (this.closeAnimation == null){
-        if (typeof(time) != "number" || time <= 0){
-            this.displayState = TEXTBOX_CLOSED;
-            this.visible = false;
-            this.clear();
+        this.displayState = TEXTBOX_CLOSED;
+        this.visible = false;
 
-            this.alpha = 0;
-
-            return;
-        }
-        else{
-            this.closeAnimation = game.add.tween(this)
-                .to({alpha: 0}, time);
-
-            this.closeAnimation.onComplete.add(this.fixTogglingState, this);
-            this.closeAnimation.onComplete.add(this.clear, this);
-        }
+		this.onEndClose.dispatch(this);
+		
+        return;
     }
+	
+	this.closeAnimation._lastChild.onComplete.add(this.onEndClose.dispatch, this);
 
     this.closeAnimation.start();
 
@@ -800,7 +743,9 @@ TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
     sentence.phaserText.text = sentence.wholeText;
     sentence.heightLeft = sentence.phaserText.height;
     sentence.maxHeight = sentence.heightLeft;
-	sentence.maxWidth = sentence.phaserText.width;
+
+	sentence.widthLeft = sentence.phaserText.width;
+	sentence.maxWidth = sentence.widthLeft;
 
     sentence.phaserText.text = "";
 
@@ -825,6 +770,8 @@ TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
 
 // Called every frame.
 TextBox.prototype.update = function(){
+	this.onUpdate.dispatch(this);
+
     // If the TextBox is not completely toggled, do nothing.
     if (this.displayState == TEXTBOX_TOGGLED){
         // If the index of the current sentence is valid,
@@ -899,13 +846,12 @@ TextBox.prototype.nextSentence = function(){
         var currentSentence = this.allSentences[i];
         var nextSentence = this.allSentences[i + 1];
 
+		// Only case it can happen is when the user clicks on the TextBox.
         if (currentSentence.readingState == SENTENCE_READING){
             currentSentence.stopReading();
 
             return;
         }
-
-        currentSentence.stopReading();
 
         if (this.allClears[i]){
             this.clear();
@@ -963,6 +909,21 @@ TextBox.prototype.clear = function(){
     this.indexCurrentSentence = -1;
 };
 
+TextBox.prototype.reset = function(){
+	for(var i = 0; i < this.allSentences.length; i++) {
+		this.allSentences[i].reset();
+		this.allSentences[i].x = this.innerBox.x;
+		this.allSentences[i].y = this.innerBox.y;
+	}
+
+	this.indexCurrentSentence = -1;
+
+	if (this.timerNextSentence != null){
+		this.timerNextSentence.stop();
+		this.timerNextSentence = null;
+	}
+};
+
 TextBox.prototype.handleVerticalOverflow = function(){
     var i = this.indexCurrentSentence;
     var currentSentence = this.allSentences[i];
@@ -975,11 +936,17 @@ TextBox.prototype.handleVerticalOverflow = function(){
             if (sentence.verticalScrollAnimation == null){
                 var deltaHeight = Math.min(currentSentence.heightLeft,
                                            this.innerBox.height);
+				
+				var minDelay = 1000;
+
+				if (currentSentence.textSpeedFactor <= 0){
+					minDelay = 500;
+				}
 
                 sentence.heightLeft -= deltaHeight;
 
                 var tween = game.add.tween(sentence)
-                    .to({}, 1000)
+                    .to({}, minDelay)
                     .to({y: sentence.y - deltaHeight},
                         Math.max(15000 / currentSentence.textSpeedFactor, 2500));
 
@@ -1098,6 +1065,8 @@ TextBox.prototype.handleMood = function(){
 
         tween.onUpdateCallback(setY, this);
         //  tween._lastChild.onComplete(this.reset)
+
+		currentSentence.moodAnimation = tween;
         break;
     case MOOD_DYING:
         break;
@@ -1184,11 +1153,24 @@ var Sentence = function(text, mood, font, fontSize, fill){
 
     this.verticalScrollAnimation = null;
     this.horizontalScrollAnimation = null;
+	this.moodAnimation = null;
 
     this.speaker = null;
     this.speakerAlign = "right";
 
     this.totalReadingTime = 1000.0 * this.wholeText.length / this.textSpeedFactor;
+
+	this.onStartReading = new Phaser.Signal();
+	this.onEndReading = new Phaser.Signal();
+
+	this.phaserText.text = this.wholeText;
+    this.heightLeft = this.phaserText.height;
+    this.maxHeight = this.heightLeft;
+
+	this.widthLeft = this.phaserText.width;
+	this.maxWidth = this.widthLeft;
+
+    this.phaserText.text = "";
 }
 
 Sentence.prototype = Object.create(Phaser.Sprite.prototype);
@@ -1264,6 +1246,9 @@ Sentence.prototype.addLetterDisplay = function(){
 
 Sentence.prototype.startReading = function(){
     if (this.readingState == SENTENCE_NOT_READING){
+
+		this.onStartReading.dispatch(this);
+
         if (this.textSpeedFactor > 0){
             this.textDisplayAnimation = game.add.tween(this)
                 .to({indexCurrentLetter: this.wholeText.length - 1},
@@ -1288,8 +1273,13 @@ Sentence.prototype.stopReading = function(forceStop){
 
     if (this.readingState == SENTENCE_READING ||
         forceStop){
+
+		this.onStartReading.dispatch(this);
+
         if (this.textDisplayAnimation != null){
             this.textDisplayAnimation.stop();
+			
+			this.textDisplayAnimation = null;
         }
 
         this.phaserText.text = this.wholeText;
@@ -1306,7 +1296,10 @@ Sentence.prototype.pause = function(){
         return;
     }
 
-    this.textDisplayAnimation.pause();
+	if (this.textDisplayAnimation != null){
+		this.textDisplayAnimation.pause();
+	}
+
     this.readingState = SENTENCE_PAUSED;
 };
 
@@ -1315,7 +1308,10 @@ Sentence.prototype.unpause = function(){
         return;
     }
 
-    this.textDisplayAnimation.resume();
+	if (this.textDisplayAnimation != null){
+		this.textDisplayAnimation.resume();
+	}
+    
     this.readingState = SENTENCE_READING;
 };
 
@@ -1345,6 +1341,32 @@ Sentence.prototype.resetVerticalScroll = function(){
         this.verticalScrollAnimation = null;
     }
 }
+
+Sentence.prototype.reset = function(){
+	this.phaserText.text = "";
+	this.oldIndexCurrentLetter = -1;
+	this.indexCurrentLetter = 0;
+
+	this.readingState = SENTENCE_NOT_READING;
+
+	if (this.verticalScrollAnimation != null){
+		this.verticalScrollAnimation.stop();
+		this.verticalScrollAnimation = null;
+	}
+	
+	if (this.horizontalScrollAnimation != null){
+		this.horizontalScrollAnimation.stop();
+		this.horizontalScrollAnimation = null;
+	}
+	
+	if (this.moodAnimation != null){
+		this.moodAnimation.stop();
+		this.moodAnimation = null;
+	}
+
+	this.widthLeft = this.maxWidth;
+	this.heightLeft = this.maxHeight;
+};
 /******************************************************************************/
 /* Sentence */
 /************/
