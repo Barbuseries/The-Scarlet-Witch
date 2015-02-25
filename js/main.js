@@ -54,17 +54,17 @@ function create(){
 	sentence2 = new Sentence("Ca marche !", MOOD_JOYFUL, -1, 24);
 	sentence3 = new Sentence("Moi aussi !", MOOD_ANGRY, -1, 24);
 	sentence4 = new Sentence("Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...", MOOD_DYING, -1, 24);
-	sentence5 = new Sentence("Hey ! C'est pas la classe ?!", MOOD_NORMAL, -1, 24);
+	sentence5 = new Sentence("Hey ! C'est pas la classe ?!", MOOD_ANGRY, -1, 24);
 
 	sentence.setTextSpeedFactor(100);
 	sentence2.setTextSpeedFactor(10);
 //	sentence5.phaserText.align = "center";
 	sentence5.setTextSpeedFactor(20);
 	
-	textBox.addSentence(sentence);
-	textBox.fitHeightToSentence(0, -1, 1);
+	textBox.addSentence(sentence, 1000, 1);
 
 	textBox.addSentence(sentence5);
+	textBox.fitHeightToSentence(0, -1, 1);
 	//textBox.addSentence(sentence3, 1000, 1);
 	//textBox.addSentence(sentence4);
 	
@@ -74,21 +74,20 @@ function create(){
 	//textBox.fitDurationToSentence(0, 1000);
 	//textBox.createVerticalClose(1000, 0, Phaser.Easing.Bounce.Out);
 
-	textBox.createToggleTimer(1000);
+	textBox.createToggleTimer(1);
 
-	textBox.onEndClose.add(textBox.reset, textBox);
+	//textBox.onEndClose.add(textBox.clear, textBox);
 
 	textBox.toggleTimer.start();
 }
 
 function update(){
-	/*if (textBox.displayState == TEXTBOX_CLOSED){
-		console.log(textBox.toggleTimer.running);
-		textBox.toggleTimer.resume();*/
+	if (textBox.displayState == TEXTBOX_CLOSED){
+		textBox.toggleTimer.resume();
 /*		textBox.clear();
 		textBox.toggle();
 		textBox.setY(250);*/
-	//}
+	}
 
 //	textBox.clear();
 }
