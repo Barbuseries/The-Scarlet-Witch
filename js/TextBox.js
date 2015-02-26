@@ -11,7 +11,7 @@ var Box = function(x, y, width, height, sprite, hasMask){
     this.width = width;
     this.height = height;
 
-    if (hasMask){
+    if (booleanable(hasMask) && hasMask){
         this.mask = game.add.graphics(x, y);
         this.mask.isMask = true;
     }
@@ -397,7 +397,7 @@ TextBox.prototype.createToggleTimer = function(time){
     this.toggleTimer.loop(time, this.toggle, this);
 }
 
-TextBox.prototype.createCloseTimer = function(time){
+TextBox.prototype.createCloseTimer = function(time, startOnEndToggle){
     if (this.closeTimer != null){
         return;
     }
@@ -411,9 +411,17 @@ TextBox.prototype.createCloseTimer = function(time){
         return;
     }
 
+	if (!booleanable(startOnEndToggle)){
+		startOnEndToggle = true;
+	}
+
     this.closeTimer = game.time.create(false);
 
     this.closeTimer.loop(time, this.close, this);
+
+	if (startOnEndToggle){
+		this.onEndToggle.add(function(){resumeLoopedTimer(this.closeTimer)}, this);
+	}
 }
 
 // Make the TextBox appear.
@@ -431,10 +439,6 @@ TextBox.prototype.toggle = function(){
 
     if (this.toggleTimer != null){
         this.toggleTimer.pause();
-    }
-
-    if (this.closeTimer != null){
-        this.onEndToggle.add(this.closeTimer.start, this.closeTimer);
     }
 
     // If there's no toggle animation, just start reading...
@@ -465,7 +469,9 @@ TextBox.prototype.close = function(){
     }
 
     if (typeof(this.allSentences[this.indexCurrentSentence]) != "undefined"){
-        this.allSentences[this.indexCurrentSentence].stopReading(true);
+		if (this.allSentences[this.indexCurrentSentence].readingState == SENTENCE_READING){
+			this.allSentences[this.indexCurrentSentence].stopReading(true);
+		}
 
 		// A hack : If I don't do that, when the TextBox reappears, it will close
 		// automatically.
@@ -832,12 +838,12 @@ TextBox.prototype.update = function(){
 						console.log("PRESS A KEY TO CONTINUE !");
 					}
 					else{
-						if (this.indexCurrentSentence < this.allSentences.length - 1){
+						/*if (this.indexCurrentSentence < this.allSentences.length - 1){
 							this.nextSentence();
 						}
 						else{
 							
-						}
+						}*/
 					}
                 }
                 // Otherwhise, wait the given time to start reading the next sentence.
@@ -1014,8 +1020,8 @@ TextBox.prototype.handleVerticalOverflow = function(){
 
                     if (this.closeTimer != null){
                         this.closeTimer.pause();
-                        // Should work but doesn't...
-                        tween.onComplete.add(this.closeTimer.resume, this);
+                        
+                        tween.onComplete.add(this.closeTimer.resume, this.closeTimer);
                     }
                 }
 
@@ -1081,24 +1087,13 @@ TextBox.prototype.fitWidthToSentence = function(indexSentence, height, conserveM
 };
 
 TextBox.prototype.fitDurationToSentence = function(indexSentence, additionalTime){
-    if (this.displayState != TEXTBOX_CLOSED){
-        return;
-    }
-
-    if (this.closeTimer != null){
-        return;
-    }
-
     if (!validIndex(indexSentence, this.allSentences)){
-        return;
-    }
+		return;
+	}
+	
+	this.createCloseTimer(additionalTime, false);
 
-    if (typeof(additionalTime) != "number"){
-        additionalTime = 0;
-    }
-
-    this.createCloseTimer(this.allSentences[indexSentence].totalReadingTime +
-                          additionalTime);
+	this.allSentences[indexSentence].onEndReading.add(function(){resumeLoopedTimer(this.closeTimer)}, this);
 }
 
 TextBox.prototype.handleMood = function(){
@@ -1339,7 +1334,7 @@ Sentence.prototype.startReading = function(){
 
         if (this.textSpeedFactor > 0){
             this.textDisplayAnimation = game.add.tween(this)
-                .to({indexCurrentLetter: this.wholeText.length - 1},
+                .to({indexCurrentLetter: this.wholeText.length},
                     this.totalReadingTime, this.readingEasing)
                 .onUpdateCallback(this.addLetterDisplay, this);
 
@@ -1362,8 +1357,6 @@ Sentence.prototype.stopReading = function(forceStop){
     if (this.readingState == SENTENCE_READING ||
         forceStop){
 
-        this.onStartReading.dispatch(this);
-
         if (this.textDisplayAnimation != null){
             this.textDisplayAnimation.stop();
 
@@ -1376,6 +1369,8 @@ Sentence.prototype.stopReading = function(forceStop){
         this.oldIndexCurrentLetter = this.indexCurrentLetter;
 
         this.readingState = SENTENCE_FINISHED_READING;
+
+		this.onEndReading.dispatch(this);
     }
 }
 
@@ -1507,4 +1502,18 @@ function validIndex(index, array){
 
     return (index < 0) ? 0 :
         (index >= array.length) ? 0 : 1;
+}
+
+function booleanable(value){
+	return ((typeof(value) == "number") ||
+			(typeof(value) == "boolean"));
+}
+
+function resumeLoopedTimer(loopedTimer){
+	if (loopedTimer.paused == false){
+		loopedTimer.start();
+	}
+	else{
+		loopedTimer.resume();
+	}
 }
