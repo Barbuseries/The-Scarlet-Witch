@@ -310,8 +310,8 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
         directionH = "none";
     }
 
-    if ((directionV != "bottom") &&
-        (directionV != "top")){
+    if ((directionV != "down") &&
+        (directionV != "up")){
         directionV = "none";
     }
 
@@ -344,11 +344,11 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
     }
 
     switch (directionV){
-    case "bottom":
+    case "down":
         initY -= height * (type == "toggle") - height * (type == "close");
         break;
 
-    case "top":
+    case "up":
         initY += height * (type == "toggle") - height * (type == "close");
         break;
 
@@ -882,6 +882,23 @@ TextBox.prototype.nextSentence = function(){
         if (currentSentence.readingState == SENTENCE_READING){
             currentSentence.stopReading();
 
+			// If I don't do that switch, the text will not be correctly
+			// aligned if it's centered or righted.
+            switch (currentSentence.phaserText.align){
+            case "center":
+                currentSentence.x = this.innerBox.x + this.innerBox.width / 2 -
+                    currentSentence.phaserText.width / 2;
+                break;
+
+            case "right":
+                currentSentence.x = this.innerBox.x + this.innerBox.width -
+                    currentSentence.phaserText.width;
+                break;
+
+            default:
+                break;
+            }
+
             return;
         }
 
@@ -958,7 +975,7 @@ TextBox.prototype.clear = function(destroySentences){
         for(var i = 0; i < sentencesToDestroy.length; i++) {
             this.remove(sentencesToDestroy[i]);
 
-            sentencesToDestroy[i].kill();
+            sentencesToDestroy[i].destroy();
         }
 
         this.indexCurrentSentence = -1;
@@ -971,7 +988,11 @@ TextBox.prototype.clear = function(destroySentences){
 };
 
 TextBox.prototype.reset = function(){
-    for(var i = 0; i < this.allSentences.length; i++) {
+    for(var i = 0; i <= this.indexCurrentSentence; i++) {
+		if(!validIndex(this.indexCurrentSentence, this.allSentences)){
+			return;
+		}
+
         this.allSentences[i].reset();
         this.allSentences[i].x = this.innerBox.x;
         this.allSentences[i].y = this.innerBox.y;
@@ -1236,7 +1257,6 @@ var Sentence = function(text, mood, font, fontSize, fill){
     this.moodAnimation = null;
 
     this.speaker = null;
-    this.speakerAlign = "right";
 
     this.totalReadingTime = 1000.0 * this.wholeText.length / this.textSpeedFactor;
 
@@ -1463,10 +1483,9 @@ Sentence.prototype.stopAnimation = function(type){
     }
 }
 
+// kill() and destroy() are the same.
 Sentence.prototype.kill = function(){
-    this._del();
-
-    Phaser.Sprite.prototype.kill.call(this);
+    this.destroy();
 }
 
 Sentence.prototype.destroy = function(){

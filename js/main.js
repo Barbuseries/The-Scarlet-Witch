@@ -46,7 +46,7 @@ function create(){
 	textBox.setMarginV(10, 10);
 	textBox.setMarginH(10, 10);
 
-	textBox.setY(300);
+	textBox.setY(200);
 	textBox.setX(150);
 
 	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
@@ -58,24 +58,23 @@ function create(){
 
 	sentence.setTextSpeedFactor(100);
 	sentence2.setTextSpeedFactor(10);
-//	sentence5.phaserText.align = "center";
+	sentence.phaserText.align = "center";
 	sentence5.setTextSpeedFactor(20);
 	
-	textBox.addSentence(sentence, 1000, 1);
+	textBox.addSentence(sentence, -1, 1);
 
 	textBox.addSentence(sentence5);
 	textBox.fitHeightToSentence(0, -1, 1);
 	//textBox.addSentence(sentence3, 1000, 1);
 	//textBox.addSentence(sentence4);
 	
-	textBox.createAnimation("toggle", "right", "bottom", 2000, 1, Phaser.Easing.Cubic.InOut);
-	textBox.createAnimation("close", "left", "top", 2000, 1, Phaser.Easing.Cubic.InOut);
+	textBox.createAnimation("toggle", "left", "down", 2000, 1, Phaser.Easing.Cubic.InOut);
+	textBox.createAnimation("close", "left", "up", 2000, 1, Phaser.Easing.Cubic.InOut);
 
-	//textBox.fitDurationToSentence(0, 1000);
+//	textBox.fitDurationToSentence(0, 1000);
 	//textBox.createVerticalClose(1000, 0, Phaser.Easing.Bounce.Out);
 
 	textBox.createToggleTimer(1);
-
 	//textBox.onEndClose.add(textBox.clear, textBox);
 
 	textBox.toggleTimer.start();

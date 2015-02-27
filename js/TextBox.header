@@ -56,11 +56,29 @@ Object TextBox{
         height;
         outerBox;
         innerBox;
+		
+		toggleAnimation; // Tween, start when toggle() is called.
+		closeAnimation; // Tween, start when close() is called.
+
+		toggleTimer; // Timer, if started, call toggle() when finished.
+		closeTimer; // Timer, if started call close() when finished.
+				    // By default, either called when onEndToggle is dispatched or
+					// after a particular Sentence has been read (fitDurationToSentence).
+
+		onStartToggle; // Signal, dispatched when toggle() is called.
+		onEndToggle; // Signal, dispatched when toggleAnimation is finished.
+		
+		onUpdate; // Signal, dispatched when update() is called.
+
+		onStartClose; // Signal, dispatched when close() is called.
+		onEndClose; // Signal, dispatched when closeAnimation is finished.
     }
 
     Methods{
 
-        TextBox(x, y, width, height, outerSprite, innerSprite);
+		// If egoist, user's inputs are enabled.
+		// (Later, will pause the game too)
+        TextBox(x, y, width, height, outerSprite, innerSprite, egoist);
 
         setWidth(width, conserveMargin);
         setHeight(height, conserverMargin);
@@ -80,47 +98,112 @@ Object TextBox{
 
         // delay : delay untill the next Sentence
         // toClear : to clear the TextBox before displaying the next Sentence.
+		// 		   	 1 => Clear but do not destroy the Sentences.
+		//			 2 => Clear and destroy the Sentences.
         addSentence(sentence, delay, toClear, index);
 
-        createVertialToggle(time, alpha, direction, easing);
-        createHorizontalToggle(time, alpha, direction, easing);
-        createBasicToggle(time, alpha, easing);
+		/* Create a toggle/closeAnimation if there's not already one (handle
+           it's destruction before yourself).
+		   type : string.
+		   		  => "toggle" : create a toggleAnimation.
+		   		  => "close" : create a closeAnimation.
+		
+		   directionH : string. Horizontal direction.
+		   			    => "left" : the TextBox will go to the left to
+           				   toggle/close.
+		   				=> "right" : the TextBox will go to the right to
+          				   toggle/close.
+ 		  				=> "none" : the TextBox will not move horizontally to
+		  				   	        toggle/close.
+		   directionV : string. Vertical direction.
+		   			  	=> "up" : the TextBox will go up to toggle/close.
+						=> "down" : the TextBox will go down to toggle/close.
+						=> "none" : the TextBox will not move vertically to
+					   			    toggle/close.
+	 	   time : the animation's duration in milliseconds.
+		   
+		   alpha : the TextBox's alpha after the animation.
+		   
+		   easing : the animation's easing. */
+        createAnimation(type, directionH, directionV, time, alpha, easing);
 
+		// Create a toggleTimer if there's not already one (handle it's
+		// destruction before yourself).
+		// Don't forget to start it !
         createToggleTimer(time);
-        createCloseTimer(time);
 
-        toggle(duration);
+		// Create a closeTimer if there's not already one (handle it's
+		// destruction before yourself).
+		// By default, startOnEndToggle is true (will automatically start when
+		// onEndToggle is dispatched).
+		// Otherwhise, don't forget to start it !
+        createCloseTimer(time, startOnEndToggle);
 
-		// Clear the TextBox before closing.
-        close(time);
+		// Dispatch onStartToggle and start toggleAnimation.
+		// Do nothing if the TextBox is already toggling or toggled.
+        toggle();
 
-        // Empty the TextBox and KILL the sentences.
-        clear();
+		// Dispatch onStartClose and start closeAnimation.
+		// Do nothing if the TextBox is already closing or closed.
+        close();
+
+        // Empty the TextBox.
+		// By default, destroySentences is false.
+		// If destroySentences is true, destroy every Sentences from the
+		// beginning to the current Sentence.
+        clear(destroySentences);
 
         // Change the TextBox's height to match the height of the given
         // sentence with the given width.
         // In BETA...
         fitHeightToSentence(indexSentence, width, conserveMargin);
 
+		// Do the same but for the width.
+		// Even more in BETA...
         fitWidthToSentence(indexSentence, height, conserveMargin);
+		
+		
+		reset();
+
+		// Kill the TextBox and everything inside.
+		kill();
+
+		// Destroy the TextBox and everything inside.
+		destroy();
     }
 }
 
 Object Sentence{
 
     Attributs{
-		phaserText;
+		phaserText; // Phaser.Text.
+
+		wholeText; // String.
+
+		textSpeedFactor; // Number in letters/second. If negative, the text
+						 //	will automatically be displayed.
+
+		speaker; // NPC or player (or undefined/null) when done.
+
 		mood;
-		wholeText;
-		textSpeedFactor;
-		speaker;
-		speakerAlign; // For the DialogueBox : "right", "left", "center"
-		              // or "dynamic" (from the speaker's position compared to the
-		              // middle of the screen).
+
+		onStartReading; // Signal, dispatched when startReading() is called.
+		
+		onUpdate; // Signal, dispatched when update() is called.
+
+		onEndReading; // Signal, dispatched when stopReading() is called.
+					  // (Rename it into onStopReading, that is the question...)
 	}
 
 	Methods{
 		
 		Sentence(text, mood, font, fontSize, fill);
+
+		reset();
+
+		// kill() and destroy() are the same.
+		kill();
+
+		destroy();
 	}
 }
