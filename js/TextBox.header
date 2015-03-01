@@ -12,7 +12,7 @@ Object Box{
     Methods{
         // Create a box at (x, y) with the given width and height.
         // If the Box has a mask, everything going out of it will be cropped.
-        Box(x, y, width, height, sprite, hasMask);
+        Box(game, x, y, width, height, sprite, hasMask);
 
         // Set the Box's width at the given width.
         // Update the Box's mask's width if there's any.
@@ -28,14 +28,6 @@ Object Box{
         // (Example : Calling the function with only one parameter)
         // Update the Box's mask's width and height if there's any.
         setDimensions(width, height);
-
-        // Set the Box's x at the given x.
-        // Update the Box's mask's x if there's any.
-        setX(x);
-
-        // Set the Box's y at the given y.
-        // Update the Box's mask's y if there's any.
-        setY(y):
 
         // Set the Box's position at the given position.
         // If only the first value is correct, x and y will be set to
@@ -78,13 +70,10 @@ Object TextBox{
 
 		// If egoist, user's inputs are enabled.
 		// (Later, will pause the game too)
-        TextBox(x, y, width, height, outerSprite, innerSprite, egoist);
+        TextBox(game, x, y, width, height, outerSprite, innerSprite, egoist);
 
         setWidth(width, conserveMargin);
         setHeight(height, conserverMargin);
-
-        setX(x);
-        setY(y);
 
         setPosition(x, y);
 
@@ -113,11 +102,15 @@ Object TextBox{
            				   toggle/close.
 		   				=> "right" : the TextBox will go to the right to
           				   toggle/close.
+						=> "both" : the TextBox will expand from it's center
+						   (horrizontally) to toggle/close.
  		  				=> "none" : the TextBox will not move horizontally to
 		  				   	        toggle/close.
 		   directionV : string. Vertical direction.
 		   			  	=> "up" : the TextBox will go up to toggle/close.
 						=> "down" : the TextBox will go down to toggle/close.
+						=> "both" : the TextBox will expand from it's center
+						   (vertically) to toggle/close.
 						=> "none" : the TextBox will not move vertically to
 					   			    toggle/close.
 	 	   time : the animation's duration in milliseconds.
@@ -197,7 +190,7 @@ Object Sentence{
 
 	Methods{
 		
-		Sentence(text, mood, font, fontSize, fill);
+		Sentence(game, text, mood, font, fontSize, fill);
 
 		reset();
 

@@ -4,25 +4,22 @@
 // Create a box at (x, y) with the given width and height.
 // If the Box has a mask, everything going out of it will be cropped.
 var Box = function(game, x, y, width, height, sprite, hasMask){
-    if (typeof(hasMask) != "number") hasMask = true;
+    if (!booleanable(hasMask)) hasMask = false;
 
     Phaser.Sprite.call(this, game, x, y, sprite);
 
     this.width = width;
     this.height = height;
 
-    if (booleanable(hasMask) && hasMask){
-        this.mask = game.add.graphics(x, y);
-        this.mask.isMask = true;
+    if (hasMask){
+        this.mask = game.add.graphics(0, 0);
+        this.addChild(this.mask);
+
+        this.updateMask();
     }
     else{
         this.mask = null;
     }
-
-    // Should work, but doesn't...
-    //this.addChild(this.mask);
-
-    this.updateMask();
 
     game.add.existing(this);
 }
@@ -89,43 +86,18 @@ Box.prototype.setDimensions = function(width, height){
     this.updateMask();
 }
 
-// Set the Box's x at the given x.
-// Update the Box's mask's x if there's any.
-Box.prototype.setX = function(x){
-    if (typeof(x) != "number") return;
-
-    this.x = x;
-
-    if (this.mask != null){
-        this.mask.x = x;
-    }
-};
-
-// Set the Box's y at the given y.
-// Update the Box's mask's y if there's any.
-Box.prototype.setY = function(y){
-    if (typeof(y) != "number") return;
-
-    this.y = y;
-
-    if(this.mask != null){
-        this.mask.y = y;
-    }
-};
 
 // Set the Box's position at the given position.
 // If only the first value is correct, x and y will be set to the same value.
 // (Example : Calling the function with only one parameter)
 // Update the Box's mask's position if there's any.
 Box.prototype.setPosition = function(x, y){
-    if (typeof(x) == "number"){
-        if (typeof(y) != "number"){
-            y = x;
-        }
+    if (typeof(y) != "number"){
+        y = x;
     }
 
-    this.setX(x);
-    this.setY(y);
+    this.x = x;
+    this.y = y;
 };
 
 // Clear and redraw the mask at it's position and with it's dimensions.
@@ -135,26 +107,33 @@ Box.prototype.updateMask = function(){
 
         this.mask.beginFill(H_WHITE);
 
-        this.mask.drawRect(0, 0,
-                           this.width, this.height);
+        this.mask.drawRect(-this.anchor.x * this.width / this.scale.x,
+                           -this.anchor.y * this.height / this.scale.y,
+                           this.width / this.scale.x,
+                           this.height / this.scale.y);
         this.mask.endFill();
     }
 }
 
-Box.prototype.kill = function(){
-	if (this.mask != null){
-		this.mask.destroy();
-	}
+Box.prototype.setAnchor = function(x, y){
+    this.anchor.setTo(x, y);
+    this.updateMask();
+}
 
-	Phaser.Sprite.prototype.kill.call(this);
+Box.prototype.kill = function(){
+    if (this.mask != null){
+        this.mask.destroy();
+    }
+
+    Phaser.Sprite.prototype.kill.call(this);
 }
 
 Box.prototype.destroy = function(){
-	if (this.mask != null){
-		this.mask.destroy();
-	}
+    if (this.mask != null){
+        this.mask.destroy();
+    }
 
-	Phaser.Sprite.prototype.destroy.call(this);
+    Phaser.Sprite.prototype.destroy.call(this);
 }
 /******************************************************************************/
 /* Box */
@@ -188,14 +167,10 @@ var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoi
     this.height = height;
 
     // Does not have a mask.
-    this.outerBox = new Box(game, 0, 0, width, height, outerSprite, false);
-    this.outerBox.mask.x = x;
-    this.outerBox.mask.y = y;
+    this.outerBox = new Box(game, 0, 0, width, height, outerSprite);
 
     // Box into which the text is written.
     this.innerBox = new Box(game, 0, 0, width, height, innerSprite, true);
-    this.innerBox.mask.x = x;
-    this.innerBox.mask.y = y;
 
     this.add(this.outerBox);
     this.add(this.innerBox);
@@ -306,12 +281,14 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
 
 
     if ((directionH != "right") &&
-        (directionH != "left")){
+        (directionH != "left") &&
+        (directionH != "both")){
         directionH = "none";
     }
 
     if ((directionV != "down") &&
-        (directionV != "up")){
+        (directionV != "up") &&
+        (directionV != "both")){
         directionV = "none";
     }
 
@@ -320,24 +297,32 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
         easing = Phaser.Easing.Linear.None;
     }
 
+    var scaleX = 1;
+    var scaleY = 1;
+
+    var finalScaleX = 1;
+    var finalScaleY = 1;
+
+    var anchorX = 0;
+    var anchorY = 0;
+
     var x = this.x;
     var y = this.y;
 
-    var width = this.width;
-    var height = this.height;
-
-    var initX = x;
-    var initY = y;
-    var initAlpha = this.alpha;
 
     switch (directionH){
     case "right":
-        initX -= width * (type == "toggle") - width * (type == "close");
+        scaleX = 0;
         break;
 
     case "left":
-        initX += width * (type == "toggle") - width * (type == "close");
+        scaleX = 0;
+        anchorX = 1;
         break;
+
+    case "both":
+        scaleX = 0;
+        anchorX = 0.5;
 
     default:
         break;
@@ -345,35 +330,105 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
 
     switch (directionV){
     case "down":
-        initY -= height * (type == "toggle") - height * (type == "close");
+        scaleY = 0;
         break;
 
     case "up":
-        initY += height * (type == "toggle") - height * (type == "close");
+        scaleY = 0;
+        anchorY = 1;
         break;
+
+    case "both":
+        scaleY = 0;
+        anchorY = 0.5;
 
     default:
         break;
     }
 
-    function reset(){
-        this.x = x;
-        this.y = y;
-        this.alpha = initAlpha;
+
+    if (type == "close"){
+        if (anchorX != 0.5){
+            anchorX = !anchorX;
+        }
+
+        if (anchorY != 0.5){
+            anchorY = !anchorY;
+        }
+
+        var temp = scaleX;
+        scaleX = finalScaleX;
+        finalScaleX = temp;
+
+        temp = scaleY;
+        scaleY = finalScaleY;
+        finalScaleY = temp;
     }
 
-    var tween = this.game.add.tween(this);
+
+    function init(){
+        this.alpha = alpha * (type == "close");
+        this.outerBox.setAnchor(anchorX, anchorY);
+        this.innerBox.setAnchor(anchorX, anchorY);
+
+        this.x += anchorX * this.width;
+        this.y += anchorY * this.height;
+
+        this.innerBox.x = this.marginLeft * (1 - anchorX) - this.marginRight * anchorX;
+        this.innerBox.y = this.marginTop * (1 - anchorY) - this.marginBottom * anchorY;
+
+        for(var i = 0; i < this.allSentences.length; i++) {
+            this.allSentences[i].x -= anchorX * this.width;
+            this.allSentences[i].y -= anchorY * this.height;
+        }
+    }
+
+    function update(){
+        this.alpha = alpha * Math.min(this.scale.x, this.scale.y);
+    }
+
+    function reset(){
+        this.outerBox.setAnchor(0, 0);
+        this.innerBox.setAnchor(0, 0);
+
+        for(var i = 0; i < this.allSentences.length; i++) {
+            this.allSentences[i].x += anchorX * this.width;
+            this.allSentences[i].y += anchorY * this.height;
+        }
+
+        this.scale.setTo(1, 1);
+        this.x = x;
+        this.y = y;
+        this.alpha = alpha;
+
+        this.innerBox.x = this.marginLeft;
+        this.innerBox.y = this.marginTop;
+    }
+
+    var tween;
+
+    if ((scaleX == finalScaleX) &&
+        (scaleY == finalScaleY)){
+        tween = this.game.add.tween(this)
+            .to({alpha: alpha * (type == "close")}, 1)
+            .to({alpha: alpha * (type == "toggle")}, time, easing);
+    }
+    else{
+        tween = this.game.add.tween(this.scale)
+            .to({x: scaleX, y: scaleY}, 1)
+            .to({x: finalScaleX, y: finalScaleY}, time, easing);
+
+        tween.onStart.add(init, this);
+
+        tween._lastChild.onUpdateCallback(update, this);
+
+        tween._lastChild.onComplete.add(reset, this);
+    }
 
     if (type == "toggle"){
-        tween.to({x: initX, y: initY, alpha: 0}, 1);
-        tween.to({x: x, y: y, alpha: alpha}, time, easing);
-
         this.toggleAnimation = tween;
     }
     else{
-        tween.to({x : initX, y: initY, alpha: 0}, time, easing);
-        tween._lastChild.onComplete.add(reset, this);
-
         this.closeAnimation = tween;
     }
 }
@@ -411,17 +466,17 @@ TextBox.prototype.createCloseTimer = function(time, startOnEndToggle){
         return;
     }
 
-	if (!booleanable(startOnEndToggle)){
-		startOnEndToggle = true;
-	}
+    if (!booleanable(startOnEndToggle)){
+        startOnEndToggle = true;
+    }
 
     this.closeTimer = this.game.time.create(false);
 
     this.closeTimer.loop(time, this.close, this);
 
-	if (startOnEndToggle){
-		this.onEndToggle.add(function(){resumeLoopedTimer(this.closeTimer)}, this);
-	}
+    if (startOnEndToggle){
+        this.onEndToggle.add(function(){resumeLoopedTimer(this.closeTimer)}, this);
+    }
 }
 
 // Make the TextBox appear.
@@ -469,13 +524,13 @@ TextBox.prototype.close = function(){
     }
 
     if (typeof(this.allSentences[this.indexCurrentSentence]) != "undefined"){
-		if (this.allSentences[this.indexCurrentSentence].readingState == SENTENCE_READING){
-			this.allSentences[this.indexCurrentSentence].stopReading(true);
-		}
+        if (this.allSentences[this.indexCurrentSentence].readingState == SENTENCE_READING){
+            this.allSentences[this.indexCurrentSentence].stopReading(true);
+        }
 
-		// A hack : If I don't do that, when the TextBox reappears, it will close
-		// automatically.
-		this.allSentences[this.indexCurrentSentence].readingState = SENTENCE_READING;
+        // A hack : If I don't do that, when the TextBox reappears, it will close
+        // automatically.
+        this.allSentences[this.indexCurrentSentence].readingState = SENTENCE_READING;
     }
 
     this.onStartClose.dispatch(this);
@@ -532,8 +587,7 @@ TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
     if ((typeof(marginLeft) != "number") &&
         (typeof(marginRight) != "number")) return;
 
-    if ((typeof(isPercentage) != "number") &&
-        (typeof(isPercentage) != "boolean")){
+    if (!booleanable(isPercentage)){
         isPercentage = false;
     }
 
@@ -553,8 +607,7 @@ TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
 
         this.marginLeft = marginLeft;
 
-        this.innerBox.setX(this.marginLeft);
-        this.innerBox.mask.x += this.x;
+        this.innerBox.x = this.marginLeft;
 
         if (typeof(marginRight) === "undefined"){
             this.marginRight = this.marginLeft;
@@ -587,7 +640,7 @@ TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
 }
 
 
-TextBox.prototype.setMarginV = function(marginTop, marginBottom){
+TextBox.prototype.setMarginV = function(marginTop, marginBottom, isPercentage){
     if (this.displayState != TEXTBOX_CLOSED){
         return;
     }
@@ -595,8 +648,7 @@ TextBox.prototype.setMarginV = function(marginTop, marginBottom){
     if ((typeof(marginTop) != "number") &&
         (typeof(marginBottom) != "number")) return;
 
-    if ((typeof(isPercentage) != "number") &&
-        (typeof(isPercentage) != "boolean")){
+    if (!booleanable(isPercentage)){
         isPercentage = false;
     }
 
@@ -616,8 +668,7 @@ TextBox.prototype.setMarginV = function(marginTop, marginBottom){
 
         this.marginTop = marginTop;
 
-        this.innerBox.setY(this.marginTop);
-        this.innerBox.mask.y += this.y;
+        this.innerBox.y = this.marginTop;
 
         if (typeof(marginBottom) === "undefined"){
             this.marginBottom = this.marginTop;
@@ -722,34 +773,11 @@ TextBox.prototype.setWidth = function(width, conserveMargin){
     }
 }
 
-TextBox.prototype.setX = function(x){
-    if (typeof(x) != "number") return;
-
-    var deltaX = x - this.x;
-
-    this.outerBox.mask.x += deltaX;
-    this.innerBox.mask.x += deltaX;
-
-    this.x += deltaX;
-};
-
-
-TextBox.prototype.setY = function(y){
-    if (typeof(y) != "number") return;
-
-    var deltaY = y - this.y;
-
-    this.outerBox.mask.y += deltaY;
-    this.innerBox.mask.y += deltaY;
-
-    this.y += deltaY;
-};
-
 TextBox.prototype.setPosition = function(x, y){
     if (typeof(y) != "number") y = x;
 
-    this.setX(x);
-    this.setY(y);
+    this.x = x;
+    this.y = y;
 }
 
 TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
@@ -834,17 +862,17 @@ TextBox.prototype.update = function(){
                 // If the delay until the next sentence is negative, wait until
                 // user's input.
                 if (this.allDelays[i] < 0){
-					if (this.egoist){
-						console.log("PRESS A KEY TO CONTINUE !");
-					}
-					else{
-						/*if (this.indexCurrentSentence < this.allSentences.length - 1){
-							this.nextSentence();
-						}
-						else{
-							
-						}*/
-					}
+                    if (this.egoist){
+                        console.log("PRESS A KEY TO CONTINUE !");
+                    }
+                    else{
+                        /*if (this.indexCurrentSentence < this.allSentences.length - 1){
+                          this.nextSentence();
+                          }
+                          else{
+
+                          }*/
+                    }
                 }
                 // Otherwhise, wait the given time to start reading the next sentence.
                 else if (this.timerNextSentence == null){
@@ -882,8 +910,8 @@ TextBox.prototype.nextSentence = function(){
         if (currentSentence.readingState == SENTENCE_READING){
             currentSentence.stopReading();
 
-			// If I don't do that switch, the text will not be correctly
-			// aligned if it's centered or righted.
+            // If I don't do that switch, the text will not be correctly
+            // aligned if it's centered or righted.
             switch (currentSentence.phaserText.align){
             case "center":
                 currentSentence.x = this.innerBox.x + this.innerBox.width / 2 -
@@ -902,59 +930,59 @@ TextBox.prototype.nextSentence = function(){
             return;
         }
 
-		// Clear the TextBox if needed.
+        // Clear the TextBox if needed.
         if (this.allClears[i]){
             this.clear(this.allClears[i] - 1);
-			
-			// If the Sentences have been destroyed, set nextSentence as the first valid one.
-			if (this.indexCurrentSentence == -1){
-				nextSentence = this.allSentences[0];
-			}
+
+            // If the Sentences have been destroyed, set nextSentence as the first valid one.
+            if (this.indexCurrentSentence == -1){
+                nextSentence = this.allSentences[0];
+            }
         }
-		// Otherwhise, the nextSentence will start below the currentSentence.
+        // Otherwhise, the nextSentence will start below the currentSentence.
         else if (typeof(nextSentence) != "undefined"){
             nextSentence.y = currentSentence.y + currentSentence.phaserText.height;
-		}
-
-		// If there's a nextSentence, do what needs to be done and start reading.
-		if (typeof(nextSentence) != "undefined"){
-			this.indexCurrentSentence++;
-
-			this.handleMood();
-
-			nextSentence.startReading();
-
-			return true;
         }
 
-		// Otherwhise, close the TextBox.
-        else{
-			if (currentSentence.verticalScrollAnimation != null){
-				currentSentence.verticalScrollAnimation._lastChild.onComplete.add(this.close,
-																				  this);
-			}
-			else{
-				this.close();
-			}
+        // If there's a nextSentence, do what needs to be done and start reading.
+        if (typeof(nextSentence) != "undefined"){
+            this.indexCurrentSentence++;
 
-			return false;
+            this.handleMood();
+
+            nextSentence.startReading();
+
+            return true;
+        }
+
+        // Otherwhise, close the TextBox.
+        else{
+            if (currentSentence.verticalScrollAnimation != null){
+                currentSentence.verticalScrollAnimation._lastChild.onComplete.add(this.close,
+                                                                                  this);
+            }
+            else{
+                this.close();
+            }
+
+            return false;
         }
     }
     else if(i == -1){
-		if (this.allSentences.length > 0){
-			this.indexCurrentSentence = 0;
+        if (this.allSentences.length > 0){
+            this.indexCurrentSentence = 0;
 
-			this.handleMood();
+            this.handleMood();
 
-			this.allSentences[0].startReading();
+            this.allSentences[0].startReading();
 
-			return true;
-		}
-		else{
-			this.close();
+            return true;
+        }
+        else{
+            this.close();
 
-			return false;
-		}
+            return false;
+        }
     }
 }
 
@@ -965,7 +993,7 @@ TextBox.prototype.clear = function(destroySentences){
     }
 
     if (destroySentences){
-		var index = this.indexCurrentSentence;
+        var index = this.indexCurrentSentence;
         var sentencesToDestroy = this.allSentences.slice(0, index + 1);
 
         this.allSentences = this.allSentences.slice(index + 1);
@@ -989,9 +1017,9 @@ TextBox.prototype.clear = function(destroySentences){
 
 TextBox.prototype.reset = function(){
     for(var i = 0; i <= this.indexCurrentSentence; i++) {
-		if(!validIndex(this.indexCurrentSentence, this.allSentences)){
-			return;
-		}
+        if(!validIndex(this.indexCurrentSentence, this.allSentences)){
+            return;
+        }
 
         this.allSentences[i].reset();
         this.allSentences[i].x = this.innerBox.x;
@@ -1041,7 +1069,7 @@ TextBox.prototype.handleVerticalOverflow = function(){
 
                     if (this.closeTimer != null){
                         this.closeTimer.pause();
-                        
+
                         tween.onComplete.add(this.closeTimer.resume, this.closeTimer);
                     }
                 }
@@ -1109,32 +1137,24 @@ TextBox.prototype.fitWidthToSentence = function(indexSentence, height, conserveM
 
 TextBox.prototype.fitDurationToSentence = function(indexSentence, additionalTime){
     if (!validIndex(indexSentence, this.allSentences)){
-		return;
-	}
-	
-	this.createCloseTimer(additionalTime, false);
+        return;
+    }
 
-	this.allSentences[indexSentence].onEndReading.add(function(){resumeLoopedTimer(this.closeTimer)}, this);
+    this.createCloseTimer(additionalTime, false);
+
+    this.allSentences[indexSentence].onEndReading.add(function(){resumeLoopedTimer(this.closeTimer)}, this);
 }
 
 TextBox.prototype.handleMood = function(){
     var currentSentence = this.allSentences[this.indexCurrentSentence];
     var tween = null;
 
-    function setY(){
-        this.setY(this.toto);
-    }
-
     switch(currentSentence.mood){
     case MOOD_ANGRY:
         this.toto = this.y;
         tween = this.game.add.tween(this)
-            .to({ toto: this.y -10 }, 40,
-                Phaser.Easing.Linear.None, false, 0, 5, true)
-            .to({ toto: this.y + 10 }, 40,
+            .to({ y: this.y -10}, 50,
                 Phaser.Easing.Linear.None, false, 0, 5, true);
-
-        tween.onUpdateCallback(setY, this);
 
         currentSentence.moodAnimation = tween;
         break;
@@ -1167,34 +1187,34 @@ TextBox.prototype.handleUserInput = function(){
 }
 
 TextBox.prototype.kill = function(){
-	this.callAll("kill");
-	this.removeAll();
-	
-	this._del();
-	
-	this.parent.remove(this, true);
+    this.callAll("kill");
+    this.removeAll();
+
+    this._del();
+
+    this.parent.remove(this, true);
 }
 
 TextBox.prototype.destroy = function(){
-	this.removeAll(true);
+    this.removeAll(true);
 
-	this._del();
+    this._del();
 
-	this.parent.remove(this, true);
+    this.parent.remove(this, true);
 }
 
 TextBox.prototype._del = function(){
-	this.allSentences = [];
-	this.allDelays = [];
-	this.allClears = [];
+    this.allSentences = [];
+    this.allDelays = [];
+    this.allClears = [];
 
-	this.onStartToggle.dispose();
-	this.onEndToggle.dispose();
+    this.onStartToggle.dispose();
+    this.onEndToggle.dispose();
 
-	this.onUpdate.dispose();
+    this.onUpdate.dispose();
 
-	this.onStartClose.dispose();
-	this.onEndClose.dispose();
+    this.onStartClose.dispose();
+    this.onEndClose.dispose();
 }
 /******************************************************************************/
 /* TextBox */
@@ -1262,7 +1282,7 @@ var Sentence = function(game, text, mood, font, fontSize, fill){
 
     this.onStartReading = new Phaser.Signal();
 
-	this.onUpdate = new Phaser.Signal();
+    this.onUpdate = new Phaser.Signal();
 
     this.onEndReading = new Phaser.Signal();
 
@@ -1390,7 +1410,7 @@ Sentence.prototype.stopReading = function(forceStop){
 
         this.readingState = SENTENCE_FINISHED_READING;
 
-		this.onEndReading.dispatch(this);
+        this.onEndReading.dispatch(this);
     }
 }
 
@@ -1421,7 +1441,7 @@ Sentence.prototype.unpause = function(){
 
 
 Sentence.prototype.update = function(){
-	this.onUpdate.dispatch();
+    this.onUpdate.dispatch();
 
     if (this.readingState == SENTENCE_READING){
     }
@@ -1489,23 +1509,23 @@ Sentence.prototype.kill = function(){
 }
 
 Sentence.prototype.destroy = function(){
-	this._del();
+    this._del();
 
-	Phaser.Sprite.prototype.destroy.call(this);
+    Phaser.Sprite.prototype.destroy.call(this);
 }
 
 Sentence.prototype._del = function(){
-	this.phaserText.destroy();
+    this.phaserText.destroy();
 
-	if (this.readingState == SENTENCE_READING){
-		this.stopReading(true);
-	}
+    if (this.readingState == SENTENCE_READING){
+        this.stopReading(true);
+    }
 
-	this.stopAnimation(-1);
+    this.stopAnimation(-1);
 
     this.onStartReading.dispose();
 
-	this.onUpdate.dispose();
+    this.onUpdate.dispose();
 
     this.onEndReading.dispose();
 }
@@ -1524,15 +1544,15 @@ function validIndex(index, array){
 }
 
 function booleanable(value){
-	return ((typeof(value) == "number") ||
-			(typeof(value) == "boolean"));
+    return ((typeof(value) == "number") ||
+            (typeof(value) == "boolean"));
 }
 
 function resumeLoopedTimer(loopedTimer){
-	if (loopedTimer.paused == false){
-		loopedTimer.start();
-	}
-	else{
-		loopedTimer.resume();
-	}
+    if (loopedTimer.paused == false){
+        loopedTimer.start();
+    }
+    else{
+        loopedTimer.resume();
+    }
 }

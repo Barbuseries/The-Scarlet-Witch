@@ -39,15 +39,15 @@ function create(){
 	sky = game.add.tileSprite(0, 0, 2000, game.cache.getImage('sky').height, 'sky');
 	sky.scale.setTo(1, 0.5);
 
-	textBox = new TextBox(game, 0, 0, 500, 100, "ground2", "ground", true);
+	textBox = new TextBox(game, 100, 100, 500, 100, "ground2", "ground", true);
 	textBox.outerBox.alpha = 0.4;
 	textBox.innerBox.alpha = 1;
 
 	textBox.setMarginV(10, 10);
 	textBox.setMarginH(10, 10);
 
-	textBox.setY(200);
-	textBox.setX(150);
+	textBox.y = 200;
+	textBox.x = 150;
 
 	sentence = new Sentence(game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
 	
@@ -68,25 +68,20 @@ function create(){
 	//textBox.addSentence(sentence3, 1000, 1);
 	//textBox.addSentence(sentence4);
 	
-	textBox.createAnimation("toggle", "left", "down", 2000, 1, Phaser.Easing.Cubic.InOut);
-	textBox.createAnimation("close", "left", "up", 2000, 1, Phaser.Easing.Cubic.InOut);
+	textBox.createAnimation("toggle", "both", "both", 2000, 1, Phaser.Easing.Cubic.InOut);
+	textBox.createAnimation("close", "both", "both", 2000, 1, Phaser.Easing.Cubic.InOut);
 
 //	textBox.fitDurationToSentence(0, 1000);
 	//textBox.createVerticalClose(1000, 0, Phaser.Easing.Bounce.Out);
 
-	textBox.createToggleTimer(1);
+//	textBox.createToggleTimer(1);
 	//textBox.onEndClose.add(textBox.clear, textBox);
 
-	textBox.toggleTimer.start();
+	textBox.toggle();
 }
 
 function update(){
 	if (textBox.displayState == TEXTBOX_CLOSED){
-		textBox.toggleTimer.resume();
-/*		textBox.clear();
 		textBox.toggle();
-		textBox.setY(250);*/
 	}
-
-//	textBox.clear();
 }
