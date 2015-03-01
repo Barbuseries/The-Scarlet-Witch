@@ -3,7 +3,7 @@
 /*******************************************************************************/
 // Create a box at (x, y) with the given width and height.
 // If the Box has a mask, everything going out of it will be cropped.
-var Box = function(x, y, width, height, sprite, hasMask){
+var Box = function(game, x, y, width, height, sprite, hasMask){
     if (typeof(hasMask) != "number") hasMask = true;
 
     Phaser.Sprite.call(this, game, x, y, sprite);
@@ -171,7 +171,7 @@ var TEXTBOX_TOGGLED = 2;
 var TEXTBOX_CLOSING = 3;
 
 
-var TextBox = function(x, y, width, height, outerSprite, innerSprite, egoist){
+var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoist){
     if (typeof(x) != "number") x = 0;
     if (typeof(y) != "number") y = 0;
     if (typeof(width) != "number") width = 0;
@@ -188,12 +188,12 @@ var TextBox = function(x, y, width, height, outerSprite, innerSprite, egoist){
     this.height = height;
 
     // Does not have a mask.
-    this.outerBox = new Box(0, 0, width, height, outerSprite, false);
+    this.outerBox = new Box(game, 0, 0, width, height, outerSprite, false);
     this.outerBox.mask.x = x;
     this.outerBox.mask.y = y;
 
     // Box into which the text is written.
-    this.innerBox = new Box(0, 0, width, height, innerSprite);
+    this.innerBox = new Box(game, 0, 0, width, height, innerSprite, true);
     this.innerBox.mask.x = x;
     this.innerBox.mask.y = y;
 
@@ -362,7 +362,7 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
         this.alpha = initAlpha;
     }
 
-    var tween = game.add.tween(this);
+    var tween = this.game.add.tween(this);
 
     if (type == "toggle"){
         tween.to({x: initX, y: initY, alpha: 0}, 1);
@@ -392,7 +392,7 @@ TextBox.prototype.createToggleTimer = function(time){
         return;
     }
 
-    this.toggleTimer = game.time.create(false);
+    this.toggleTimer = this.game.time.create(false);
 
     this.toggleTimer.loop(time, this.toggle, this);
 }
@@ -415,7 +415,7 @@ TextBox.prototype.createCloseTimer = function(time, startOnEndToggle){
 		startOnEndToggle = true;
 	}
 
-    this.closeTimer = game.time.create(false);
+    this.closeTimer = this.game.time.create(false);
 
     this.closeTimer.loop(time, this.close, this);
 
@@ -1027,7 +1027,7 @@ TextBox.prototype.handleVerticalOverflow = function(){
 
                 sentence.heightLeft -= deltaHeight;
 
-                var tween = game.add.tween(sentence)
+                var tween = this.game.add.tween(sentence)
                     .to({}, minDelay)
                     .to({y: sentence.y - deltaHeight},
                         Math.max(15000 / currentSentence.textSpeedFactor, 100));
@@ -1128,7 +1128,7 @@ TextBox.prototype.handleMood = function(){
     switch(currentSentence.mood){
     case MOOD_ANGRY:
         this.toto = this.y;
-        tween = game.add.tween(this)
+        tween = this.game.add.tween(this)
             .to({ toto: this.y -10 }, 40,
                 Phaser.Easing.Linear.None, false, 0, 5, true)
             .to({ toto: this.y + 10 }, 40,
@@ -1223,7 +1223,7 @@ var SENTENCE_READING = 1;
 var SENTENCE_PAUSED = 2;
 var SENTENCE_FINISHED_READING = 3;
 
-var Sentence = function(text, mood, font, fontSize, fill){
+var Sentence = function(game, text, mood, font, fontSize, fill){
     if (typeof(text) === "undefined") text = "";
     if (typeof(text) === "number") text = text.toString();
     if (typeof(mood) != "number") mood = MOOD_NORMAL;
@@ -1353,7 +1353,7 @@ Sentence.prototype.startReading = function(){
         this.onStartReading.dispatch(this);
 
         if (this.textSpeedFactor > 0){
-            this.textDisplayAnimation = game.add.tween(this)
+            this.textDisplayAnimation = this.game.add.tween(this)
                 .to({indexCurrentLetter: this.wholeText.length},
                     this.totalReadingTime, this.readingEasing)
                 .onUpdateCallback(this.addLetterDisplay, this);

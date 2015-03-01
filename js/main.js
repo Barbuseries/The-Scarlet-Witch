@@ -39,7 +39,7 @@ function create(){
 	sky = game.add.tileSprite(0, 0, 2000, game.cache.getImage('sky').height, 'sky');
 	sky.scale.setTo(1, 0.5);
 
-	textBox = new TextBox(0, 0, 500, 100, "ground2", "ground", true);
+	textBox = new TextBox(game, 0, 0, 500, 100, "ground2", "ground", true);
 	textBox.outerBox.alpha = 0.4;
 	textBox.innerBox.alpha = 1;
 
@@ -49,12 +49,12 @@ function create(){
 	textBox.setY(200);
 	textBox.setX(150);
 
-	sentence = new Sentence("Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
+	sentence = new Sentence(game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
 	
-	sentence2 = new Sentence("Ca marche !", MOOD_JOYFUL, -1, 24);
-	sentence3 = new Sentence("Moi aussi !", MOOD_ANGRY, -1, 24);
-	sentence4 = new Sentence("Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...", MOOD_DYING, -1, 24);
-	sentence5 = new Sentence("Hey ! C'est pas la classe ?!", MOOD_ANGRY, -1, 24);
+	sentence2 = new Sentence(game, "Ca marche !", MOOD_JOYFUL, -1, 24);
+	sentence3 = new Sentence(game, "Moi aussi !", MOOD_ANGRY, -1, 24);
+	sentence4 = new Sentence(game, "Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...", MOOD_DYING, -1, 24);
+	sentence5 = new Sentence(game, "Hey ! C'est pas la classe ?!", MOOD_ANGRY, -1, 24);
 
 	sentence.setTextSpeedFactor(100);
 	sentence2.setTextSpeedFactor(10);
