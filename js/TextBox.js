@@ -209,6 +209,8 @@ var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoi
 
     this.onUpdate = new Phaser.Signal();
 
+	this.onNextSentence = new Phaser.Signal();
+
     this.onStartClose = new Phaser.Signal();
     this.onEndClose = new Phaser.Signal();
 
@@ -802,11 +804,17 @@ TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
 
     switch (sentence.phaserText.align){
     case "center":
-        sentence.x += this.innerBox.width / 2 - sentence.maxWidth / 2;
+        sentence.x += this.innerBox.width / 2;
         break;
 
     case "right":
-        sentence.x += this.innerBox.width / 2 - sentence.maxWidth;
+        sentence.x += this.innerBox.width;
+		break;
+
+	case "doublecenter":
+		sentence.x += this.innerBox.width / 2;
+		sentence.y += this.innerBox.height / 2;
+		break;
 
     default:
         break;
@@ -842,6 +850,14 @@ TextBox.prototype.update = function(){
                     currentSentence.x = this.innerBox.x + this.innerBox.width -
                         currentSentence.phaserText.width;
                     break;
+
+				case "doublecenter":
+					currentSentence.x = this.innerBox.x + this.innerBox.width / 2 -
+                        currentSentence.phaserText.width / 2;
+
+					currentSentence.y = this.innerBox.y + this.innerBox.height / 2 -
+                        currentSentence.phaserText.height / 2;
+					break;
 
                 default:
                     break;
@@ -950,6 +966,8 @@ TextBox.prototype.nextSentence = function(){
 
             this.handleMood();
 
+			this.onNextSentence.dispatch(this);
+
             nextSentence.startReading();
 
             return true;
@@ -973,16 +991,18 @@ TextBox.prototype.nextSentence = function(){
             this.indexCurrentSentence = 0;
 
             this.handleMood();
+			
+			this.onNextSentence.dispatch(this);
 
             this.allSentences[0].startReading();
 
             return true;
         }
-        else{
+        /*else{
             this.close();
 
             return false;
-        }
+        }*/
     }
 }
 
@@ -1243,12 +1263,15 @@ var SENTENCE_READING = 1;
 var SENTENCE_PAUSED = 2;
 var SENTENCE_FINISHED_READING = 3;
 
-var Sentence = function(game, text, mood, font, fontSize, fill){
+var Sentence = function(game, text, mood, speaker, textSpeedFactor, font, fontSize,
+						fill){
     if (typeof(text) === "undefined") text = "";
     if (typeof(text) === "number") text = text.toString();
     if (typeof(mood) != "number") mood = MOOD_NORMAL;
+	if ((typeof(speaker) != "object") && (typeof(speaker) != "string")) speaker = null;
+	if (typeof(textSpeedFactor) != "number") textSpeedFactor = 60;
     if (typeof(font) != "string") font = "Arial";
-    if (typeof(fontSize) != "number") fontSize = 12;
+    if (typeof(fontSize) != "number") fontSize = 24;
     if (typeof(fill) != "string") fill = WHITE;
 
     Phaser.Sprite.call(this, game, 0, 0, "");
@@ -1259,7 +1282,7 @@ var Sentence = function(game, text, mood, font, fontSize, fill){
     this.phaserText.fill = fill;
 
     this.wholeText = text;
-    this.textSpeedFactor = 1;
+    this.textSpeedFactor = textSpeedFactor;
 
     this.readingEasing = Phaser.Easing.Linear.None;
 
@@ -1276,7 +1299,7 @@ var Sentence = function(game, text, mood, font, fontSize, fill){
     this.horizontalScrollAnimation = null;
     this.moodAnimation = null;
 
-    this.speaker = null;
+    this.speaker = speaker;
 
     this.totalReadingTime = 1000.0 * this.wholeText.length / this.textSpeedFactor;
 
@@ -1501,6 +1524,30 @@ Sentence.prototype.stopAnimation = function(type){
             this.moodAnimation = null;
         }
     }
+}
+
+Sentence.prototype.getSpeakerName = function(){
+	if (this.speaker == null){
+		return null;
+	}
+	if (typeof(this.speaker) === "object"){
+		return this.speaker.name;
+	}
+	else{
+		return this.speaker;
+	}
+}
+
+Sentence.prototype.getSpeakerAlign = function(){
+	if (this.speaker == null){
+		return undefined;
+	}
+	else if(typeof(this.speaker) === "object"){
+		return this.speaker.dialogueAlign;
+	}
+	else{
+		return undefined;
+	}
 }
 
 // kill() and destroy() are the same.

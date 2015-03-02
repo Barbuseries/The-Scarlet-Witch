@@ -176,7 +176,7 @@ Object Sentence{
 		textSpeedFactor; // Number in letters/second. If negative, the text
 						 //	will automatically be displayed.
 
-		speaker; // NPC or player (or undefined/null) when done.
+		speaker; // NPC or player (or a string or null).
 
 		mood;
 
@@ -190,7 +190,9 @@ Object Sentence{
 
 	Methods{
 		
-		Sentence(game, text, mood, font, fontSize, fill);
+		Sentence(game, text, mood, speaker, textSpeedFactor, font, fontSize, fill);
+
+		getSpeakerName();
 
 		reset();
 

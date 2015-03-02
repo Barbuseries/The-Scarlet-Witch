@@ -48,18 +48,26 @@ function create(){
 
 	textBox.y = 200;
 	textBox.x = 150;
-
-	sentence = new Sentence(game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, -1, 24);
 	
-	sentence2 = new Sentence(game, "Ca marche !", MOOD_JOYFUL, -1, 24);
-	sentence3 = new Sentence(game, "Moi aussi !", MOOD_ANGRY, -1, 24);
-	sentence4 = new Sentence(game, "Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...", MOOD_DYING, -1, 24);
-	sentence5 = new Sentence(game, "Hey ! C'est pas la classe ?!", MOOD_ANGRY, -1, 24);
+	toto = {};
+	toto.name = "Toto";
+	toto.dialogueAlign = "left";
 
-	sentence.setTextSpeedFactor(100);
-	sentence2.setTextSpeedFactor(10);
-	sentence.phaserText.align = "center";
-	sentence5.setTextSpeedFactor(20);
+	tata = {};
+	tata.name = "Tata";
+	tata.dialogueAlign = "right";
+
+	sentence = new Sentence(game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, toto, 100);
+	
+	sentence2 = new Sentence(game, "Ca marche !", MOOD_JOYFUL, null, 10);
+	sentence3 = new Sentence(game, "Moi aussi !", MOOD_ANGRY);
+	sentence4 = new Sentence(game, "Je me meurs... Arg.... Je... vais... mourir....\nEcoute... b...ien ce que... je... vais te d...ire...\nJe suis mort...\nAdieu...",
+							 MOOD_DYING);
+	sentence5 = new Sentence(game, "Hey ! C'est pas la classe ?!", MOOD_ANGRY, tata,
+							 20);
+
+//	sentence.phaserText.align = "center";
+
 	
 	textBox.addSentence(sentence, -1, 1);
 
@@ -77,11 +85,43 @@ function create(){
 //	textBox.createToggleTimer(1);
 	//textBox.onEndClose.add(textBox.clear, textBox);
 
-	textBox.toggle();
+	//textBox.toggle();
+	
+	sentence6 = new Sentence(game, "La boîte de dialogue est fonctionnelle !",
+							 MOOD_NORMAL, toto);
+
+	sentence7 = new Sentence(game, "Maintenant, je peux me parler à moi même !",
+							 MOOD_JOYFUL, toto);
+
+	sentence8 = new Sentence(game, "Ou avec d'autres personnes !", MOOD_JOYFUL, tata);
+
+	sentence9 = new Sentence(game, "C'est cool d'être schizo !", MOOD_SAD, toto);
+
+	dialogueBox = new DialogueBox(game, "ground2", "ground", true);
+
+	dialogueBox.textBox.setMarginV(10, 10);
+	dialogueBox.textBox.setMarginH(10, 10);
+	dialogueBox.textBox.outerBox.alpha = 0.4;
+	
+	dialogueBox.speakerBox.setMarginV(5, 5);
+	dialogueBox.speakerBox.setMarginH(5, 5);
+	dialogueBox.speakerBox.outerBox.alpha = 0.4;
+
+	dialogueBox.textBox.addSentence(sentence6, 500);
+	dialogueBox.textBox.addSentence(sentence7, 500);
+	dialogueBox.textBox.addSentence(sentence8, 500);
+	dialogueBox.textBox.addSentence(sentence9);
+
+	dialogueBox.textBox.createAnimation("toggle", "both", "both", 2000, 1,
+										Phaser.Easing.Cubic.InOut);
+	/*dialogueBox.speakerBox.createAnimation("toggle", "both", "both", 2000, 1,
+										   Phaser.Easing.Cubic.InOut);*/
+
+	dialogueBox.textBox.createAnimation("close", "both", "both", 2000, 1,
+										Phaser.Easing.Cubic.InOut);
+	dialogueBox.toggle();
+
 }
 
 function update(){
-	if (textBox.displayState == TEXTBOX_CLOSED){
-		textBox.toggle();
-	}
 }
