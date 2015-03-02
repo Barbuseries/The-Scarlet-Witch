@@ -39,8 +39,7 @@ var DialogueBox = function(game, outerSprite, innerSprite, egoist){
     this.textBox.onEndToggle.add(this.onEndToggle.dispatch, this.onEndToggle,
                                  [this]);
 
-	this.onUpdate.add(this.update, this);
-    this.onUpdate.add(this.textBox.update, this.textBox);
+	this.textBox.onUpdate.add(this.onUpdate.dispatch, this.onUpdate, [this]);
 
     this.textBox.onNextSentence.add(this.onNextSentence.dispatch, this.onNextSentence,
                                     [this]);
@@ -66,10 +65,6 @@ DialogueBox.prototype.constructor = DialogueBox;
 
 DialogueBox.prototype.toggle = function(){
     this.textBox.toggle();
-}
-
-DialogueBox.prototype.update = function(){
-	
 }
 
 DialogueBox.prototype._initSpeakerName = function(){
