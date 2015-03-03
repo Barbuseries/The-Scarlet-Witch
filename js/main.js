@@ -33,7 +33,7 @@ function preload(){
 }
 
 function create(){
-	ground = game.add.sprite(0, 525, "ground");
+	/*ground = game.add.sprite(0, 525, "ground");
 	ground.scale.setTo(2, 1);
 
 	sky = game.add.tileSprite(0, 0, 2000, game.cache.getImage('sky').height, 'sky');
@@ -66,7 +66,7 @@ function create(){
 	sentence5 = new Sentence(game, "Hey ! C'est pas la classe ?!", MOOD_ANGRY, tata,
 							 20);
 
-//	sentence.phaserText.align = "center";
+	//sentence.phaserText.align = "center";
 
 	
 	textBox.addSentence(sentence, -1, 1);
@@ -107,20 +107,66 @@ function create(){
 	dialogueBox.speakerBox.setMarginH(5, 5);
 	dialogueBox.speakerBox.outerBox.alpha = 0.4;
 
-	dialogueBox.textBox.addSentence(sentence6, 500);
+	dialogueBox.textBox.addSentence(sentence, 500);
 	dialogueBox.textBox.addSentence(sentence7, 500);
 	dialogueBox.textBox.addSentence(sentence8, 500);
 	dialogueBox.textBox.addSentence(sentence9);
 
 	dialogueBox.textBox.createAnimation("toggle", "both", "both", 2000, 1,
-										Phaser.Easing.Cubic.InOut);
+										Phaser.Easing.Cubic.InOut);*/
 	/*dialogueBox.speakerBox.createAnimation("toggle", "both", "both", 2000, 1,
 										   Phaser.Easing.Cubic.InOut);*/
 
-	dialogueBox.textBox.createAnimation("close", "both", "both", 2000, 1,
+/*	dialogueBox.textBox.createAnimation("close", "both", "both", 2000, 1,
 										Phaser.Easing.Cubic.InOut);
-	dialogueBox.toggle();
+	dialogueBox.toggle();*/
+	
+	toto = {};
+	
+	toto.health = new Stat(toto, "Health", STAT_PERCENT_LINK, 40);
 
+	toto.level = new Stat(toto, "Level", STAT_NO_MAXSTAT, 1, -1, 1, 99);
+	
+	toto.endurance = new Stat(toto, "Endurance", STAT_PERCENT_LINK, 0);
+
+	toto.special = new Stat(toto, "Special", STAT_PERCENT_LINK, 0, 100);
+
+	toto.get = function(name, t){
+		return this[name].get(t);
+	}
+	
+	toto.getBasic = function(name, t){
+		return this[name].getBasic(t);
+	}
+
+	toto.getMax = function(name, t){
+		return this[name].getMax(t);
+	}
+
+	toto.health.growth.addTerme(toto.getBasic, ["health"]);
+
+	toto.health.growth.addTerme([[toto.get, ["level"]], 10]);
+
+	toto.health.growth.addTerme([[toto.getMax, ["endurance"]], 3]);
+
+	toto.health.growth.compute();
+
+	toto.health.onUpdateBasic.add(toto.health.growth.reCompute,
+								  toto.health.growth);
+
+	toto.level.onUpdate.add(toto.health.growth.reCompute,
+							toto.health.growth);
+
+	toto.endurance.onUpdateMax.add(toto.health.growth.reCompute,
+								   toto.health.growth);
+
+
+	toto.level.add(1);
+
+	toto.endurance.addMax(50);
+	
+	// WIZARDRY ! toto.health.maxValue has changed too !
+	console.log(toto.health);
 }
 
 function update(){

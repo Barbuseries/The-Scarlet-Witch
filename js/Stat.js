@@ -4,18 +4,20 @@
 
 var STAT_NO_MAXSTAT = -1; // No maxStat is created.
 var STAT_NO_LINK = 0; // No link between stat and maxStat (except for the fact
-// that stat can not be greater than maxStat).
+                      // that stat can not be greater than maxStat).
 var STAT_BRUT_LINK = 1; // Brut link between stat and maxStat (if maxStat
-// increases by 3, so do stat).
-var STAT_PERCENT_LINK = 2; // Percentage equality link between stat and
-// maxStat (if stat is equal to 30% of maxStat
-// before maxStat increases, it will be 30% again after)
+                        // increases by 3, so do stat).
+var STAT_PERCENT_LINK = 2; // Percentage link between stat and
+                           // maxStat (if stat is equal to 30% of maxStat
+                           // before maxStat increases, it will be 30% again after)
 var STAT_EQUAL_LINK = 3; // Why not ?
 
 
 // If upsideDown, you can go past maxValue (not max) but not below maxValue (nor min).
 // Good for stats which are better if smaller (attackDelay, ...).
-var Stat = function(name, link, basicValue, basicMaxValue, min, max, upsideDown){
+var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
+					upsideDown){
+	if (typeof(entity) != "object") entity = null;
 	if (typeof(basicValue) != "number") basicValue = 0;
 	if (typeof(basicMaxValue) != "number") basicMaxValue = basicValue;
 	if (typeof(min) != "number") min = 0;
@@ -30,6 +32,7 @@ var Stat = function(name, link, basicValue, basicMaxValue, min, max, upsideDown)
 
     if (link != STAT_NO_MAXSTAT){
         this._maxValue = basicMaxValue;
+		this._basicValue = basicMaxValue;
 
         this.onUpdateMax = new Phaser.Signal();
         this.onUpdateMax.add(this.applyLink, this);
@@ -41,6 +44,10 @@ var Stat = function(name, link, basicValue, basicMaxValue, min, max, upsideDown)
     this._upsideDown = upsideDown;
 
     this.factor = 1;
+
+	this.growth = new Formula(entity);
+
+	this.growth.onCompute.add(this.applyGrowth, this);
 
     this.onUpdate = new Phaser.Signal();
     this.onUpdateBasic = new Phaser.Signal();
@@ -310,9 +317,9 @@ Stat.prototype._setTo = function(type, value, isPercentage){
             }
         }
     }
-    else if (type == 3){
+    else if (type == 2){
         if (this._link != STAT_NO_MAXSTAT){
-            if (getFinalValue(value, this._min, this._maxValue)){
+            if (getFinalValue(value, this._min, this._max)){
                 var oldValue = this._maxValue;
 
                 this._maxValue = value;
@@ -364,6 +371,10 @@ Stat.prototype.getBasic = function(inPercentage, relativeTo){
     else{
         return this._basicValue;
     }
+}
+
+Stat.prototype.applyGrowth = function(growth){
+	this.setMax(growth.result);
 }
 /******************************************************************************/
 /* Stat */
