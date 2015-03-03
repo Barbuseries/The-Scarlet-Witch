@@ -137,9 +137,16 @@ function create(){
 
 	totoMode.addStat("special", "TOTO !", STAT_NO_LINK, 0, 100);
 
-	totoMode.health.growth.addTerme([[totoMode.getStat, ["level"]], 10]);
 
-	totoMode.health.growth.addTerme([[totoMode.getStatMax, ["endurance"]], 3]);
+	// The same as :
+	// totoMode.health.growth.addTerme([[totoMode.getStat, totoMode, ["level"]], 10]);
+
+	totoMode.health.growth.addTerme([["_value", totoMode.level], 10]);
+	/*totoMode.health.growth.addTerme([["_value", totoMode.level], 10], -1, -1,
+									[["_value", totoMode.level], 2]);*/
+
+	totoMode.health.growth.addTerme([[totoMode.getStatMax, totoMode,
+									  ["endurance"]], 3]);
 
 	totoMode.level.onUpdate.add(totoMode.health.growth.reCompute,
 								totoMode.health.growth);
@@ -147,12 +154,16 @@ function create(){
 	totoMode.endurance.onUpdateMax.add(totoMode.health.growth.reCompute,
 									   totoMode.health.growth);
 
+
+
 	totoMode.engage();
 	totoMode.level.add(10);
 	totoMode.endurance.addMax(50);
-	console.log(totoMode.endurance);
+	
 
 	// WIZARDRY ! totoMode.health.maxValue has changed too !
+	//totoMode.health.growth.compute();
+
 	console.log(totoMode.health);
 
 	console.log(totoMode);
