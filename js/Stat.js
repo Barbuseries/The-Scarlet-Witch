@@ -36,8 +36,9 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
         this._maxValue = basicMaxValue;
 		this._basicValue = basicMaxValue;
 
-        this.onUpdateMax = new Phaser.Signal();
-        this.onUpdateMax.add(this.applyLink, this);
+        this.onUpdateMax = new Phaser.Signal(); // (add/subtract/setMax)
+        this.onUpdateMax.add(this._applyLink, this); // When this._maxValue changes,
+		                                             // apply the changes to this._value.
     }
 
     this._min = min;
@@ -47,28 +48,45 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
 
     this.factor = 1;
 
-	this.growth = new Formula(entity);
-	this.growth.addTerme(this._basicValue);
+	this.growth = new Formula(entity); // Formula,
+	                                   // "What is the equation of this._maxValue ?"
 
-	this.growth.result = this._basicValue;
+	this.growth.addTerme(this._basicValue); // By default, this._basicValue is there.
 
-	this.growth.onCompute.add(this.applyGrowth, this);
+	this.growth.result = this._basicValue; // No need to call growth.compute()... 
 
-    this.onUpdate = new Phaser.Signal();
-    this.onUpdateBasic = new Phaser.Signal();
+	this.growth.onCompute.add(this._applyGrowth, this); // When you compute this.growth,
+	                                                    // change this._maxValue.
+
+    this.onUpdate = new Phaser.Signal(); // (add/subtract/set)
+    this.onUpdateBasic = new Phaser.Signal(); // (add/subtrac/setBasic)
 
 	this.onUpdateBasic.add(this.growth.reCompute,
-						   this.growth);
+						   this.growth); // If this._basicValue changes,
+	                                     // recompute this.growth.
+	                                     // You need to do that for each terme of
+	                                     // this.growth.
 }
 
+// Add value to this._value.
+// If isPercentage : value = 0.5 <=> 50%.
+//                   value = 0.5 <=> value = 0.5 * percentageFrom.
+// By default, percentageFrom = this._maxValue, if there's any this._value otherwhise.
+// Dispatch this.onUpdate. (Even if this._value is the same)
 Stat.prototype.add = function (value, isPercentage, percentageFrom){
     this._addTo(1, value, isPercentage, percentageFrom);
 };
 
+// Add value to this._basicValue.
+// Same as above.
+// Dispatch this.onUpdateBasic. (Even if this._basicValue is the same)
 Stat.prototype.addBasic = function(value, isPercentage, percentageFrom){
     this._addTo(0, value, isPercentage, percentageFrom);
 }
 
+// Add value to this._maxValue.
+// Same as above.
+// Dispatch this.onUpdateMax. (Even if this._maxValue is the same)
 Stat.prototype.addMax = function(value, isPercentage, percentageFrom){
     if (this._link == STAT_NO_MAXSTAT){
         return;
@@ -85,9 +103,9 @@ Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom){
     if (booleanable(isPercentage) &&
         isPercentage){
         if (typeof(percentageFrom) === "undefined"){
-            precentageFrom = (this._link != STAT_NO_MAXSTAT) ? this._maxValue : this._value;
+            percentageFrom = (this._link != STAT_NO_MAXSTAT) ? this._maxValue : this._value;
         }
-        value *=  percentageFrom / 100;
+        value *=  percentageFrom;
     }
 
     function getFinalValue(variable, value, min, max){
@@ -128,10 +146,14 @@ Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom){
     }
 }
 
+// Subtract value from this._value.
+// Do the same as add but negate the value beforehand.
 Stat.prototype.subtract = function(value, isPercentage, percentageFrom){
     this.add(-1 * value, isPercentage, percentageFrom);
 }
 
+// Subtract value to this._maxValue.
+// Same as above.
 Stat.prototype.subtractMax = function(value, isPercentage, percentageFrom){
     if (this._link == STAT_NO_MAXSTAT){
         return;
@@ -140,18 +162,23 @@ Stat.prototype.subtractMax = function(value, isPercentage, percentageFrom){
     this.addMax(-1 * value, isPercentage, percentageFrom);
 }
 
+// Subtract value to this._basicValue.
+// Same as above.
 Stat.prototype.subtractBasic = function(value, isPercentage, percentageFrom){
     this.addBasic(-1 * value, isPercentage, percentageFrom);
 }
 
+// Return true if you can add value to this._value "as is", false otherwhise.
 Stat.prototype.canAdd = function(value, isPercentage, percentageFrom){
     return this._canAddTo(1, value, isPercentage, percentageFrom);
 }
 
+// Return true if you can add value to this._basicValue "as is", false otherwhise. 
 Stat.prototype.canAddBasic = function(value, isPercentage, percentageFrom){
     return this._canAddTo(0, value, isPercentage, percentageFrom);
 }
 
+// Return true if you can add value to this._maxValue "as is", false otherwhise.
 Stat.prototype.canAddMax = function(value, isPercentage, percentageFrom){
     if (this._link == STAT_NO_MAXSTAT){
         return false;
@@ -168,9 +195,9 @@ Stat.prototype._canAddTo = function(type, value, isPercentage, percentageFrom){
     if (booleanable(isPercentage) &&
         isPercentage){
         if (typeof(percentageFrom) === "undefined"){
-            precentageFrom = (this._link != STAT_NO_MAXSTAT) ? this._maxValue : this._value;
+            percentageFrom = (this._link != STAT_NO_MAXSTAT) ? this._maxValue : this._value;
         }
-        value *=  percentageFrom / 100;
+        value *=  percentageFrom;
     }
 
     function getFinalValue(variable, value, min, max){
@@ -199,10 +226,12 @@ Stat.prototype._canAddTo = function(type, value, isPercentage, percentageFrom){
     }
 }
 
+// Return true if you can subtract value from this._value "as is", false otherwhise.
 Stat.prototype.canSubtract = function(value, isPercentage, percentageFrom){
     return this.canAdd(-1 * value, isPercentage, percentageFrom);
 }
 
+// Return true if you can subtract value from this._maxValue "as is", false otherwhise.
 Stat.prototype.canSubtractMax = function(value, isPercentage, percentageFrom){
     if (this._link == STAT_NO_MAXSTAT){
         return false;
@@ -211,11 +240,20 @@ Stat.prototype.canSubtractMax = function(value, isPercentage, percentageFrom){
     return this.canAddMax(-1 * value, isPercentage, percentageFrom);
 }
 
+// Return true if you can subtract value from this._basicValue "as is",
+// false otherwhise.
 Stat.prototype.canSubtractBasic = function(value, isPercentage, percentageFrom){
     return this.canAddBasic(-1 * value, isPercentage, percentageFrom);
 }
 
-Stat.prototype.applyLink = function(self, oldMaxValue, newMaxValue){
+// Modify this._value relatively to this._maxValue.
+// By default, called each time this.onUpdateMax is dispatched.
+// If this._maxValue hasn't change, do nothing.
+Stat.prototype._applyLink = function(self, oldMaxValue, newMaxValue){
+	if (oldMaxValue == newMaxValue){
+		return;
+	}
+
     switch(this._link){
     case STAT_NO_MAXSTAT:
         return;
@@ -239,7 +277,7 @@ Stat.prototype.applyLink = function(self, oldMaxValue, newMaxValue){
         break;
 
     case STAT_PERCENT_LINK:
-        this.set(this._value / oldMaxValue * newMaxValue);
+		(oldMaxValue == 0) ? this.set(1, 1) : this.set(this._value / oldMaxValue * newMaxValue);
         break;
 
     case STAT_EQUAL_LINK:
@@ -251,19 +289,26 @@ Stat.prototype.applyLink = function(self, oldMaxValue, newMaxValue){
     }
 }
 
-Stat.prototype.set = function(value, isPercentage){
-    this._setTo(1, value, isPercentage);
+// Set this._value to value.
+// Dispatch this.onUpdate. (Even if this._value is the same)
+Stat.prototype.set = function(value, isPercentage, percentageFrom){
+    this._setTo(1, value, isPercentage, percentageFrom);
 }
 
-Stat.prototype.setMax = function(value, isPercentage){
-    this._setTo(2, value, isPercentage);
+// Set this._maxValue to value.
+// Dispatch this.onUpdateMax. (Even if this._maxValue is the same)
+Stat.prototype.setMax = function(value, isPercentage, percentageFrom){
+    this._setTo(2, value, isPercentage, percentageFrom);
 }
 
-Stat.prototype.setBasic = function(value, isPercentage){
-    this._setTo(0, value, isPercentage);
+// Set this._basicValue to value.
+// Dispatch this.onUpdateBasic. (Even if this._basicValue is the same)
+Stat.prototype.setBasic = function(value, isPercentage, percentageFrom){
+    this._setTo(0, value, isPercentage, percentageFrom);
 }
 
-Stat.prototype._setTo = function(type, value, isPercentage){
+
+Stat.prototype._setTo = function(type, value, isPercentage, percentageFrom){
     if (type >= 3){
         return;
     }
@@ -272,14 +317,107 @@ Stat.prototype._setTo = function(type, value, isPercentage){
     }
 
     if (booleanable(isPercentage) &&
-        isPercentage){
+        isPercentage &&
+	   (typeof(percentageFrom) === "undefined")){
         switch (type){
         case 0:
             value *= this._basicValue;
             break;
 
         case 1:
-            value *= this._value;
+            value *= this._maxValue;
+            break;
+
+        case 2:
+            value *= this._maxValue;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    function getFinalValue(value, min, max){
+        return ((value > max) ? max :
+                (value < min) ? min : value);
+    }
+
+    if (type == 0){
+		value = getFinalValue(value, this._min, this._max);
+
+        var oldValue = this._basicValue;
+		
+        this._basicValue = value;
+		
+        this.onUpdateBasic.dispatch(this, oldValue, this._basicValue);
+    }
+    else if (type == 1){
+        if (this._upsideDown){
+			value = getFinalValue(value, this._maxValue, this._max);
+            
+            var oldValue = this._value;
+			
+            this._value = value;
+			
+            this.onUpdate.dispatch(this, oldValue, this._value);
+        }
+        else{
+			value = getFinalValue(value, this._min, this._maxValue);
+
+            var oldValue = this._value;
+			
+            this._value = value;
+			
+            this.onUpdate.dispatch(this, oldValue, this._value);
+        }
+    }
+    else if (type == 2){
+        if (this._link != STAT_NO_MAXSTAT){
+			value = getFinalValue(value, this._min, this._max);
+         
+            var oldValue = this._maxValue;
+			
+            this._maxValue = value;
+			
+            this.onUpdateMax.dispatch(this, oldValue, this._maxValue);
+        }
+    }
+
+}
+
+// Return true if this._value can be set to value "as is", false otherwhise.
+Stat.prototype.canSet = function(value, isPercentage, percentageFrom){
+	this._canSetTo(1, value, isPercentage, percentageFrom);
+}
+
+// Return true if this._maxValue can be set to value "as is", false otherwhise.
+Stat.prototype.canSetMax = function(value, isPercentage, percentageFrom){
+	this._canSetTo(2, value, isPercentage, percentageFrom);
+}
+
+// Return true if this._basicValue can be set to value "as is", false otherwhise.
+Stat.prototype.canSetBasic = function(value, isPercentage, percentageFrom){
+	this._canSetTo(0, value, isPercentage, percentageFrom);
+}
+
+Stat.prototype._canSetTo = function(type, value, isPercentage, percentageFrom){
+	if (type >= 3){
+        return;
+    }
+    if (typeof(value) != "number"){
+        return;
+    }
+
+    if (booleanable(isPercentage) &&
+        isPercentage &&
+	   (typeof(percentageFrom) === "undefined")){
+        switch (type){
+        case 0:
+            value *= this._basicValue;
+            break;
+
+        case 1:
+            value *= this._maxValue;
             break;
 
         case 2:
@@ -297,48 +435,25 @@ Stat.prototype._setTo = function(type, value, isPercentage){
     }
 
     if (type == 0){
-        if (getFinalValue(value, this._min, this._max)){
-            var oldValue = this._basicValue;
-
-            this._basicValue = value;
-
-            this.onUpdateBasic.dispatch(this, oldValue, this._basicValue);
-        }
+		return getFinalValue(value, this._min, this._max);
     }
     else if (type == 1){
         if (this._upsideDown){
-            if (getFinalValue(value, this._maxValue, this._max)){
-                var oldValue = this._value;
-
-                this._value = value;
-
-                this.onUpdate.dispatch(this, oldValue, this._value);
-            }
+			return getFinalValue(value, this._maxValue, this._max);
         }
         else{
-            if (getFinalValue(value, this._min, this._maxValue)){
-                var oldValue = this._value;
-
-                this._value = value;
-
-                this.onUpdate.dispatch(this, oldValue, this._value);
-            }
+			return getFinalValue(value, this._min, this._maxValue);
         }
     }
     else if (type == 2){
         if (this._link != STAT_NO_MAXSTAT){
-            if (getFinalValue(value, this._min, this._max)){
-                var oldValue = this._maxValue;
-
-                this._maxValue = value;
-
-                this.onUpdateMax.dispatch(this, oldValue, this._maxValue);
-            }
+			return getFinalValue(value, this._min, this._max);
         }
     }
-
 }
 
+// Return this._value multiplied by this.factor.
+// By default, if inPercentage, relativeTo is equal to this._maxValue.
 Stat.prototype.get = function(inPercentage, relativeTo){
     if (typeof(relativeTo) != "number"){
         relativeTo = this._maxValue;
@@ -353,9 +468,11 @@ Stat.prototype.get = function(inPercentage, relativeTo){
     }
 }
 
+// Return this._maxValue.
+// By default, if inPercentage, relativeTo is equal to this._basicValue.
 Stat.prototype.getMax = function(inPercentage, relativeTo){
     if (typeof(relativeTo) != "number"){
-        relativeTo = this._value;
+        relativeTo = this._basicValue;
     }
 
     if (booleanable(inPercentage) &&
@@ -367,6 +484,8 @@ Stat.prototype.getMax = function(inPercentage, relativeTo){
     }
 }
 
+// Return this._basicValue.
+// By default, if inPercentage, relativeTo is equal to this._maxValue.
 Stat.prototype.getBasic = function(inPercentage, relativeTo){
     if (typeof(relativeTo) != "number"){
         relativeTo = this._maxValue;
@@ -381,7 +500,9 @@ Stat.prototype.getBasic = function(inPercentage, relativeTo){
     }
 }
 
-Stat.prototype.applyGrowth = function(growth){
+// Called when this.growth.compute() is called.
+// Set this._maxValue to this.growth.result.
+Stat.prototype._applyGrowth = function(growth){
 	if (this._link != STAT_NO_MAXSTAT){
 		this.setMax(growth.result);
 	}

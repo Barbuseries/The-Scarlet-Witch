@@ -150,9 +150,12 @@ function create(){
 	totoMode.engage();
 	totoMode.level.add(10);
 	totoMode.endurance.addMax(50);
+	console.log(totoMode.endurance);
 
 	// WIZARDRY ! totoMode.health.maxValue has changed too !
 	console.log(totoMode.health);
+
+	console.log(totoMode);
 
 }
 
