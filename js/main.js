@@ -122,51 +122,38 @@ function create(){
 	dialogueBox.toggle();*/
 	
 	toto = {};
+
+	totoMode = new Mode(toto);
+	// There should be a toto.addMode(totoMode) when it's done.
+
+	// The stat belongs to totoMode NOT toto !
+	// To get toto's stat, you need to add each activated modes' stat.
+	// (When Mode is completely implemented...)
+	totoMode.addStat("health", "Health", STAT_PERCENT_LINK, 40);
+
+	totoMode.addStat("level", "Level", STAT_NO_MAXSTAT, 1, -1, 1, 99);
 	
-	toto.health = new Stat(toto, "Health", STAT_PERCENT_LINK, 40);
+	totoMode.addStat("endurance", "Endurance", STAT_PERCENT_LINK, 0);
 
-	toto.level = new Stat(toto, "Level", STAT_NO_MAXSTAT, 1, -1, 1, 99);
-	
-	toto.endurance = new Stat(toto, "Endurance", STAT_PERCENT_LINK, 0);
+	totoMode.addStat("special", "TOTO !", STAT_NO_LINK, 0, 100);
 
-	toto.special = new Stat(toto, "Special", STAT_PERCENT_LINK, 0, 100);
+	totoMode.health.growth.addTerme([[totoMode.getStat, ["level"]], 10]);
 
-	toto.get = function(name, t){
-		return this[name].get(t);
-	}
-	
-	toto.getBasic = function(name, t){
-		return this[name].getBasic(t);
-	}
+	totoMode.health.growth.addTerme([[totoMode.getStatMax, ["endurance"]], 3]);
 
-	toto.getMax = function(name, t){
-		return this[name].getMax(t);
-	}
+	totoMode.level.onUpdate.add(totoMode.health.growth.reCompute,
+								totoMode.health.growth);
 
-	toto.health.growth.addTerme(toto.getBasic, ["health"]);
+	totoMode.endurance.onUpdateMax.add(totoMode.health.growth.reCompute,
+									   totoMode.health.growth);
 
-	toto.health.growth.addTerme([[toto.get, ["level"]], 10]);
+	totoMode.engage();
+	totoMode.level.add(10);
+	totoMode.endurance.addMax(50);
 
-	toto.health.growth.addTerme([[toto.getMax, ["endurance"]], 3]);
+	// WIZARDRY ! totoMode.health.maxValue has changed too !
+	console.log(totoMode.health);
 
-	toto.health.growth.compute();
-
-	toto.health.onUpdateBasic.add(toto.health.growth.reCompute,
-								  toto.health.growth);
-
-	toto.level.onUpdate.add(toto.health.growth.reCompute,
-							toto.health.growth);
-
-	toto.endurance.onUpdateMax.add(toto.health.growth.reCompute,
-								   toto.health.growth);
-
-
-	toto.level.add(1);
-
-	toto.endurance.addMax(50);
-	
-	// WIZARDRY ! toto.health.maxValue has changed too !
-	console.log(toto.health);
 }
 
 function update(){

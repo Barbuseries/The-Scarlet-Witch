@@ -1212,6 +1212,14 @@ TextBox.prototype.kill = function(){
 
     this._del();
 
+	this.onStartToggle = null;
+	this.onEndToggle = null;
+
+	this.onUpdate = null;
+
+	this.onStartClose = null;
+	this.onEndClose = null;
+
     this.parent.remove(this, true);
 }
 
@@ -1230,11 +1238,12 @@ TextBox.prototype._del = function(){
 
     this.onStartToggle.dispose();
     this.onEndToggle.dispose();
-
+	
     this.onUpdate.dispose();
-
+	
     this.onStartClose.dispose();
     this.onEndClose.dispose();
+	
 }
 /******************************************************************************/
 /* TextBox */
@@ -1563,6 +1572,7 @@ Sentence.prototype.destroy = function(){
 
 Sentence.prototype._del = function(){
     this.phaserText.destroy();
+	this.phaserText = null;
 
     if (this.readingState == SENTENCE_READING){
         this.stopReading(true);
@@ -1571,10 +1581,13 @@ Sentence.prototype._del = function(){
     this.stopAnimation(-1);
 
     this.onStartReading.dispose();
+	this.onStartReading = null;
 
     this.onUpdate.dispose();
+	this.onUpdate = null;
 
     this.onEndReading.dispose();
+	this.onEndReading = null;
 }
 /******************************************************************************/
 /* Sentence */

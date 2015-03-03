@@ -24,6 +24,8 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
 	if (typeof(max) != "number") max = Infinity;
 	if (!booleanable(upsideDown)) upsideDown = false;
 
+	this.entity = entity;
+
     this.name = name;
     this._link = link;
 
@@ -46,11 +48,17 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
     this.factor = 1;
 
 	this.growth = new Formula(entity);
+	this.growth.addTerme(this._basicValue);
+
+	this.growth.result = this._basicValue;
 
 	this.growth.onCompute.add(this.applyGrowth, this);
 
     this.onUpdate = new Phaser.Signal();
     this.onUpdateBasic = new Phaser.Signal();
+
+	this.onUpdateBasic.add(this.growth.reCompute,
+						   this.growth);
 }
 
 Stat.prototype.add = function (value, isPercentage, percentageFrom){
@@ -374,7 +382,38 @@ Stat.prototype.getBasic = function(inPercentage, relativeTo){
 }
 
 Stat.prototype.applyGrowth = function(growth){
-	this.setMax(growth.result);
+	if (this._link != STAT_NO_MAXSTAT){
+		this.setMax(growth.result);
+	}
+	else{
+		this.set(growth.result);
+	}
+}
+
+Stat.prototype.kill = function(){
+	this.destroy();
+}
+
+Stat.prototype.destroy = function(){
+	this._del();
+
+	this.growth.kill();
+	this.growth = null;
+}
+
+Stat.prototype._del = function(){
+	this.entity = null;
+
+	this.onUpdate.dispose();
+	this.onUpdate = null;
+
+	this.onUpdateBasic.dispose();
+	this.onUpdateBasic = null;
+
+	if (this._link != STAT_NO_MAXSTAT){
+		this.onUpdateMax.dispose();
+		this.onUpdateMax = null;
+	}
 }
 /******************************************************************************/
 /* Stat */
