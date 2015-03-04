@@ -2,18 +2,18 @@
 /* DialogueBox */
 /******************************************************************************/
 
-var DialogueBox = function(game, outerSprite, innerSprite, egoist){
+var DialogueBox = function(game, outerSprite, innerSprite, egoist, enableInput){
     Phaser.Group.call(this, game);
 
     this.x = 0;
-    this.y = 500;
+    this.y = game.camera.height - 150;
 
     this.textBox = new TextBox(game, 0, 0,
                                game.camera.width, game.camera.height - this.y,
                                outerSprite, innerSprite,
-                               egoist);
+                               egoist, enableInput);
 
-    this.speakerBox = new TextBox(game, 0, -50, 100, 40, outerSprite, innerSprite);
+    this.speakerBox = new TextBox(game, 0, -45, 100, 40, outerSprite, innerSprite);
 
     var speakerName = new Sentence(game, "", MOOD_NORMAL, null, -1, 24);
     speakerName.setTextSpeedFactor(-1);

@@ -3,8 +3,9 @@
 /*******************************************************************************/
 // Create a box at (x, y) with the given width and height.
 // If the Box has a mask, everything going out of it will be cropped.
-var Box = function(game, x, y, width, height, sprite, hasMask){
+var Box = function(game, x, y, width, height, sprite, hasMask, enableInput){
     if (!booleanable(hasMask)) hasMask = false;
+	if (!booleanable(enableInput)) enableInput = false;
 
     Phaser.Sprite.call(this, game, x, y, sprite);
 
@@ -20,6 +21,8 @@ var Box = function(game, x, y, width, height, sprite, hasMask){
     else{
         this.mask = null;
     }
+
+	this.inputEnabled = enableInput;
 
     game.add.existing(this);
 }
@@ -120,6 +123,13 @@ Box.prototype.setAnchor = function(x, y){
     this.updateMask();
 }
 
+Box.prototype.add = function(child){
+	child.scale.x /= this.scale.x;
+	child.scale.y /= this.scale.y;
+
+	this.addChild(child);
+}
+
 Box.prototype.kill = function(){
     if (this.mask != null){
         this.mask.destroy();
@@ -134,6 +144,8 @@ Box.prototype.destroy = function(){
     }
 
     Phaser.Sprite.prototype.destroy.call(this);
+	
+	this.removeChildren();
 }
 /******************************************************************************/
 /* Box */
@@ -150,14 +162,16 @@ var TEXTBOX_TOGGLED = 2;
 var TEXTBOX_CLOSING = 3;
 
 
-var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoist){
+var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoist,
+					   enableInput){
     if (typeof(x) != "number") x = 0;
     if (typeof(y) != "number") y = 0;
     if (typeof(width) != "number") width = 0;
     if (typeof(height) != "number") height = 0;
     if (typeof(outerSprite) != "string") outerSprite = "";
     if (typeof(innerSprite) != "string") innerSprite = "";
-    if ((typeof(egoist) != "number") && (typeof(egoist) != "boolean")) egoist = false;
+    if (!booleanable(egoist)) egoist = false;
+	if (!booleanable(enableInput)) enableInput = false;
 
     Phaser.Group.call(this, game);
 
@@ -170,7 +184,7 @@ var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoi
     this.outerBox = new Box(game, 0, 0, width, height, outerSprite);
 
     // Box into which the text is written.
-    this.innerBox = new Box(game, 0, 0, width, height, innerSprite, true);
+    this.innerBox = new Box(game, 0, 0, width, height, innerSprite, true, enableInput);
 
     this.add(this.outerBox);
     this.add(this.innerBox);
@@ -190,11 +204,11 @@ var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoi
     this.alpha = 1;
 
     this.egoist = egoist;
+	this.enableInput = enableInput;
 
-    if (this.egoist){
-        this.innerBox.inputEnabled = true;
-        this.innerBox.events.onInputDown.add(this.handleUserInput, this);
-    }
+	if (this.enableInput){
+		this.innerBox.events.onInputDown.add(this.handleUserInput, this);    
+	}
 
     this.timerNextSentence = null;
 
@@ -582,10 +596,6 @@ TextBox.prototype.setMarginBottom = function(marginBottom, isPercentage){
 }
 
 TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
-    if (this.displayState != TEXTBOX_CLOSED){
-        return;
-    }
-
     if ((typeof(marginLeft) != "number") &&
         (typeof(marginRight) != "number")) return;
 
@@ -643,10 +653,6 @@ TextBox.prototype.setMarginH = function(marginLeft, marginRight, isPercentage){
 
 
 TextBox.prototype.setMarginV = function(marginTop, marginBottom, isPercentage){
-    if (this.displayState != TEXTBOX_CLOSED){
-        return;
-    }
-
     if ((typeof(marginTop) != "number") &&
         (typeof(marginBottom) != "number")) return;
 
@@ -703,10 +709,6 @@ TextBox.prototype.setMarginV = function(marginTop, marginBottom, isPercentage){
 }
 
 TextBox.prototype.setHeight = function(height, conserveMargin){
-    if (this.displayState != TEXTBOX_CLOSED){
-        return;
-    }
-
     var oldHeight = this.height;
 
     if (oldHeight == height){
@@ -735,10 +737,6 @@ TextBox.prototype.setHeight = function(height, conserveMargin){
 }
 
 TextBox.prototype.setWidth = function(width, conserveMargin){
-    if (this.displayState != TEXTBOX_CLOSED){
-        return;
-    }
-
     var oldWidth = this.width;
 
     if (oldWidth == width){
@@ -766,12 +764,15 @@ TextBox.prototype.setWidth = function(width, conserveMargin){
     this.setMarginH(marginLeft, marginRight);
 
     for(var i = 0; i < this.allSentences.length; i++) {
-        this.allSentences[i].setWordWrap(true, this.innerBox.width);
-        this.allSentences[i].phaserText.text = this.allSentences[i].wholeText;
-        this.allSentences[i].heightLeft = this.allSentences[i].phaserText.height;
-        this.allSentences[i].maxHeight = this.allSentences[i].heightLeft;
+		var sentence = this.allSentences[i];
+		var beforeText = sentence.phaserText.text;
 
-        this.allSentences[i].phaserText.text = "";
+        sentence.setWordWrap(true, this.innerBox.width);
+        sentence.phaserText.text = sentence.wholeText;
+        sentence.heightLeft = sentence.phaserText.height;
+        sentence.maxHeight = sentence.heightLeft;
+
+        sentence.phaserText.text = beforeText;
     }
 }
 
@@ -878,7 +879,7 @@ TextBox.prototype.update = function(){
                 // If the delay until the next sentence is negative, wait until
                 // user's input.
                 if (this.allDelays[i] < 0){
-                    if (this.egoist){
+                    if (this.enableInput){
                         console.log("PRESS A KEY TO CONTINUE !");
                     }
                     else{
@@ -894,7 +895,7 @@ TextBox.prototype.update = function(){
                 else if (this.timerNextSentence == null){
                     var delay = this.allDelays[i];
 
-                    this.timerNextSentence = game.time.create(true);
+                    this.timerNextSentence = this.game.time.create(true);
                     this.timerNextSentence.add(this.allDelays[i],
                                                this.nextSentence, this);
 
@@ -1106,10 +1107,6 @@ TextBox.prototype.handleVerticalOverflow = function(){
 // width.
 // In BETA...
 TextBox.prototype.fitHeightToSentence = function(indexSentence, width, conserveMargin){
-    if (this.displayState != TEXTBOX_CLOSED){
-        return;
-    }
-
     if (typeof(indexSentence) != "number"){
         return;
     }
@@ -1134,10 +1131,6 @@ TextBox.prototype.fitHeightToSentence = function(indexSentence, width, conserveM
 }
 
 TextBox.prototype.fitWidthToSentence = function(indexSentence, height, conserveMargin){
-    if (this.displayState != TEXTBOX_CLOSED){
-        return;
-    }
-
     if (typeof(indexSentence) != "number"){
         return;
     }
@@ -1146,13 +1139,29 @@ TextBox.prototype.fitWidthToSentence = function(indexSentence, height, conserveM
         return;
     }
 
-    var oldHeight = this.allSentences[indexSentence].maxHeight;
-    var newWidth = this.width * oldHeight / height;
+	if ((typeof(height) === "undefined") ||
+	   (height == -1)){
+		height = this.height;
+	}
+
+	var sentence = this.allSentences[this.indexCurrentSentence];
+	var beforeText = sentence.phaserText.text;
+	
+	sentence.wordWrap = false;
+	sentence.phaserText.text = sentence.wholeText;
+
+	var oldWidth = sentence.phaserText.width;
+	var oldHeight = sentence.phaserText.height;
+
+	var newWidth = oldHeight * oldWidth / height;
+
+	sentence.wordWrap = true;
+	sentence.phaserText.text = beforeText;
 
     this.setHeight(height, conserveMargin);
-    this.setHeight(this.height + this.marginTop + this.marginBottom, conserveMargin);
-    this.setWidth(newWidth, conserveMargin);
-    this.setWidth(this.width + this.marginLeft + this.marginRight, conserveMargin);
+    //this.setHeight(this.height + this.marginTop + this.marginBottom, conserveMargin);
+    this.setWidth(newWidth + 50, conserveMargin);
+    //this.setWidth(this.width + this.marginLeft + this.marginRight, conserveMargin);
 };
 
 TextBox.prototype.fitDurationToSentence = function(indexSentence, additionalTime){
