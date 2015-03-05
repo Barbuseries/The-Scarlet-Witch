@@ -1,4 +1,4 @@
-// TODO: Ajouter les animations
+/*// TODO: Ajouter les animations
 //       Ajouter d'autres types de jauges (sprite, linear, monochrome, ... ?)
 //       Ajouter deux variables offset (x et y) pour le sprite
 //       Ajouter la possibilité d'afficher les valeurs (brut, pourcentage)
@@ -205,24 +205,10 @@ Gauge.prototype.updateTweens = function(){
 			if (this.allTweens[i]._lastChild.isRunning){
 				this.allTweens[i].willComplete = true;
 			}
-            /*if (!this.allTweens[i]._lastChild.isRunning){
-                this.allTweens[i].start();
-                //this.allTweens[i].isPaused = false;
-            }*/
-            /*else if (this.allTweens[i].isPaused){
-                this.allTweens[i].resume();
-                this.allTweens[i].isPaused = false;
-            }*/
         }
 		else{
 			this.allTweens[i].willComplete = true;
 		}
-        /*else{
-            if (this.allTweens[i].isRunning){
-                this.allTweens[i].pause();
-                this.allTweens[i].isPaused = true;
-            }
-        }*/
     }
 }
 
@@ -334,4 +320,251 @@ Gauge.prototype.pulse = function(deltaX, deltaY, goToDelay,
 		.to({x: 1, y: 1}, returnToDelay, returnToEasing);
 	
 	this.addTween(tween, activateAt);
+}
+*/
+
+var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
+					  orientation){
+	Phaser.Group.call(this, game);
+	
+	this.x = x;
+	this.y = y;
+
+	this.width = width;
+	this.height = height;
+
+	this.stat = stat;
+
+	this.belowSprite = game.add.sprite(0, 0, belowSprite);
+	this.belowSprite.width = width;
+	this.belowSprite.height = height;
+	
+	this.upperSprite = game.add.sprite(0, 0, upperSprite);
+	this.upperSprite.width = width;
+	this.upperSprite.height = height;
+
+	this.add(this.belowSprite);
+	this.add(this.upperSprite);
+
+	this.currentValue = stat.get();
+
+	this.fillArea = null;
+
+	stat.onUpdate.add(this.updateGauge, this);
+	stat.onUpdateMax.add(this.resizeGauge, this);
+
+	this.updateAnimation = null;
+	this.updateAnimationType = -1;
+
+	this.decreaseColor = H_RED;
+	this.decreaseAlpha = 0.5;
+	this.decreaseSpeed = 1;
+
+	this.increaseColor = H_GREEN;
+	this.increaseAlpha = 0.5;
+	this.increaseSpeed  = 1;
+
+	this.additionalFill = null;
+
+	this.allowResize = false;
+
+	this.fill = null;
+	this.backgroundFill = null;
+
+	this.onUpdate = new Phaser.Signal();
+}
+
+Gauge.prototype = Object.create(Phaser.Group.prototype);
+Gauge.prototype.constructor = Gauge;
+
+Gauge.prototype.updateGauge = function(stat, oldValue, newValue){
+}
+
+Gauge.prototype.update = function(){
+	this.onUpdate.dispatch(this);
+	
+	Phaser.Group.prototype.update.call(this);
+}
+
+Gauge.prototype.resizeGauge = function(stat, oldMaxValue, newMaxValue){
+	if (this.allowResize){
+		this.belowSprite.width *= newMaxValue / oldMaxValue;
+		this.upperSprite.width *= newMaxValue / oldMaxValue;
+	}
+}
+
+Gauge.prototype.stopAnimation = function(type){
+
+}
+
+Gauge.prototype.kill = function(){
+	this.belowSprite.kill();
+	this.upperSprite.kill();
+	this.visible = false;
+}
+
+Gauge.prototype._del = function(){
+	this.stopAnimation(-1);
+
+	this.stat.onUpdate.remove(this.updateGauge);
+	this.stat.onUpdateMax.remove(this.resizeGauge);
+}
+
+
+var MonoGauge = function(game, x, y, width, height, stat, fillColor, backgroundColor,
+						 belowSprite, upperSprite, orientation){
+	Gauge.apply(this, [game, x, y, width, height, stat, belowSprite,
+					  upperSprite, orientation]);
+
+	this.backgroundFill = createRectangle(game, 0, 0, width, height, backgroundColor);
+
+	this.fill = createRectangle(game, 0, 0, width, height, fillColor);
+	this.fill.scale.x = this.currentValue / stat.getMax();
+
+	this.additionalFill = createRectangle(game, 0, 0,
+										  this.width, this.height,
+										  H_WHITE);
+	this.additionalFill.scale.x = 0;
+
+	this.add(this.backgroundFill);
+	this.add(this.fill);
+	this.add(this.additionalFill);
+	this.bringToTop(this.upperSprite);
+}
+
+MonoGauge.prototype = Object.create(Gauge.prototype);
+MonoGauge.prototype.constructor = MonoGauge;
+
+
+MonoGauge.prototype.updateGauge = function(stat, oldValue, newValue){
+	if (oldValue != newValue){
+		
+		if (this.currentValue != newValue){
+
+			if (this.currentValue < newValue){
+				this._createIncreaseTween(newValue);
+				this.updateAnimation.start();
+			}
+			else if (this.currentValue > newValue){
+				this._createDecreaseTween(newValue);
+				this.updateAnimation.start();
+			}
+			else{
+				if (this.updateAnimation != null){
+					this.updateAnimation.stop();
+					this.updateAnimation = null;
+				}
+			}
+		}
+	}
+}
+
+MonoGauge.prototype._createIncreaseTween = function(newValue){
+	if (this.updateAnimationType == 1){
+		this._stopIncreaseTween(true);
+	}
+	else{
+		this._stopIncreaseTween(false);
+	}
+
+	this.updateAnimationType = 1;
+
+	var maxScale = newValue / this.stat.getMax();
+	
+	var duration = Math.abs(1000 * (this.currentValue - newValue) / this.stat.getMax());
+	duration /= this.increaseSpeed;
+
+	this.additionalFill.scale.x = -(newValue - this.currentValue) / this.stat.getMax();		
+	this.additionalFill.position.x = (this.currentValue / this.stat.getMax() - this.additionalFill.scale.x) * this.width;
+				
+	this.additionalFill.tint = this.increaseColor;
+	
+	this.additionalFill.alpha = this.increaseAlpha;
+
+	this.updateAnimation = this.game.add.tween(this.additionalFill.scale)
+		.to({x: 0}, duration);
+	
+	function updateCurrentValue(){
+		this.fill.scale.x = this.additionalFill.position.x / this.width + this.additionalFill.scale.x;
+		this.currentValue = this.fill.scale.x * this.stat.getMax();
+	}
+
+	this.updateAnimation.onUpdateCallback(updateCurrentValue, this);
+	this.updateAnimation.onComplete.add(function(){this.additionalFill.scale.x = 0;
+												   this.fill.scale.x = maxScale;
+												   this.currentValue = newValue;}, this);
+}
+
+MonoGauge.prototype._stopIncreaseTween = function(sameType){
+	if (booleanable(sameType) && sameType){
+		if (this.updateAnimation != null){
+			this.updateAnimation.stop(true);
+			this.updateAnimation = null;
+		}
+
+	}
+	else{
+		if (this.updateAnimation != null){
+			this.updateAnimation.stop(true);
+			this.updateAnimation = null;
+		}
+	}
+}
+
+MonoGauge.prototype._createDecreaseTween = function(newValue){
+	if (this.updateAnimationType == 0){
+		this._stopDecreaseTween(true);
+	}
+	else{
+		this._stopDecreaseTween(false);
+	}
+
+	this.updateAnimationType = 0;
+
+	
+	var duration = Math.abs(1000 * (this.currentValue - newValue) / this.stat.getMax());
+	duration /= this.decreaseSpeed;
+
+	this.additionalFill.scale.x += -(newValue - this.currentValue) / this.stat.getMax();
+	
+	this.currentValue = newValue;
+	this.fill.scale.x = this.currentValue / this.stat.getMax();
+
+	this.additionalFill.position.x = this.fill.scale.x * this.width;
+				
+	this.additionalFill.tint = this.decreaseColor;
+	
+	this.additionalFill.alpha = this.decreaseAlpha;
+
+	this.updateAnimation = this.game.add.tween(this.additionalFill.scale)
+		.to({x: 0}, duration);
+	
+	this.updateAnimation.onComplete.add(function(){this.additionalFill.scale.x = 0}, this);
+}
+
+MonoGauge.prototype._stopDecreaseTween = function(sameType){
+	if (booleanable(sameType) && sameType){
+		if (this.updateAnimation != null){
+			this.updateAnimation.stop();
+			this.updateAnimation = null;
+		}
+
+	}
+	else{
+		if (this.updateAnimation != null){
+			this.updateAnimation.stop(true);
+			this.updateAnimation = null;
+		}
+	}
+}
+
+function createRectangle(game, x, y, width, height, color){
+	var rectangle = game.add.graphics(0, 0);
+
+	rectangle.beginFill(color, 1);
+	rectangle.bounds = new PIXI.Rectangle(0, 0, width, height);
+	rectangle.drawRect(0, 0, width, height);
+	rectangle.boundsPadding = 0;
+
+	return rectangle;
 }

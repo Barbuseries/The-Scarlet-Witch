@@ -6,14 +6,14 @@ var DialogueBox = function(game, outerSprite, innerSprite, egoist, enableInput){
     Phaser.Group.call(this, game);
 
     this.x = 0;
-    this.y = game.camera.height - 150;
+    this.y = game.camera.height - 100 + 10;
 
     this.textBox = new TextBox(game, 0, 0,
                                game.camera.width, game.camera.height - this.y,
                                outerSprite, innerSprite,
                                egoist, enableInput);
 
-    this.speakerBox = new TextBox(game, 0, -45, 100, 40, outerSprite, innerSprite);
+    this.speakerBox = new TextBox(game, 0, -50, 100, 40, outerSprite, innerSprite);
 
     var speakerName = new Sentence(game, "", MOOD_NORMAL, null, -1, 24);
     speakerName.setTextSpeedFactor(-1);
@@ -34,37 +34,50 @@ var DialogueBox = function(game, outerSprite, innerSprite, egoist, enableInput){
     this.onStartClose = new Phaser.Signal();
     this.onEndClose = new Phaser.Signal();
 
+	// Link textBox Signals and dialogueBox Signals.
+	// (textBox Signals are dispatched first)
     this.textBox.onStartToggle.add(this.onStartToggle.dispatch, this.onStartToggle,
                                    [this]);
     this.textBox.onEndToggle.add(this.onEndToggle.dispatch, this.onEndToggle,
                                  [this]);
 
-	this.textBox.onUpdate.add(this.onUpdate.dispatch, this.onUpdate, [this]);
 
     this.textBox.onNextSentence.add(this.onNextSentence.dispatch, this.onNextSentence,
                                     [this]);
+
 
     this.textBox.onStartClose.add(this.onStartClose.dispatch, this.onStartClose,
                                   [this]);
     this.textBox.onEndClose.add(this.onEndClose.dispatch, this.onEndClose,
                                 [this]);
 
+
+	// Link toggle and close of textBox and speakerBox.
+	// (textBox Signals are dispatched first)
     this.textBox.onStartToggle.add(this.speakerBox.toggle, this.speakerBox);
     this.speakerBox.onEndToggle.add(this._initSpeakerName, this);
 
     this.textBox.onNextSentence.add(this._initSpeakerName, this);
 
-    this.textBox.onUpdate.add(this.speakerBox.update, this.speakerBox);
-
     this.textBox.onStartClose.add(this.speakerBox.close, this.speakerBox);
 };
 
 
-DialogueBox.prototype = Phaser.Group.prototype;
+DialogueBox.prototype = Object.create(Phaser.Group.prototype);
 DialogueBox.prototype.constructor = DialogueBox;
 
 DialogueBox.prototype.toggle = function(){
     this.textBox.toggle();
+}
+
+DialogueBox.prototype.close = function(){
+	this.textBox.close();
+}
+
+DialogueBox.prototype.update = function(){
+	this.onUpdate.dispatch();
+	
+	Phaser.Group.prototype.update.call(this);
 }
 
 DialogueBox.prototype._initSpeakerName = function(){
@@ -98,7 +111,7 @@ DialogueBox.prototype._initSpeakerName = function(){
             speakerName.phaserText.text = speakerName.wholeText;
 
             if (this.speakerBox.allSentences[0].wholeText != ""){
-                this.speakerBox.fitWidthToSentence(0, 40);
+                this.speakerBox.fitWidthToSentence(0, 40, 2, 50);
             }
 
             speakerName.x = this.speakerBox.innerBox.x + this.speakerBox.innerBox.width / 2 - speakerName.phaserText.width / 2;

@@ -7,7 +7,7 @@ BasicGame.MainMenu.prototype.create = function(){
 	var centerY = this.game.camera.height / 2;
 
 	this.background = this.game.add.tileSprite(0, 0,
-											   this.game.stage.bounds.width,
+											   2 * centerX,
 											   this.game.cache.getImage("sky").height,
 											   "sky");
 	this.background.scale.y = this.background.height / (2 * centerX - 10);
@@ -34,10 +34,32 @@ BasicGame.MainMenu.prototype.update = function(){
 }
 
 BasicGame.MainMenu.prototype.startGame = function(pointer){
-    this.state.start("Game");
+	this.disableOptions();
+
+	this.cleanUp();
+
+	this.state.start("Game");
+}
+
+BasicGame.MainMenu.prototype.disableOptions = function(){
+	this.newGameText.inputEnabled = false;
+	this.loadGameText.inputEnabled = false;
+	this.optionText.inputEnabled = false;
+	this.exitText.inputEnabled = false;
+}
+
+BasicGame.MainMenu.prototype.cleanUp = function(){
+	this.newGameText.destroy();
+	this.loadGameText.destroy();
+	this.optionText.destroy();
+	this.exitText.destroy();
 }
 
 BasicGame.MainMenu.prototype.exit = function(){
+	this.disableOptions();
+
+	this.cleanUp();
+
 	window.location.replace("site.html");
 }
 

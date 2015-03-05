@@ -6,18 +6,37 @@ BasicGame.Game.prototype.preload = function(){
 	
 }
 
+var ground;
+var sky;
+var toto;
+var totoMode;
+var tata;
+var sentence;
+var sentence2;
+var sentence3;
+var sentence4;
+var sentence5;
+var sentence6;
+var sentence7;
+var sentence8;
+var sentence9;
+var textBox;
+var dialogueBox;
+var healthBar;
+
 BasicGame.Game.prototype.create = function(){
-	ground = this.game.add.sprite(0, this.game.camera.height - 210, "ground");
+	ground = this.game.add.sprite(0, this.game.camera.height - 150, "ground");
 	ground.width = this.game.camera.width;
 	ground.height = 10;
 
 	sky = this.game.add.tileSprite(0, 0,
-								   this.game.stage.bounds.width,
+								   ground.width,
 								   this.game.cache.getImage('sky').height,
 								   'sky');
-	sky.scale.y = (this.game.camera.height - 210) / sky.height;
+	sky.scale.y = (this.game.camera.height - 150) / sky.height;
 
-/*	textBox = new TextBox(this.game, 100, 100, 500, 100, "ground2", "ground", true);
+	textBox = new TextBox(this.game, 100, 100, 500, 100, "ground2", "ground",
+						  true, true);
 	textBox.outerBox.alpha = 0.4;
 	textBox.innerBox.alpha = 1;
 
@@ -25,7 +44,8 @@ BasicGame.Game.prototype.create = function(){
 	textBox.setMarginH(10, 10);
 
 	textBox.y = 200;
-	textBox.x = 150;*/
+	textBox.x = 150;
+
 	
 	toto = {};
 	toto.name = "Barton";
@@ -35,7 +55,13 @@ BasicGame.Game.prototype.create = function(){
 	tata.name = "Lucy";
 	tata.dialogueAlign = "right";
 
-	sentence = new Sentence(this.game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, toto, 100);
+	sentence = new Sentence(this.game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_ANGRY, toto);
+
+	textBox.addSentence(sentence);
+	textBox.fitHeightToSentence(0);
+	textBox.fitDurationToSentence(0, 2000);
+
+	
 	
 /*	sentence2 = new Sentence(this.game, "Ca marche !", MOOD_JOYFUL, null, 10);
 	sentence3 = new Sentence(this.game, "Moi aussi !", MOOD_ANGRY);
@@ -47,15 +73,15 @@ BasicGame.Game.prototype.create = function(){
 	//sentence.phaserText.align = "center";
 
 	
-/*	textBox.addSentence(sentence, -1, 1);
+//	textBox.addSentence(sentence, -1, 1);
 
-	textBox.addSentence(sentence5);
-	textBox.fitHeightToSentence(0, -1, 1);
+//	textBox.addSentence(sentence5);
+//	textBox.fitHeightToSentence(0, -1, 1);
 	//textBox.addSentence(sentence3, 1000, 1);
 	//textBox.addSentence(sentence4);
 	
 	textBox.createAnimation("toggle", "both", "both", 2000, 1, Phaser.Easing.Cubic.InOut);
-	textBox.createAnimation("close", "both", "both", 2000, 1, Phaser.Easing.Cubic.InOut);*/
+	textBox.createAnimation("close", "both", "both", 2000, 1, Phaser.Easing.Cubic.InOut);
 
 //	textBox.fitDurationToSentence(0, 1000);
 	//textBox.createVerticalClose(1000, 0, Phaser.Easing.Bounce.Out);
@@ -67,6 +93,7 @@ BasicGame.Game.prototype.create = function(){
 	
 	sentence6 = new Sentence(this.game, "La boîte de dialogue est fonctionnelle !",
 							 MOOD_NORMAL, toto);
+	textBox.toggle();
 
 	sentence7 = new Sentence(this.game, "Maintenant, je peux me parler à moi même !",
 							 MOOD_JOYFUL, toto);
@@ -108,7 +135,7 @@ BasicGame.Game.prototype.create = function(){
 	// The stat belongs to totoMode NOT toto !
 	// To get toto's stat, you need to add each activated modes' stat.
 	// (When Mode is completely implemented...)
-	totoMode.addStat("health", "Health", STAT_PERCENT_LINK, 40);
+	totoMode.addStat("health", "Health", STAT_NO_LINK,  100000, 100000);
 
 	totoMode.addStat("level", "Level", STAT_NO_MAXSTAT, 1, -1, 1, 99);
 	
@@ -144,8 +171,36 @@ BasicGame.Game.prototype.create = function(){
 	console.log(totoMode.health);
 
 	console.log(totoMode);
-}
-
-BasicGame.Game.prototype.update = function(){
 	
+	healthBar = new MonoGauge(this.game, 50, 100, 100, 10, totoMode.health,
+							  H_RED, H_BLACK,
+							  "", "");
+	healthBar.upperSprite.alpha = 0.5;
+	healthBar.increaseSpeed = 0.25;
+	healthBar.increaseAlpha = 0.2;
+
+	healthBar.decreaseSpeed = 0.5;
+	healthBar.decreaseAlpha = 0.4;
+	healthBar.decreaseColor = H_RED;
+
+	totoMode.health.addMax(1000);
+	//totoMode.health.add(1000000);
+	//totoMode.health.subtract(10000);
+}
+var i = 0;
+BasicGame.Game.prototype.update = function(){
+	i++;
+	
+
+	if (!(i%45)){
+		totoMode.health.subtract(15000);
+	}
+
+	if (!(i%60)){
+		if(totoMode.health.get() != 0){
+			totoMode.health.add(15000);
+		}
+	}
+
+	//dialogueBox.update();
 }
