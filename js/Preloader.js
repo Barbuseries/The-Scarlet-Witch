@@ -21,6 +21,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.preloadBar.angle = -90;
     
 	this.load.image("ground2", "assets/platform2.png");
+	this.load.image("perso", "assets/firstaid.png");
     this.load.spritesheet("lucy", "assets/Lucy/SaraFullSheet.png", 64, 64);
 	this.load.spritesheet("lucy1", "assets/Lucy/SaraHairBottomLayer.png", 64, 64);
 	this.load.spritesheet("lucy2", "assets/Lucy/SaraHairShadowOnFace.png", 64, 64);
