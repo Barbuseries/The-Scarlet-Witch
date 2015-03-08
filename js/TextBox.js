@@ -211,6 +211,8 @@ var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoi
 		this.innerBox.events.onInputDown.add(this.handleUserInput, this);    
 	}
 
+	this.fitSentenceToTextBox = true;
+
     this.timerNextSentence = null;
 
     this.toggleAnimation = null;
@@ -326,7 +328,6 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
     var x = this.x;
     var y = this.y;
 
-
     switch (directionH){
     case "right":
         scaleX = 0;
@@ -388,8 +389,14 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
         this.outerBox.setAnchor(anchorX, anchorY);
         this.innerBox.setAnchor(anchorX, anchorY);
 
-        this.x += anchorX * this._width;
-        this.y += anchorY * this._height;
+		if (this.fixedToCamera){
+			this.cameraOffset.x += anchorX * this._width;
+			this.cameraOffset.y += anchorY * this._height;
+		}
+		else {
+			this.x += anchorX * this._width;
+			this.y += anchorY * this._height;
+		}
 
         this.innerBox.x = this.marginLeft * (1 - anchorX) - this.marginRight * anchorX;
         this.innerBox.y = this.marginTop * (1 - anchorY) - this.marginBottom * anchorY;
@@ -414,8 +421,15 @@ TextBox.prototype.createAnimation = function(type, directionH, directionV,
         }
 
         this.scale.setTo(1, 1);
-        this.x = x;
-        this.y = y;
+
+		if (this.fixedToCamera){
+			this.cameraOffset.x = x;
+			this.cameraOffset.y = y;
+		}
+		else{
+			this.x = x;
+			this.y = y;
+		}
         this.alpha = alpha;
 
         this.innerBox.x = this.marginLeft;
@@ -822,6 +836,23 @@ TextBox.prototype.addSentence = function(sentence, delay, toClear, index){
     }
     sentence.mask = this.innerBox.mask;
 
+	if (this.fitSentenceToTextBox){
+		if (sentence.y + sentence.maxHeight > this.innerBox.y + this.innerBox.height){
+			sentence.phaserText.fontSize *= (this.innerBox.y + this.innerBox.height) /
+				(sentence.y + sentence.maxHeight);
+			
+			sentence.phaserText.text = sentence.wholeText;
+			
+			sentence.heightLeft = sentence.phaserText.height;
+			sentence.maxHeight = sentence.heightLeft;
+			
+			sentence.widthLeft = sentence.phaserText.width;
+			sentence.maxWidth = sentence.widthLeft;
+			
+			sentence.phaserText.text = "";
+		}
+	}
+
     this.allSentences.splice(index, 0, sentence);
     this.allDelays.splice(index, 0, delay);
     this.allClears.splice(index, 0, toClear);
@@ -844,15 +875,15 @@ TextBox.prototype.update = function(){
                 2 * currentSentence.phaserText.fontSize){
                 switch (currentSentence.phaserText.align){
                 case "center":
-                    currentSentence.x = Math.florr(this.innerBox.x +
-												   this.innerBox.width / 2 -
-												   currentSentence.phaserText.width / 2);
+                    currentSentence.x = this.innerBox.x +
+						this.innerBox.width / 2 -
+						currentSentence.phaserText.width / 2;
                     break;
 
                 case "right":
-                    currentSentence.x = Math.floor(this.innerBox.x +
-												   this.innerBox.width -
-												   currentSentence.phaserText.width);
+                    currentSentence.x = this.innerBox.x +
+						this.innerBox.width - this.marginRight -
+						currentSentence.phaserText.width;
                     break;
 
 				case "doublecenter":
@@ -885,7 +916,7 @@ TextBox.prototype.update = function(){
                 // user's input.
                 if (this.allDelays[i] < 0){
                     if (this.enableInput){
-                        console.log("PRESS A KEY TO CONTINUE !");
+                        //console.log("PRESS A KEY TO CONTINUE !");
                     }
                     else{
                         /*if (this.indexCurrentSentence < this.allSentences.length - 1){
@@ -1327,6 +1358,9 @@ var Sentence = function(game, text, mood, speaker, textSpeedFactor, font, fontSi
     this.phaserText.font = font;
     this.phaserText.fontSize = fontSize;
     this.phaserText.fill = fill;
+
+	this.phaserText.stroke = BLACK;
+	this.phaserText.strokeThickness = 2;
 
     this.wholeText = text;
     this.textSpeedFactor = textSpeedFactor;

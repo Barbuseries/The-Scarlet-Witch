@@ -3,11 +3,12 @@ BasicGame.Game = function(game){
 }
 
 BasicGame.Game.prototype.preload = function(){
-	
+	this.game.time.advancedTiming = true;
 }
 
 var ground;
 var sky;
+var uiBackground;
 var toto;
 var totoMode;
 var tata;
@@ -23,28 +24,53 @@ var sentence9;
 var textBox;
 var dialogueBox;
 var healthBar;
+var status_UI;
+var status_UI_2;
+var perso;
+var fps;
 
 BasicGame.Game.prototype.create = function(){
-	ground = this.game.add.sprite(0, this.game.camera.height - 150, "ground");
-	ground.width = this.game.camera.width;
-	ground.height = 10;
+	this.game.world.setBounds(0, 0, 3 * this.game.camera.width,
+							  this.game.camera.height);
+
+	ground = this.game.add.tileSprite(0, this.game.camera.height - 150,
+									  this.game.world.width, 10,
+									  "ground");
 
 	sky = this.game.add.tileSprite(0, 0,
-								   ground.width,
+								   this.game.world.width,
 								   this.game.cache.getImage('sky').height,
 								   'sky');
 	sky.scale.y = (this.game.camera.height - 150) / sky.height;
 
-	textBox = new TextBox(this.game, 100, 100, 500, 100, "ground2", "ground",
+	fps = this.game.add.text(this.game.camera.width - 25, 10, "FPS : 0");
+	fps.fill = WHITE;
+	fps.font = "Arial";
+	fps.fontSize = 24;
+	fps.stroke = BLACK;
+	fps.strokeThickness = 3;
+
+	fps.anchor.setTo(1, 0);
+	fps.fixedToCamera = true;
+
+	perso = this.game.add.sprite(this.game.camera.width / 2, ground.y - 30,
+								 "perso");
+
+	uiBackground = this.game.add.sprite(0, ground.y + 10, "ground");
+	uiBackground.tint = H_GREY;
+
+	uiBackground.width = ground.width;
+	uiBackground.height = 140;
+
+	textBox = new TextBox(this.game,this.game.camera.width / 2 - 325,
+						  this.game.camera.height / 2 - 50,
+						  650, 100, "ground2", "ground",
 						  true, true);
 	textBox.outerBox.alpha = 0.4;
 	textBox.innerBox.alpha = 1;
 
 	textBox.setMarginV(10, 10);
 	textBox.setMarginH(10, 10);
-
-	textBox.y = 200;
-	textBox.x = 150;
 
 	
 	toto = {};
@@ -55,12 +81,17 @@ BasicGame.Game.prototype.create = function(){
 	tata.name = "Lucy";
 	tata.dialogueAlign = "right";
 
-	sentence = new Sentence(this.game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_ANGRY, toto);
+	sentence = new Sentence(this.game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, toto);
+	sentence0 = new Sentence(this.game, "Utilise les flêches droite et gauche pour te déplacer !", MOOD_NORMAL);
 
-	textBox.addSentence(sentence);
+	sentence0.phaserText.align = "center";
+
+	textBox.fitSentenceToTextBox = false;
+	textBox.addSentence(sentence0);
 	textBox.fitHeightToSentence(0);
 	textBox.fitDurationToSentence(0, 2000);
-
+	textBox.fitSentenceToTextBox = true;
+	textBox.fixedToCamera = true;
 	
 	
 /*	sentence2 = new Sentence(this.game, "Ca marche !", MOOD_JOYFUL, null, 10);
@@ -101,8 +132,11 @@ BasicGame.Game.prototype.create = function(){
 	sentence8 = new Sentence(this.game, "Ou avec d'autres personnes !", MOOD_JOYFUL, tata);
 
 	sentence9 = new Sentence(this.game, "Hey, salut sœurette !", MOOD_SAD, toto);
+	
+	sentence10 = new Sentence(this.game, "Un jour, je vous aurai !", MOOD_NORMAL, "???");
 
 	dialogueBox = new DialogueBox(this.game, "ground2", "ground", true, true);
+	dialogueBox.fixedToCamera = true;
 
 	dialogueBox.textBox.setMarginV(5, 5);
 	dialogueBox.textBox.setMarginH(10, 10);
@@ -116,7 +150,8 @@ BasicGame.Game.prototype.create = function(){
 	dialogueBox.textBox.addSentence(sentence6, 500);
 	dialogueBox.textBox.addSentence(sentence7, 500);
 	dialogueBox.textBox.addSentence(sentence8, 500);
-	dialogueBox.textBox.addSentence(sentence9);
+	dialogueBox.textBox.addSentence(sentence9, 500);
+	dialogueBox.textBox.addSentence(sentence10);
 
 	dialogueBox.textBox.createAnimation("toggle", "both", "both", 2000, 1,
 										Phaser.Easing.Cubic.InOut);
@@ -135,36 +170,45 @@ BasicGame.Game.prototype.create = function(){
 	// The stat belongs to totoMode NOT toto !
 	// To get toto's stat, you need to add each activated modes' stat.
 	// (When Mode is completely implemented...)
-	totoMode.addStat("health", "Health", STAT_NO_LINK,  100000, 100000);
+	totoMode.addStat("health", "Health", STAT_NO_LINK,  40);
 
 	totoMode.addStat("level", "Level", STAT_NO_MAXSTAT, 1, -1, 1, 99);
 	
 	totoMode.addStat("endurance", "Endurance", STAT_PERCENT_LINK, 0);
 
 	totoMode.addStat("special", "TOTO !", STAT_NO_LINK, 0, 100);
+	totoMode.profilSprite = "perso";
 
 
 	// The same as :
 	// totoMode.health.growth.addTerme([[totoMode.getStat, totoMode, ["level"]], 10]);
 
-	totoMode.health.growth.addTerme([["_value", totoMode.level], 10]);
+	//totoMode.health.growth.addTerme([["_value", totoMode.level], 10]);
 	/*totoMode.health.growth.addTerme([["_value", totoMode.level], 10], -1, -1,
 									[["_value", totoMode.level], 2]);*/
 
-	totoMode.health.growth.addTerme([[totoMode.getStatMax, totoMode,
-									  ["endurance"]], 3]);
+	/*totoMode.health.growth.addTerme([[totoMode.getStatMax, totoMode,
+									  ["endurance"]], 3]);*/
 
-	totoMode.level.onUpdate.add(totoMode.health.growth.reCompute,
-								totoMode.health.growth);
+	function healthGrowth(){
+		var basicValue = this.getBasic();
+		var levelPart = this.entity.level.get() * 10;
+		var endurancePart = this.entity.endurance.getMax() * 3;
+		
+		return basicValue + levelPart + endurancePart;
+	}
 
-	totoMode.endurance.onUpdateMax.add(totoMode.health.growth.reCompute,
-									   totoMode.health.growth);
+	totoMode.health.setGrowth(healthGrowth, totoMode.health, []);
 
+	totoMode.level.onUpdate.add(totoMode.health.grow,
+								totoMode.health);
 
+	totoMode.endurance.onUpdateMax.add(totoMode.health.grow,
+									   totoMode.health);
 
 	totoMode.engage();
-	totoMode.level.add(10);
 	totoMode.endurance.addMax(50);
+	totoMode.level.add(10);
 	
 
 	// WIZARDRY ! totoMode.health.maxValue has changed too !
@@ -172,35 +216,85 @@ BasicGame.Game.prototype.create = function(){
 
 	console.log(totoMode);
 	
-	healthBar = new MonoGauge(this.game, 50, 100, 100, 10, totoMode.health,
-							  H_RED, H_BLACK,
-							  "", "");
-	healthBar.upperSprite.alpha = 0.5;
-	healthBar.increaseSpeed = 0.25;
-	healthBar.increaseAlpha = 0.2;
+	healthBar = new MonoGauge(this.game, -25 + perso.width / 2, -10, 50, 5, totoMode.health,
+							  H_RED, H_BLACK);
+	perso.addChild(healthBar);
+	/*healthBar.increaseSpeed = 0.33;
+	healthBar.increaseAlpha = 0.4;*/
 
-	healthBar.decreaseSpeed = 0.5;
+	healthBar.allowIncreaseAnimation = false;
+	healthBar.allowDecreaseAnimation = false;
+	healthBar.valueDisplayType = GAUGE_NONE;
+	healthBar.updateValueText();
+
+	/*healthBar.decreaseSpeed = 0.1;
 	healthBar.decreaseAlpha = 0.4;
-	healthBar.decreaseColor = H_RED;
+	healthBar.decreaseColor = H_RED;*/
 
-	totoMode.health.addMax(1000);
+//	healthBar.visible = false;
+	//totoMode.health.subtract(100000);
+	
 	//totoMode.health.add(1000000);
-	//totoMode.health.subtract(10000);
+
+	status_UI = new Status_UI(this.game, totoMode, 25, 10);
+	status_UI.healthBar.valueDisplayType = GAUGE_NONE;
+	status_UI.healthBar.updateValueText();
+	status_UI.specialBar.valueDisplayType = GAUGE_NONE;
+	status_UI.specialBar.updateValueText();
+	status_UI.scale.setTo(0.5);
+	
+	status_UI_2 = new Status_UI(this.game, totoMode, 25, ground.y + 20);
+//	status_UI_2.scale.setTo(0.75);
+
+	this.game.world.bringToTop(dialogueBox);
+
+	this.game.camera.follow(perso);
+	
 }
 var i = 0;
 BasicGame.Game.prototype.update = function(){
 	i++;
+
+	/*if (dialogueBox.textBox.displayState != TEXTBOX_CLOSED){
+		status_UI.visible = false;
+		status_UI_2.visible = false;
+	}
+	else{
+		status_UI.visible = true;
+		status_UI_2.visible = true;
+	}*/
+
+	fps.text = "FPS : " + this.game.time.fps.toString();
 	
-
 	if (!(i%45)){
-		totoMode.health.subtract(15000);
+		totoMode.health.subtract(25);
+		totoMode.special.add(5);
 	}
-
+	
 	if (!(i%60)){
-		if(totoMode.health.get() != 0){
-			totoMode.health.add(15000);
-		}
+		totoMode.health.add(55);
+		totoMode.special.add(10);
 	}
 
-	//dialogueBox.update();
+	if (!(i%4)){
+		totoMode.special.subtract(1);
+	}
+
+	if (!(i%150)){
+		totoMode.level.add(5);
+	}
+
+	if (!(i%200)){
+		totoMode.endurance.addMax(5);
+	}
+
+	if (this.game.input.keyboard.isDown(Phaser.Keyboard.LEFT)){
+		perso.x -= 5;
+		sky.tilePosition.x += 1;
+	}
+
+	if (this.game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)){
+		perso.x += 5;
+		sky.tilePosition.x -= 1;
+	}
 }

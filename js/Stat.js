@@ -48,24 +48,26 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
 
     this.factor = 1;
 
-	this.growth = new Formula(entity); // Formula,
-	                                   // "What is the equation of this._maxValue ?"
+	function basicGrowth(){
+		return this._basicValue;
+	}
 
-	this.growth.addTerme(this._basicValue); // By default, this._basicValue is there.
-
-	this.growth.result = this._basicValue; // No need to call growth.compute()... 
-
-	this.growth.onCompute.add(this._applyGrowth, this); // When you compute this.growth,
-	                                                    // change this._maxValue.
+	this.growth = [basicGrowth, null, [this]];
+	this.growthResult = this._basicValue;
 
     this.onUpdate = new Phaser.Signal(); // (add/subtract/set)
+	this.onUpdateLink = new Phaser.Signal();
     this.onUpdateBasic = new Phaser.Signal(); // (add/subtrac/setBasic)
 
-	this.onUpdateBasic.add(this.growth.reCompute,
-						   this.growth); // If this._basicValue changes,
-	                                     // recompute this.growth.
-	                                     // You need to do that for each terme of
-	                                     // this.growth.
+	this.onUpdateBasic.add(this.grow,
+						   this); // If this._basicValue changes,
+	                              // recompute this.growth.
+	                              // You need to do that for each terme of
+	                              // this.growth.
+
+	this.onGrowth = new Phaser.Signal();
+	
+	this.onGrowth.add(this._applyGrowth, this);
 }
 
 // Add value to this._value.
@@ -73,15 +75,15 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
 //                   value = 0.5 <=> value = 0.5 * percentageFrom.
 // By default, percentageFrom = this._maxValue, if there's any this._value otherwhise.
 // Dispatch this.onUpdate. (Even if this._value is the same)
-Stat.prototype.add = function (value, isPercentage, percentageFrom){
-    this._addTo(1, value, isPercentage, percentageFrom);
+Stat.prototype.add = function (value, isPercentage, percentageFrom, updateType){
+    this._addTo(1, value, isPercentage, percentageFrom, updateType);
 };
 
 // Add value to this._basicValue.
 // Same as above.
 // Dispatch this.onUpdateBasic. (Even if this._basicValue is the same)
 Stat.prototype.addBasic = function(value, isPercentage, percentageFrom){
-    this._addTo(0, value, isPercentage, percentageFrom);
+    this._addTo(0, value, isPercentage, percentageFrom, updateType);
 }
 
 // Add value to this._maxValue.
@@ -95,7 +97,7 @@ Stat.prototype.addMax = function(value, isPercentage, percentageFrom){
     this._addTo(2, value, isPercentage, percentageFrom);
 }
 
-Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom){
+Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom, updateType){
     if (typeof(value) != "number"){
         return;
     }
@@ -125,15 +127,32 @@ Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom){
         var oldValue = this._value;
 
         if (this._upsideDown){
-            this._value = getFinalValue(this._value, value,
-                                        this._maxValue, this._max);
+			if (this._link == STAT_NO_MAXSTAT){
+				this._value = getFinalValue(this._value, value,
+											this._min, this._max);
+			}
+			else{
+				this._value = getFinalValue(this._value, value,
+											this._maxValue, this._max);
+			}
         }
         else{
-            this._value = getFinalValue(this._value, value,
-                                        this._min, this._maxValue);
+			if (this._link == STAT_NO_MAXSTAT){
+				this._value = getFinalValue(this._value, value,
+											this._min, this._max);
+			}
+			else{
+				this._value = getFinalValue(this._value, value,
+											this._min, this._maxValue);
+			}
         }
 
-        this.onUpdate.dispatch(this, oldValue, this._value);
+		if (!booleanable(updateType) || !updateType){
+			this.onUpdate.dispatch(this, oldValue, this._value);
+		}
+		else{
+			this.onUpdateLink.dispatch(this, oldValue, this._value);
+		}
     }
     else if ((type == 2) &&
              (this._link != STAT_NO_MAXSTAT)){
@@ -148,8 +167,8 @@ Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom){
 
 // Subtract value from this._value.
 // Do the same as add but negate the value beforehand.
-Stat.prototype.subtract = function(value, isPercentage, percentageFrom){
-    this.add(-1 * value, isPercentage, percentageFrom);
+Stat.prototype.subtract = function(value, isPercentage, percentageFrom, updateType){
+    this.add(-1 * value, isPercentage, percentageFrom, updateType);
 }
 
 // Subtract value to this._maxValue.
@@ -211,8 +230,14 @@ Stat.prototype._canAddTo = function(type, value, isPercentage, percentageFrom){
     }
     else if (type == 1){
         if (this._upsideDown){
-            return getFinalValue(this._value, value,
-                                 this._maxValue, this._max);
+			if (this._link == STAT_NO_MAXSTAT){
+				return getFinalValue(this._value, value,
+									 this._min, this._max);
+			}
+			else{
+				return getFinalValue(this._value, value,
+									 this._maxValue, this._max);
+			}
         }
         else{
             return getFinalValue(this._value, value,
@@ -262,26 +287,26 @@ Stat.prototype._applyLink = function(self, oldMaxValue, newMaxValue){
     case STAT_NO_LINK:
         if (this._upsideDown){
             if (this._value < newMaxValue){
-                this.set(newMaxValue);
+                this.set(newMaxValue, 0, undefined, 1);
             }
         }
         else{
             if (this._value > newMaxValue){
-                this.set(newMaxValue);
+                this.set(newMaxValue, 0, undefined, 1);
             }
         }
         break;
 
     case STAT_BRUT_LINK:
-        this.add(newMaxValue - oldMaxValue);
+        this.add(newMaxValue - oldMaxValue, 0, undefined, 1);
         break;
 
     case STAT_PERCENT_LINK:
-		(oldMaxValue == 0) ? this.set(1, 1) : this.set(this._value / oldMaxValue * newMaxValue);
+		(oldMaxValue == 0) ? this.set(1, 1, undefined, 1) : this.set(this._value / oldMaxValue * newMaxValue, 0, undefined, 1);
         break;
 
     case STAT_EQUAL_LINK:
-        this.set(newMaxValue);
+        this.set(newMaxValue, 0, undefined, 1);
         break;
 
     default:
@@ -291,8 +316,8 @@ Stat.prototype._applyLink = function(self, oldMaxValue, newMaxValue){
 
 // Set this._value to value.
 // Dispatch this.onUpdate. (Even if this._value is the same)
-Stat.prototype.set = function(value, isPercentage, percentageFrom){
-    this._setTo(1, value, isPercentage, percentageFrom);
+Stat.prototype.set = function(value, isPercentage, percentageFrom, updateType){
+    this._setTo(1, value, isPercentage, percentageFrom, updateType);
 }
 
 // Set this._maxValue to value.
@@ -308,7 +333,7 @@ Stat.prototype.setBasic = function(value, isPercentage, percentageFrom){
 }
 
 
-Stat.prototype._setTo = function(type, value, isPercentage, percentageFrom){
+Stat.prototype._setTo = function(type, value, isPercentage, percentageFrom, updateType){
     if (type >= 3){
         return;
     }
@@ -359,7 +384,12 @@ Stat.prototype._setTo = function(type, value, isPercentage, percentageFrom){
 			
             this._value = value;
 			
-            this.onUpdate.dispatch(this, oldValue, this._value);
+			if (!booleanable(updateType) || !updateType){
+				this.onUpdate.dispatch(this, oldValue, this._value);
+			}
+			else{
+				this.onUpdateLink.dispatch(this, oldValue, this._value);
+			}
         }
         else{
 			value = getFinalValue(value, this._min, this._maxValue);
@@ -368,7 +398,12 @@ Stat.prototype._setTo = function(type, value, isPercentage, percentageFrom){
 			
             this._value = value;
 			
-            this.onUpdate.dispatch(this, oldValue, this._value);
+			if (!booleanable(updateType) || !updateType){
+				this.onUpdate.dispatch(this, oldValue, this._value);
+			}
+			else{
+				this.onUpdateLink.dispatch(this, oldValue, this._value);
+			}
         }
     }
     else if (type == 2){
@@ -477,10 +512,20 @@ Stat.prototype.getMax = function(inPercentage, relativeTo){
 
     if (booleanable(inPercentage) &&
         inPercentage){
-        return this._maxValue / relativeTo;
+		if (this._link == STAT_NO_MAXSTAT){
+			return this._max / relativeTo;
+		}
+		else{
+			return this._maxValue / relativeTo;
+		}
     }
     else{
-        return this._maxValue;
+		if (this._link == STAT_NO_MAXSTAT){
+			return this._max;
+		}
+		else{
+			return this._maxValue;
+		}
     }
 }
 
@@ -502,12 +547,43 @@ Stat.prototype.getBasic = function(inPercentage, relativeTo){
 
 // Called when this.growth.compute() is called.
 // Set this._maxValue to this.growth.result.
-Stat.prototype._applyGrowth = function(growth){
+Stat.prototype._applyGrowth = function(){
 	if (this._link != STAT_NO_MAXSTAT){
-		this.setMax(growth.result);
+		this.setMax(this.growthResult);
 	}
 	else{
-		this.set(growth.result);
+		this.set(this.growthResult);
+	}
+}
+
+Stat.prototype.grow = function(self, oldValue, newValue){
+	if (typeof(oldValue) != "undefined" &&
+		(oldValue == newValue)){
+		return;
+	}
+
+	var growthFunction = this.growth[0];
+	var growthContext = this.growth[1];
+	var growthArgs = this.growth[2];
+	
+	this.growthResult = growthFunction.apply(growthContext, growthArgs);
+
+	this.onGrowth.dispatch(this, this.growth, this.growthResult);
+}
+
+Stat.prototype.setGrowth = function(growthFunction, context, args, toGrow){
+	if (!booleanable(toGrow)){
+		toGrow = false;
+	}
+
+	var allArgs = args.unshift(this);
+
+	context = (context == -1) ? this : context;
+
+	this.growth = [growthFunction, context, args];
+
+	if (toGrow){
+		this.grow();
 	}
 }
 
@@ -518,7 +594,6 @@ Stat.prototype.kill = function(){
 Stat.prototype.destroy = function(){
 	this._del();
 
-	this.growth.kill();
 	this.growth = null;
 }
 
@@ -535,6 +610,9 @@ Stat.prototype._del = function(){
 		this.onUpdateMax.dispose();
 		this.onUpdateMax = null;
 	}
+
+	this.onGrowth.dispose();
+	this.onGrowth = null;
 }
 /******************************************************************************/
 /* Stat */

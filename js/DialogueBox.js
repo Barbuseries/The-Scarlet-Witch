@@ -18,6 +18,8 @@ var DialogueBox = function(game, outerSprite, innerSprite, egoist, enableInput){
     var speakerName = new Sentence(game, "", MOOD_NORMAL, null, -1, 24);
     speakerName.setTextSpeedFactor(-1);
     speakerName.phaserText.align = "doublecenter";
+	speakerName.phaserText.fontWeight = "bold";
+	this.speakerBox.fitSentenceToTextBox = false;
 
     this.speakerBox.addSentence(speakerName);
 
@@ -130,7 +132,7 @@ DialogueBox.prototype._initSpeakerName = function(){
         }
     }
     else{
-        this.speakerBox.visible = false;
+        this.hideSpeakerBox();
 
         this.speakerBox.allSentences[0].wholeText = "";
 

@@ -323,8 +323,23 @@ Gauge.prototype.pulse = function(deltaX, deltaY, goToDelay,
 }
 */
 
+var GAUGE_NONE = 0;
+var GAUGE_BRUT = 1;
+var GAUGE_PERCENT = 2;
+var GAUGE_FACTOR = 3;
+
+
 var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 					  orientation){
+
+	if ((typeof(belowSprite) === "undefined")){
+		belowSprite = "";
+	}
+
+	if (typeof(upperSprite) === "undefined"){
+		upperSprite = "";
+	}
+
 	Phaser.Group.call(this, game);
 	
 	this.x = x;
@@ -338,12 +353,26 @@ var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 	this.belowSprite = game.add.sprite(0, 0, belowSprite);
 	this.belowSprite.width = width;
 	this.belowSprite.height = height;
+
+	this.valueDisplayType = GAUGE_BRUT;
+	this.valueText = game.add.text(width/2, height/2, stat.get().toString() +
+								   " / " + stat.getMax().toString());
+	this.valueText.fontSize = height;
+	this.valueText.font = "Arial";
+	this.valueText.fill = WHITE;
+	this.valueText.stroke = BLACK;
+	this.valueText.strokeThickness = 3;
+	this.valueText.anchor.setTo(0.5, 0.4);
 	
 	this.upperSprite = game.add.sprite(0, 0, upperSprite);
 	this.upperSprite.width = width;
 	this.upperSprite.height = height;
+	
+	this.upperSprite.inputEnabled = true;
+	this.upperSprite.events.onInputDown.add(this.nextValueDisplayType, this);
 
 	this.add(this.belowSprite);
+	this.add(this.valueText);
 	this.add(this.upperSprite);
 
 	this.currentValue = stat.get();
@@ -352,6 +381,9 @@ var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 
 	stat.onUpdate.add(this.updateGauge, this);
 	stat.onUpdateMax.add(this.resizeGauge, this);
+
+	stat.onUpdate.add(this.updateValueText, this);
+	stat.onUpdateMax.add(this.updateValueText, this);
 
 	this.updateAnimation = null;
 	this.updateAnimationType = -1;
@@ -367,6 +399,9 @@ var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 	this.additionalFill = null;
 
 	this.allowResize = false;
+
+	this.allowIncreaseAnimation = true;
+	this.allowDecreaseAnimation = true;
 
 	this.fill = null;
 	this.backgroundFill = null;
@@ -386,11 +421,37 @@ Gauge.prototype.update = function(){
 	Phaser.Group.prototype.update.call(this);
 }
 
+Gauge.prototype.updateValueText = function(){
+	if (this.valueDisplayType == GAUGE_BRUT){
+		// TODO: Substitue "000" for K.
+		this.valueText.text = this.stat.get().toString() +
+			" / " + this.stat.getMax().toString();
+	}
+	else if (this.valueDisplayType == GAUGE_PERCENT){
+		this.valueText.text = (this.stat.get(1) * 100).toFixed(2).toString() + "%";
+	}
+	else if (this.valueDisplayType == GAUGE_FACTOR){
+		this.valueText.text = this.stat.get(1).toFixed(2).toString();
+	}
+	else{
+		this.valueText.text = "";
+	}
+}
+
+Gauge.prototype.nextValueDisplayType = function(){
+	this.valueDisplayType++;
+
+	this.valueDisplayType %= 4;
+
+	this.updateValueText();
+}
+
 Gauge.prototype.resizeGauge = function(stat, oldMaxValue, newMaxValue){
 	if (this.allowResize){
-		this.belowSprite.width *= newMaxValue / oldMaxValue;
-		this.upperSprite.width *= newMaxValue / oldMaxValue;
+		
 	}
+
+	this.fill.scale.x = this.currentValue / newMaxValue;
 }
 
 Gauge.prototype.stopAnimation = function(type){
@@ -408,6 +469,8 @@ Gauge.prototype._del = function(){
 
 	this.stat.onUpdate.remove(this.updateGauge);
 	this.stat.onUpdateMax.remove(this.resizeGauge);
+	this.stat.onUpdate.remove(this.updateValueText);
+	this.stat.onUpdateMax.remove(this.updateValueText);
 }
 
 
@@ -422,13 +485,14 @@ var MonoGauge = function(game, x, y, width, height, stat, fillColor, backgroundC
 	this.fill.scale.x = this.currentValue / stat.getMax();
 
 	this.additionalFill = createRectangle(game, 0, 0,
-										  this.width, this.height,
+										  width, height,
 										  H_WHITE);
 	this.additionalFill.scale.x = 0;
 
 	this.add(this.backgroundFill);
 	this.add(this.fill);
 	this.add(this.additionalFill);
+	this.bringToTop(this.valueText);
 	this.bringToTop(this.upperSprite);
 }
 
@@ -441,11 +505,13 @@ MonoGauge.prototype.updateGauge = function(stat, oldValue, newValue){
 		
 		if (this.currentValue != newValue){
 
-			if (this.currentValue < newValue){
+			if ((this.currentValue < newValue) &&
+				this.allowIncreaseAnimation){
 				this._createIncreaseTween(newValue);
 				this.updateAnimation.start();
 			}
-			else if (this.currentValue > newValue){
+			else if ((this.currentValue > newValue) &&
+					 this.allowDecreaseAnimation){
 				this._createDecreaseTween(newValue);
 				this.updateAnimation.start();
 			}
@@ -454,6 +520,9 @@ MonoGauge.prototype.updateGauge = function(stat, oldValue, newValue){
 					this.updateAnimation.stop();
 					this.updateAnimation = null;
 				}
+
+				this.currentValue = newValue;
+				this.fill.scale.x = this.currentValue / this.stat.getMax();				
 			}
 		}
 	}
@@ -474,7 +543,8 @@ MonoGauge.prototype._createIncreaseTween = function(newValue){
 	var duration = Math.abs(1000 * (this.currentValue - newValue) / this.stat.getMax());
 	duration /= this.increaseSpeed;
 
-	this.additionalFill.scale.x = -(newValue - this.currentValue) / this.stat.getMax();		
+	this.additionalFill.scale.x = -(newValue - this.currentValue) / this.stat.getMax();
+
 	this.additionalFill.position.x = (this.currentValue / this.stat.getMax() - this.additionalFill.scale.x) * this.width;
 				
 	this.additionalFill.tint = this.increaseColor;
@@ -486,6 +556,7 @@ MonoGauge.prototype._createIncreaseTween = function(newValue){
 	
 	function updateCurrentValue(){
 		this.fill.scale.x = this.additionalFill.position.x / this.width + this.additionalFill.scale.x;
+
 		this.currentValue = this.fill.scale.x * this.stat.getMax();
 	}
 
@@ -498,7 +569,7 @@ MonoGauge.prototype._createIncreaseTween = function(newValue){
 MonoGauge.prototype._stopIncreaseTween = function(sameType){
 	if (booleanable(sameType) && sameType){
 		if (this.updateAnimation != null){
-			this.updateAnimation.stop(true);
+			this.updateAnimation.stop();
 			this.updateAnimation = null;
 		}
 
