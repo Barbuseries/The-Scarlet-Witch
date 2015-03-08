@@ -1,3 +1,5 @@
+// TODO:  kill() and destroy() !
+
 /********/
 /* Mode */
 /******************************************************************************/
@@ -39,8 +41,8 @@ Mode.prototype.addStat = function(statName, name, link, basicValue, basicMaxValu
         this[statName] = new Stat(this, name, link, basicValue, basicMaxValue, min, max,
                                   upsideDown);
 		
-		this.onEngage.add(this[statName].growth.compute,
-						  this[statName].growth);
+		this.onEngage.add(this[statName].grow,
+						  this[statName]);
     }
 
 }
