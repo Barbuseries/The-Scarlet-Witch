@@ -15,6 +15,7 @@ var H_BLUE = 0x0000ff;
 var H_YELLOW = 0xffff00;
 var H_PINK = 0xff00ff;
 var H_ORANGE = 0xff9900;
+var H_GREY = 0x99999;
 
 var FPS = 60.0;
 
