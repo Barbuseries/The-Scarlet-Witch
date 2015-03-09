@@ -130,6 +130,12 @@ DialogueBox.prototype._initSpeakerName = function(){
 				break;
 			}
         }
+
+		// If the current sentence has a mood, copy the effect on the textBox
+		// to speakerBox.
+		speakerName.mood = currentSentence.mood;
+
+		this.speakerBox.handleMood();
     }
     else{
         this.hideSpeakerBox();

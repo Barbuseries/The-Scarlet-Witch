@@ -221,6 +221,8 @@ var TextBox = function(game, x, y, width, height, outerSprite, innerSprite, egoi
     this.toggleTimer = null;
     this.closeTimer = null;
 
+	this.moodAnimation = null;
+
     this.onStartToggle = new Phaser.Signal();
     this.onEndToggle = new Phaser.Signal();
 
@@ -1238,14 +1240,17 @@ TextBox.prototype.handleMood = function(){
     var currentSentence = this.allSentences[this.indexCurrentSentence];
     var tween = null;
 
+	if (this.moodAnimation != null){
+		this.moodAnimation.stop();
+		this.moodAnimation = null;
+	}
+
     switch(currentSentence.mood){
     case MOOD_ANGRY:
-        this.toto = this.y;
         tween = this.game.add.tween(this)
-            .to({ y: this.y -10}, 50,
+            .to({ y: this.y - 10}, 50,
                 Phaser.Easing.Linear.None, false, 0, 5, true);
 
-        currentSentence.moodAnimation = tween;
         break;
     case MOOD_DYING:
         break;
@@ -1254,8 +1259,8 @@ TextBox.prototype.handleMood = function(){
     }
 
     this.moodAnimation = tween;
-
-    if (tween != null){
+	
+    if (this.moodAnimation != null){
         this.moodAnimation.start();
     }
 }
@@ -1312,6 +1317,35 @@ TextBox.prototype._del = function(){
 	
     this.onStartClose.dispose();
     this.onEndClose.dispose();
+
+	if (this.toggleAnimation != null){
+		this.toggleAnimation.stop();
+		this.toggleAnimation = null;
+	}
+
+	if (this.closeAnimation != null){
+		this.closeAnimation.stop();
+		this.closeAnimation = null;
+	}
+
+	if (this.moodAnimation != null){
+		this.moodAnimation.stop();
+		this.moodAnimation = null;
+	}
+
+	if (this.toggleTimer != null){
+		this.toggleTimer.stop();
+		this.toggleTimer = null;
+	}
+
+	if (this.closeTimer != null){
+		this.closeTimer = null;
+	}
+
+	if (this.timerNextSentence != null){
+		this.timerNextSentence.stop();
+		this.timerNextSentence = null;
+	}
 	
 }
 /******************************************************************************/

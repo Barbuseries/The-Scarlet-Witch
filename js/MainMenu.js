@@ -70,9 +70,8 @@ BasicGame.MainMenu.prototype.createOption = function(y, string, onClickFunction,
 	var newOption = this.game.add.text(this.game.camera.width / 2, y,
 									   string, style);
 	
-	newOption.fontWeight = 'bold';
+	newOption.fontWeight = "bold";
 
-    newOption.stroke = '#000000';
     newOption.strokeThickness = 6;
 
 	newOption.anchor.setTo(0.5);
@@ -81,12 +80,14 @@ BasicGame.MainMenu.prototype.createOption = function(y, string, onClickFunction,
 
 	newOption.events.onInputOver.add(function(){
 		this.scale.setTo(1.5);
-		this.fill = "#ffff33";
+		//this.fill = "#ffff33";
+		this.stroke = '#ff0000';
 	}, newOption);
 
 	newOption.events.onInputOut.add(function(){
 		this.scale.setTo(1)
 		this.fill = "#ffffff";
+		this.stroke = '#000000';
 	}, newOption);
 
 	if (typeof(onClickFunction) != "undefined"){

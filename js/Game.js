@@ -81,15 +81,16 @@ BasicGame.Game.prototype.create = function(){
 	tata.name = "Lucy";
 	tata.dialogueAlign = "right";
 
-	sentence = new Sentence(this.game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_NORMAL, toto);
+	sentence = new Sentence(this.game, "Il était une fois, dans un pays très, très, très, très, très, très, très, très, très, très, très, très, très, vide... Un jeu qui peut maintenant avoir des boîtes de dialogue.\nMagnifique, n'est-ce pas ?\nQui c'est qui se charge de faire tous les dialogues ?\nC'est pas moi !", MOOD_ANGRY, toto);
 	sentence0 = new Sentence(this.game, "Utilise les flêches droite et gauche pour te déplacer !", MOOD_NORMAL);
 
-	sentence0.phaserText.align = "center";
+//	sentence0.phaserText.align = "center";
 
 	textBox.fitSentenceToTextBox = false;
+	textBox.addSentence(sentence);
 	textBox.addSentence(sentence0);
 	textBox.fitHeightToSentence(0);
-	textBox.fitDurationToSentence(0, 2000);
+//	textBox.fitDurationToSentence(0, 2000);
 	textBox.fitSentenceToTextBox = true;
 	textBox.fixedToCamera = true;
 	
@@ -123,7 +124,7 @@ BasicGame.Game.prototype.create = function(){
 	//textBox.toggle();
 	
 	sentence6 = new Sentence(this.game, "La boîte de dialogue est fonctionnelle !",
-							 MOOD_NORMAL, toto);
+							 MOOD_ANGRY, toto);
 	textBox.toggle();
 
 	sentence7 = new Sentence(this.game, "Maintenant, je peux me parler à moi même !",
@@ -219,6 +220,101 @@ BasicGame.Game.prototype.create = function(){
 	healthBar = new MonoGauge(this.game, -25 + perso.width / 2, -10, 50, 5, totoMode.health,
 							  H_RED, H_BLACK);
 	perso.addChild(healthBar);
+
+	perso.goLeft = function(input){
+		if (input.isDown){
+			perso.x -= 5;
+		}
+	}
+
+	perso.goRight = function(input){
+		if (input.isDown){
+			perso.x += 5;
+		}
+	}
+
+	perso.goUp = function(input){
+		if (input.isDown){
+			perso.y -= 5;
+		}
+	}
+
+	perso.goDown = function(input){
+		if (input.isDown){
+			perso.y += 5;
+		}
+	}
+
+	perso.switchTarget = function(input){
+		input.manager.setTarget(healthBar);
+	}
+
+	perso.changeKeyCodes = function(input){
+		var control = input.manager;
+		
+		control.rebindInput("leftInput", Phaser.Keyboard.J);
+	}
+
+	perso.rotate = function(input){
+		if (input.isDown){
+			perso.angle += 5;
+		}
+		else{
+			perso.angle -= 5;
+		}
+	}
+
+	healthBar.goLeft = function(input){
+		if (input.isDown){
+			healthBar.x -= 5;
+		}
+	}
+
+	healthBar.goRight = function(input){
+		if (input.isDown){
+			healthBar.x += 5;
+		}
+	}
+
+	healthBar.goUp = function(input){
+		if (input.isDown){
+			healthBar.angle -= 5;
+		}
+	}
+
+	healthBar.goDown = function(input){
+		if (input.isDown){
+			healthBar.angle += 5;
+		}
+	}
+
+	healthBar.switchTarget = function(input){
+		input.manager.setTarget(perso);
+	}
+
+	healthBar.changeKeyCodes = function(input){
+		var control = input.manager;
+
+		control.swapInputs("upInput", "downInput");
+		
+	}
+
+	perso.control = new ControlManager(this.game, CONTROL_KEYBOARD, perso);
+	//perso.control.target = healthBar;
+
+	perso.control.bindInput("leftInput", Phaser.Keyboard.Q, "goLeft");
+	perso.control.bindInput("rightInput", Phaser.Keyboard.D, "goRight");
+	perso.control.bindInput("upInput", Phaser.Keyboard.Z, "goUp");
+	perso.control.bindInput("downInput", Phaser.Keyboard.S, "goDown");
+	
+	perso.control.bindInput("switchInput", Phaser.Keyboard.TAB, "switchTarget",
+							"down");
+	perso.control.bindInput("changeKey", Phaser.Keyboard.SPACEBAR, "changeKeyCodes",
+							"down");
+	
+	perso.control.bindInput("rotationInput", Phaser.Keyboard.Z, "rotate");
+	//perso.control.leftInput.enabled = false;
+
 	/*healthBar.increaseSpeed = 0.33;
 	healthBar.increaseAlpha = 0.4;*/
 
@@ -288,7 +384,7 @@ BasicGame.Game.prototype.update = function(){
 		totoMode.endurance.addMax(5);
 	}
 
-	if (this.game.input.keyboard.isDown(Phaser.Keyboard.LEFT)){
+	/*if (this.game.input.keyboard.isDown(Phaser.Keyboard.LEFT)){
 		perso.x -= 5;
 		sky.tilePosition.x += 1;
 	}
@@ -296,5 +392,7 @@ BasicGame.Game.prototype.update = function(){
 	if (this.game.input.keyboard.isDown(Phaser.Keyboard.RIGHT)){
 		perso.x += 5;
 		sky.tilePosition.x -= 1;
-	}
+	}*/
+	
+	perso.control.update();
 }
