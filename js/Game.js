@@ -55,6 +55,9 @@ BasicGame.Game.prototype.create = function(){
 
 	perso = this.game.add.sprite(this.game.camera.width / 2, ground.y - 30,
 								 "perso");
+	lucy = this.game.add.sprite(0, ground.y - 64, "lucy");
+	lucy.animations.add("walkLeft", [118, 119, 120, 121, 122, 123, 124, 125], 15);
+	lucy.animations.add("walkRight", [144, 145, 146, 147, 148, 149, 150, 151], 15);
 
 	uiBackground = this.game.add.sprite(0, ground.y + 10, "ground");
 	uiBackground.tint = H_GREY;
@@ -221,98 +224,135 @@ BasicGame.Game.prototype.create = function(){
 							  H_RED, H_BLACK);
 	perso.addChild(healthBar);
 
-	perso.goLeft = function(input){
-		if (input.isDown){
-			perso.x -= 5;
+	lucy.goLeft = function(controlInput){
+		if (controlInput.input.isDown){
+			lucy.animations.play("walkLeft");
+			lucy.x -= 4;
 		}
 	}
 
-	perso.goRight = function(input){
-		if (input.isDown){
-			perso.x += 5;
+	lucy.goRight = function(controlInput){
+		if (controlInput.input.isDown){
+			lucy.animations.play("walkRight");
+			lucy.x += 4;
 		}
 	}
 
-	perso.goUp = function(input){
-		if (input.isDown){
-			perso.y -= 5;
+	lucy.goUp = function(controlInput){
+		if (controlInput.input.isDown){
+			lucy.y -= 5;
 		}
 	}
 
-	perso.goDown = function(input){
-		if (input.isDown){
-			perso.y += 5;
+	lucy.goDown = function(controlInput){
+		if (controlInput.input.isDown){
+			lucy.y += 5;
 		}
 	}
 
-	perso.switchTarget = function(input){
-		input.manager.setTarget(healthBar);
+	lucy.switchTarget = function(controlInput){
+		lucy.animations.stop();
+		controlInput.manager.setTarget(healthBar);
 	}
 
-	perso.changeKeyCodes = function(input){
-		var control = input.manager;
+	lucy.changeKeyCodes = function(controlInput){
+		var control = controlInput.manager;
 		
-		control.rebindInput("leftInput", Phaser.Keyboard.J);
+		control.rebindInput("leftInput", Phaser.Keyboard.J, "rotate");
 	}
 
-	perso.rotate = function(input){
-		if (input.isDown){
-			perso.angle += 5;
+	lucy.disableInput = function(controlInput){
+		controlInput.manager.disable("movement");
+
+		controlInput.manager.rebindInput("ableInput", -1, "enableInput");
+	}
+
+	lucy.enableInput = function(controlInput){
+		controlInput.manager.enable("movement");
+
+		controlInput.manager.rebindInput("ableInput", -1, "disableInput");
+	}
+
+	lucy.rotate = function(controlInput){
+		if (controlInput.input.isDown){
+			lucy.angle += 5;
 		}
 		else{
-			perso.angle -= 5;
+			lucy.angle -= 5;
 		}
 	}
 
-	healthBar.goLeft = function(input){
-		if (input.isDown){
+	lucy.stopLeft = function(controlInput){
+		lucy.animations.stop();
+		lucy.frame = 117;
+	}
+
+	lucy.stopRight = function(controlInput){
+		lucy.animations.stop();
+		lucy.frame = 143;
+	}
+
+	healthBar.goLeft = function(controlInput){
+		if (controlInput.input.isDown){
 			healthBar.x -= 5;
 		}
 	}
 
-	healthBar.goRight = function(input){
-		if (input.isDown){
+	healthBar.goRight = function(controlInput){
+		if (controlInput.input.isDown){
 			healthBar.x += 5;
 		}
 	}
 
-	healthBar.goUp = function(input){
-		if (input.isDown){
+	healthBar.goUp = function(controlInput){
+		if (controlInput.input.isDown){
 			healthBar.angle -= 5;
 		}
 	}
 
-	healthBar.goDown = function(input){
-		if (input.isDown){
+	healthBar.goDown = function(controlInput){
+		if (controlInput.input.isDown){
 			healthBar.angle += 5;
 		}
 	}
 
-	healthBar.switchTarget = function(input){
-		input.manager.setTarget(perso);
+	healthBar.switchTarget = function(controlInput){
+		controlInput.manager.setTarget(lucy);
 	}
 
-	healthBar.changeKeyCodes = function(input){
-		var control = input.manager;
+	healthBar.changeKeyCodes = function(controlInput){
+		var control = controlInput.manager;
 
 		control.swapInputs("upInput", "downInput");
 		
 	}
 
-	perso.control = new ControlManager(this.game, CONTROL_KEYBOARD, perso);
+	lucy.control = new ControlManager(this.game, CONTROL_KEYBOARD, lucy);
 	//perso.control.target = healthBar;
 
-	perso.control.bindInput("leftInput", Phaser.Keyboard.Q, "goLeft");
-	perso.control.bindInput("rightInput", Phaser.Keyboard.D, "goRight");
-	perso.control.bindInput("upInput", Phaser.Keyboard.Z, "goUp");
-	perso.control.bindInput("downInput", Phaser.Keyboard.S, "goDown");
+	lucy.control.bindInput("leftInput", Phaser.Keyboard.Q, "goLeft", "update",
+						   "movement");
+	lucy.control.bindInput("rightInput", Phaser.Keyboard.D, "goRight", "update",
+						   "movement");
+	lucy.control.bindInput("upInput", Phaser.Keyboard.Z, "goUp", "update",
+						   "movement");
+	lucy.control.bindInput("downInput", Phaser.Keyboard.S, "goDown", "update",
+						   "movement");
+
+	lucy.control.bindInput("stopLeftInput", Phaser.Keyboard.Q, "stopLeft",
+						   "up");
+	lucy.control.bindInput("stopRightInput", Phaser.Keyboard.D, "stopRight",
+						  "up");
+
 	
-	perso.control.bindInput("switchInput", Phaser.Keyboard.TAB, "switchTarget",
+	lucy.control.bindInput("switchInput", Phaser.Keyboard.TAB, "switchTarget",
 							"down");
-	perso.control.bindInput("changeKey", Phaser.Keyboard.SPACEBAR, "changeKeyCodes",
+	lucy.control.bindInput("changeKey", Phaser.Keyboard.SPACEBAR, "changeKeyCodes",
 							"down");
+	lucy.control.bindInput("ableInput", Phaser.Keyboard.ALT, "disableInput",
+						   "down");
 	
-	perso.control.bindInput("rotationInput", Phaser.Keyboard.Z, "rotate");
+	//lucy.control.bindInput("rotationInput", Phaser.Keyboard.Z, "rotate");
 	//perso.control.leftInput.enabled = false;
 
 	/*healthBar.increaseSpeed = 0.33;
@@ -344,7 +384,7 @@ BasicGame.Game.prototype.create = function(){
 
 	this.game.world.bringToTop(dialogueBox);
 
-	this.game.camera.follow(perso);
+	this.game.camera.follow(lucy);
 	
 }
 var i = 0;
@@ -394,5 +434,5 @@ BasicGame.Game.prototype.update = function(){
 		sky.tilePosition.x -= 1;
 	}*/
 	
-	perso.control.update();
+	lucy.control.update();
 }
