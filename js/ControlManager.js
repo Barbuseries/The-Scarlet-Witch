@@ -4,6 +4,17 @@
 var CONTROL_KEYBOARD = 0;
 var CONTROL_GAMEPAD = 1;
 
+/* Store controls and handle their rebinding, swap, ...
+   type : (number) CONTROL_KEYBOARD => enable key binding.
+                   CONTROL_GAMEPAD => enable button binding and joystick handling.
+
+   target : (object) the object whose methods will be called.
+            By default, all controls share the same target as the ControlManager,
+			but you can specify it for each control.
+
+   pad : (string) which pad to use with CONTROL_GAMEPAD.
+         ("pad1", "pad2", "pad3" or "pad4")
+*/
 var ControlManager = function(game, type, target, pad){
 	this.game = game;
 
@@ -20,203 +31,116 @@ var ControlManager = function(game, type, target, pad){
 
 	this.type = type;
 	this.target = target;
+	this.allControls = {};
 
 	this.onUpdate = new Phaser.Signal();
 }
 
-// Call each input's function with "update" as signal.
-// "this" is not dispatched to a function binded to an input.
-// (Only if YOU decide to add a function to the onUpdate signal)
+// Call each control's function with "update" as signal.
+// "this" is not dispatched to a function binded to a control, it's the control itself.
 ControlManager.prototype.update = function(){
 	this.onUpdate.dispatch(this);
 }
 
 
-/* Bind an input to a function.
-   If ControlManager refers to a Keyboard, bind the input to a key.
-   Otherwhise, if it refers to a Gamepad, bind the input to a button.
+/* Bind a control to a function.
+   If ControlManager refers to a Keyboard, bind the control to a key.
+   Otherwhise, if it refers to a Gamepad, bind the control to a button.
    The function must be a method of target (otherwhise, it won't be called).
-   The function, when called will be sent as parameter the input (input.input refers
+   The function, when called will be sent as parameter the control (control.input refers
    to the key/button).
 
-   inputName : (string) name of the ControlManager attribut
-               => inputName = "leftInput" => this.leftInput refers to it.
+   controlName : (string) name of the control (controlManager.allControls.controlName
+                 will refer to the control)
+                 => inputName = "leftInput" => this.leftInput refers to it.
+				 If a control of the ControlManager has the same name, it will be
+				 replaced.
 
-   inputCode : (number) key or button code. (Phaser.Keyboard.LEFT, for example)
+   controlCode : (number) key or button code. (Phaser.Keyboard.LEFT, for example)
+                 => -1 : if controlName is already a control of the ControlManager,
+				 will copy the key.
 
    functionName : (string) name of the function to be binded.
-                  As the function is created in ControlManager, please refrain
-                  from using an existing one...(and don't name it the same as an input)
+                  => -1 : if controlName is already a control of the ControlManager,
+				  will copy the function.
 
    signal : (string) when to call the function.
             => "update" : call when ControlManager.update() is called.
 			=> "down" : call when input is down.
 			=> "up" : call when input is up.
+			=> -1 : if controlName is already a control of the ControlManager,
+				  will copy the signal.
 
    allTags : (string or array of strings) can be used to enable/disable
              a group of inputs.
+			 => -1 : if controlName is already a control of the ControlManager,
+			 will copy the tags.
+
+   target : (object) object whose method will be called for this specific control.
+            => -1 : if controlName is already a control of the ControlManager,
+			will copy the function.
 */
-ControlManager.prototype.bindInput = function(inputName, inputCode, functionName,
-											  signal, allTags){
-	if (typeof(inputName) != "string") return;
-	if (typeof(inputCode) != "number") return;
-	if (typeof(functionName) != "string") return;
+ControlManager.prototype.bindControl = function(controlName, controlCode, functionName,
+												signal, allTags, target){
+	var code;
+	var funct;
+	var sig;
+	var targ;
+	var tags;
 
-	this[inputName] = {};
-	
-	if (this.type == CONTROL_KEYBOARD){
-		this[inputName].input = this.keyboard.addKey(inputCode);
-	}
-	else if (this.type == CONTROL_GAMEPAD){
-		this[inputName].input = this.pad.addButton(inputCode);
-	}
+	if (typeof(this.allControls[controlName]) != "undefined"){
+		var control = this.allControls[controlName];
 
-	this[inputName].function = functionName;
-	this[inputName].manager = this;
-	this[inputName].allTags = [];
-
-	// What I thought would happen was that this.target would be dynamically
-	// calculated when the function is called.
-	// Instead, this.target is calculated here.
-	// Therefore, I created setTarget, which will go trough each key and change
-	// the value of this.target.
-	// That's uglier than I thought, but still damn powerful!
-	this[functionName] = function(self){
-		if (this.target == null) return;
-
-		if (typeof(this.target[functionName]) === "function"){
-			this.target[functionName](this[inputName]);
-		}
-	}
-
-	if ((typeof(signal) === "undefined") ||
-		(signal == "update")){
-		this[inputName].signal = "update";
-		signal = this.onUpdate;
-	}
-
-	if (signal == "down"){
-		this[inputName].signal = "down";
-		signal = this[inputName].input.onDown;
-	}
-
-	if (signal == "up"){
-		this[inputName].signal = "up";
-		signal = this[inputName].input.onUp;
-	}
-
-	signal.add(this[functionName], this);
-
-	if (typeof(allTags) === "object"){
-		for(var i = 0; i < allTags.length; i++) {
-			if (typeof(allTags[i]) === "string"){
-				this[inputName].allTags.push(allTags[i]);
+		function getFinalValue(value, name, type){
+			if (type == 0){
+				return (value == -1) ? control[name] : value;
+			}
+			else{
+				return (value == -1) ? control[name] :
+					(typeof(value) == "undefined") ? control[name] : value;
 			}
 		}
+
+		code = getFinalValue(controlCode, "code", 0);
+		funct = getFinalValue(functionName, "functionName");
+		sig = getFinalValue(signal, "signal");
+		targ = getFinalValue(target, "target");
+		tags = getFinalValue(allTags, "allTags");
+
+		this.unbindControl(controlName);
 	}
-	else if (typeof(allTags) === "string"){
-		this[inputName].allTags.push(allTags);
+	else{
+		code = controlCode;
+		funct = functionName;
+		sig = signal;
+		targ = target;
+		tags = allTags;
 	}
+
+	this.allControls[controlName] = new Control(this, code, funct, sig, tags, targ);
 }
 
-// Change the inputName's key/button code to inpuCode, it's function to inputFunction
-// and it's signal to signal.
-// If inputCode or inputFunction or signal is equal to -1 (or undefined), those values
-// will refer to the input's ones.
-ControlManager.prototype.rebindInput = function(inputName, inputCode, inputFunction,
-												signal){
-	if (typeof(inputName) != "string") return;
-	if (typeof(inputCode) != "number") return;
+
+// Destroy the given control (by name).
+ControlManager.prototype.unbindControl = function(controlName){
+	if (typeof(controlName) != "string") return;
+	if (typeof(this.allControls[controlName]) === "undefined") return;
 	
-	if (typeof(this[inputName]) === "undefined") return;
-
-	if (inputCode == -1){
-		if (this.type == CONTROL_KEYBOARD){
-			inputCode = this[inputName].input.keyCode;
-		}
-		else if (this.type == CONTROL_GAMEPAD){
-			inputCode = this[inputName].input.buttonCode;
-		}
-	}
-	if ((typeof(inputFunction) === "undefined") ||
-		(inputFunction == -1)){
-		inputFunction = this[inputName].function;
-	}
-
-	if ((typeof(signal) === "undefined") ||
-		(signal == -1)){
-		signal = this[inputName].signal;
-	}
-
-	this.unbindInput(inputName);
-
-	this.bindInput(inputName, inputCode, inputFunction, signal);
+	this.allControls[controlName].destroy();
+	this.allControls[controlName] = undefined;	
 }
 
-// Remove the binding of the given input (by name).
-// Be careful, if there's no listener attached to the key/button, it will be destroyed.
-ControlManager.prototype.unbindInput = function(inputName){
-	if (typeof(inputName) != "string") return;
-	if (typeof(this[inputName]) === "undefined") return;
-
-	var inputFunction = this[inputName].function;
-	var inputSignal = this[inputName].signal;
-
-	switch (inputSignal){
-	case "down":
-		this[inputName].input.onDown.remove(this[inputFunction], this);
-		break;
-		
-	case "up":
-		this[inputName].input.onUp.remove(this[inputFunction], this);
-		break;
-		
-	case "update":
-		this.onUpdate.remove(this[inputFunction], this);
-		break;
-		
-	default:
-		break;
-	}
-
-	if (this.type == CONTROL_KEYBOARD){
-		// If there's no event attached to the key, destroy it. 
-		if (this[inputName].input.onDown.getNumListeners() +
-			this[inputName].input.onUp.getNumListeners() == 0){
-			this.keyboard.removeKey(this[inputName].keyCode);
-		}
-
-		this[inputName].input = null;
-
-		this[inputName] = undefined;
-	}
-	else if (this.type == CONTROL_GAMEPAD){
-		// If there's no event attached to the button, destroy it.
-		if (this[inputName].input.onDown.getNumListeners() +
-			this[inputName].input.onUp.getNumListeners() +
-			this[inputName].input.onFloat.getNumListeners() == 0){
-			this[inputName].input.destroy();
-		}
-
-		this[inputName].input = null;
-
-		this[inputName] = undefined;
-	}
-
-	
-}
-
-// Swap two inputs.
-// If type is 0, swap the inputs' codes.
-// Otherwhise, swap the inputs' functions and signals. 
-ControlManager.prototype.swapInputs = function(inputName1, inputName2, type){
-	if ((typeof(inputName1) != "string") ||
-		(typeof(inputName2) != "string")){
+// Swap two controls.
+// If type is 0, swap the controls' codes.
+// Otherwhise, swap the controls' functions and signals. 
+ControlManager.prototype.swapControls = function(controlName1, controlName2, type){
+	if ((typeof(controlName1) != "string") ||
+		(typeof(controlName2) != "string")){
 		return;
 	}
 
-	if ((typeof(this[inputName1]) === "undefined") ||
-		(typeof(this[inputName2])) === "undefined"){
+	if ((typeof(this.allControls[controlName1]) === "undefined") ||
+		(typeof(this.allControls[controlName2])) === "undefined"){
 		return;
 	}
 
@@ -224,65 +148,64 @@ ControlManager.prototype.swapInputs = function(inputName1, inputName2, type){
 		type = 0;
 	}
 
-	var inputCode1;
-	var inputCode2;
+	var control1 = this.allControls[controlName1];
+	var control2 = this.allControls[controlName2];
 
-	if (this.type == CONTROL_KEYBOARD){
-		inputCode1 = this[inputName1].input.keyCode;
-		inputCode2 = this[inputName2].input.keyCode;
-	}
-	else if (this.type == CONTROL_GAMEPAD){
-		inputCode1 = this[inputName1].input.buttonCode;
-		inputCode2 = this[inputName2].input.buttonCode;
-	}
-	
-	var inputFunction1 = this[inputName1].function;
-	var inputFunction2 = this[inputName2].function;
+	var controlCode1  = control1.code;
+	var controlCode2 = control2.code;
 
-	var inputSignal1 = this[inputName1].signal;
-	var inputSignal2 = this[inputName2].signal;
+	var controlFunction1 = control1.functionName;
+	var controlFunction2 = control2.functionName;
+	
+	var controlSignal1 = control1.signal;
+	var controlSignal2 = control2.signal;
 	
 	
-	this.unbindInput(inputName1);
-	this.unbindInput(inputName2);
+	this.unbindControl(controlName1);
+	this.unbindControl(controlName2);
 
 	// If type == 0, swap the key/buttonCodes. 
 	if (!type){
-		this.bindInput(inputName1, inputCode2, inputFunction1, inputSignal1);
-		this.bindInput(inputName2, inputCode1, inputFunction2, inputSignal2);
+		this.bindControl(controlName1, controlCode2, controlFunction1, controlSignal1);
+		this.bindControl(controlName2, controlCode1, controlFunction2, controlSignal2);
 	}
 	// Else, swap the functions (and the signals).
 	else{
-		this.bindInput(inputName1, inputCode1, inputFunction2, inputSignal2);
-		this.bindInput(inputName2, inputCode2, inputFunction1, inputSignal1);
+		this.bindControl(controlName1, controlCode1, controlFunction2, controlSignal2);
+		this.bindControl(controlName2, controlCode2, controlFunction1, controlSignal1);
 	}
 }
 
-ControlManager.prototype.setTarget = function(target){
-	this.target = target;
+// Return the control.
+ControlManager.prototype.get = function(controlName){
+	return this.allControls[controlName];
+}
 
-	for(property in this){
-		if (this.hasOwnProperty(property)){
-			if (typeof(this[property].function) != "undefined"){
-				this[property].function = function(controlInput){
-					if (this.target == null) return;
+// Set the controls target to target.
+// If controls is undefined, set the ControlManager's target to target.
+ControlManager.prototype.setTarget = function(target, controls){
+	if (typeof(target) === "undefined") return;
 
-					if (typeof(this.target[property].function) === "function"){
-						this.target[property].function(this[inputName]);
-					}
-				}
-			}
+	if (typeof(controls) === "undefined"){
+		this.target = target;
+	}
+	else if (typeof(controls) === "string"){
+		this.allControls[controls].target = target;
+	}
+	else if (typeof(controls) === "object"){
+		for(var i = 0; i < controls.length; i++) {
+			this.allControls[controls].target = target;
 		}
 	}
 }
 
-// Disable all inputs with one of the tags in allTags.
+// Disable all controls with one of the tags in allTags.
 // (allTags can also be a string)
 ControlManager.prototype.disable = function(allTags){
 	this._able(allTags, false);
 }
 
-// Enable all inputs with one of the tags in allTags.
+// Enable all controls with one of the tags in allTags.
 // (allTags can also be a string)
 ControlManager.prototype.enable = function(allTags){
 	this._able(allTags, true);
@@ -290,46 +213,136 @@ ControlManager.prototype.enable = function(allTags){
 
 ControlManager.prototype._able = function(allTags, enabled){
 	if (typeof(allTags) === "undefined"){
-		for (property in this){
-			if (this.hasOwnProperty(property)){
-				if (typeof(this[property].allTags) != "undefined"){
-					this[property].input.enabled = enabled;
-				}
-			}
+		for (control in this.allControls){
+			this.allControls[control].input.enabled = enabled;
 		}
 	}
 	else if (typeof(allTags) === "object"){
-		for (property in this){
-			if (this.hasOwnProperty(property)){
-				if (typeof(this[property].allTags) != "undefined"){
-					var i = 0;
-					var found;
-					
-					while (validIndex(i, allTags) && !found){
-						if (this[property].allTags.indexOf(allTags[i]) != -1){
-							found = true;
-						}
-					}
-
-					if (found){
-						this[property].input.enabled = enabled;
-					}
+		for (control in this.allControls){	
+			var i = 0;
+			var found;
+			
+			while (validIndex(i, allTags) && !found){
+				if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
+					found = true;
 				}
 			}
+
+			if (found){
+				this.allControls[control].input.enabled = enabled;
+			}		
 		}
 	}
 	else if (typeof(allTags) === "string"){
-		for (property in this){
-			if (this.hasOwnProperty(property)){
-				if (typeof(this[property].allTags) != "undefined"){
-					if (this[property].allTags.indexOf(allTags) != -1){
-						this[property].input.enabled = enabled;
-					}
-				}
-			}
+		for (control in this.allControls){
+			if (this.allControls[control].allTags.indexOf(allTags) != -1){
+				this.allControls[control].input.enabled = enabled;
+			}	
 		}
 	}
 }
 /******************************************************************************/
 /* ControlManager */
 /******************/
+
+/***********/
+/* Control */
+/******************************************************************************/
+
+var Control = function(manager, controlCode, functionName, signal,
+					   allTags, target){
+
+	if (typeof(manager) != "object") return;
+	if ((typeof(target) != "undefined") &&
+		(typeof(target) != "object") && (target != -1)) return;
+	if (typeof(target) === "undefined") target = -1;
+	if (typeof(controlCode) != "number") return;
+	if (typeof(functionName) != "string") return;
+
+
+	if (manager.type == CONTROL_KEYBOARD){
+		this.input = manager.keyboard.addKey(controlCode);
+	}
+	else if (manager.type == CONTROL_GAMEPAD){
+		this.input = manager.pad.addButton(controlCode);
+	}
+
+	this.manager = manager;
+	this.target = target;
+	this.functionName = functionName;
+	this.code = controlCode;
+	this.allTags = [];
+
+	if ((typeof(signal) === "undefined") ||
+		(signal == "update")){
+		this.signal = "update";
+		signal = manager.onUpdate;
+	}
+	else if (signal == "down"){
+		this.signal = "down";
+		signal = this.input.onDown;
+	}
+	else if (signal == "up"){
+		this.signal = "up";
+		signal = this.input.onUp;
+	}
+
+	signal.add(this.execute, this);
+
+	if (typeof(allTags) === "object"){
+		for(var i = 0; i < allTags.length; i++) {
+			this.allTags.push(allTags[i]);
+		}
+	}
+	else{
+		this.allTags.push(allTags);
+	}
+}
+
+Control.prototype.execute = function(){
+	if (this.target == null){
+		if (typeof(this.functionName) === "function"){
+			this.functionName();
+		}
+		
+		return;
+	}
+	
+	var target = (this.target == -1) ? this.manager.target : this.target;
+	
+	if (typeof(target[this.functionName]) === "undefined") return;
+
+	target[this.functionName](this);
+}
+
+
+Control.prototype.destroy = function(){
+	switch(this.signal){
+		case "update":
+		this.manager.onUpdate.remove(this.execute, this);
+		break;
+		
+		case "down":
+		this.input.onDown.remove(this.execute, this);
+		break;
+		
+		case "up":
+		this.input.onUp.remove(this.execute, this);
+		break;
+
+		default:
+		break;
+	}
+
+	this.manager = null;
+	this.input = null;
+	this.code = -1;
+	this.functionName = null;
+	this.signal = null;
+	this.allTags = [];
+	this.target = undefined;
+}
+
+/******************************************************************************/
+/* Control */
+/***********/
