@@ -225,29 +225,21 @@ BasicGame.Game.prototype.create = function(){
 	perso.addChild(healthBar);
 
 	lucy.goLeft = function(control){
-		if (control.input.isDown){
-			lucy.animations.play("walkLeft");
-			lucy.x -= 4;
-		}
+		lucy.animations.play("walkLeft");
+		lucy.x -= 4;
 	}
 
 	lucy.goRight = function(control){
-		if (control.input.isDown){
-			lucy.animations.play("walkRight");
-			lucy.x += 4;
-		}
+		lucy.animations.play("walkRight");
+		lucy.x += 4;
 	}
 
 	lucy.goUp = function(control){
-		if (control.input.isDown){
-			lucy.y -= 5;
-		}
+		lucy.y -= 5;
 	}
 
 	lucy.goDown = function(control){
-		if (control.input.isDown){
-			lucy.y += 5;
-		}
+		lucy.y += 5;
 	}
 
 	lucy.switchTarget = function(control){
@@ -256,7 +248,8 @@ BasicGame.Game.prototype.create = function(){
 	}
 
 	lucy.changeKeyCodes = function(control){
-		control.manager.bindControl("leftControl", Phaser.Keyboard.J, "rotate");
+		control.manager.bindControl("leftControl", Phaser.Keyboard.J, "rotate",
+									"update");
 	}
 
 	lucy.disableControl = function(control){
@@ -291,27 +284,19 @@ BasicGame.Game.prototype.create = function(){
 	}
 
 	healthBar.goLeft = function(control){
-		if (control.input.isDown){
-			healthBar.x -= 5;
-		}
+		healthBar.x -= 5;
 	}
 
 	healthBar.goRight = function(control){
-		if (control.input.isDown){
-			healthBar.x += 5;
-		}
+		healthBar.x += 5;
 	}
 
 	healthBar.goUp = function(control){
-		if (control.input.isDown){
-			healthBar.angle -= 5;
-		}
+		healthBar.angle -= 5;
 	}
 
 	healthBar.goDown = function(control){
-		if (control.input.isDown){
-			healthBar.angle += 5;
-		}
+		healthBar.angle += 5;
 	}
 
 	healthBar.switchTarget = function(control){
@@ -326,35 +311,35 @@ BasicGame.Game.prototype.create = function(){
 	//perso.control.target = healthBar;
 
 	lucy.controlManager.bindControl("leftControl", Phaser.Keyboard.Q, "goLeft",
-									"update", "movement");
+									"down", "movement");
 	lucy.controlManager.bindControl("rightControl", Phaser.Keyboard.D, "goRight",
-									"update", "movement");
+									"down", "movement");
 	lucy.controlManager.bindControl("upControl", Phaser.Keyboard.Z, "goUp",
-									"update", "movement");
+									"down", "movement");
 	lucy.controlManager.bindControl("downControl", Phaser.Keyboard.S, "goDown",
-									"update", "movement");
+									"down", "movement");
 
 	lucy.controlManager.bindControl("stopLeftControl", Phaser.Keyboard.Q, "stopLeft",
-									"up");
+									"onUp");
 	lucy.controlManager.bindControl("stopRightControl", Phaser.Keyboard.D, "stopRight",
-									"up");
+									"onUp");
 	
 	
 	lucy.controlManager.bindControl("switchControl", Phaser.Keyboard.TAB,
 									"switchTarget",
-									"down");
+									"onDown");
 	lucy.controlManager.bindControl("changeKey", Phaser.Keyboard.SPACEBAR,
 									"changeKeyCodes",
-									"down");
+									"onDown");
 	lucy.controlManager.bindControl("ableControl", Phaser.Keyboard.ALT,
 									"disableControl",
-									"down");
+									"onDown");
 	
 	lucy.controlManager.bindControl("dialogue", Phaser.Keyboard.A, "nextSentence",
-									"down", "menu",
+									"onDown", "menu",
 									textBox);
 	lucy.controlManager.bindControl("textbox", Phaser.Keyboard.E, "nextSentence",
-									"down", "menu",
+									"onDown", "menu",
 									dialogueBox.textBox);
 	
 	//lucy.control.bindInput("rotationInput", Phaser.Keyboard.Z, "rotate");

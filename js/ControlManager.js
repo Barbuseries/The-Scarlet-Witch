@@ -68,6 +68,9 @@ ControlManager.prototype.update = function(){
             => "update" : call when ControlManager.update() is called.
 			=> "down" : call when input is down.
 			=> "up" : call when input is up.
+			=> "onDown" : call when input has just been pressed.
+			=> "onUp" : call when input has just been released.
+			=> "onFloat" : (button only) call when input's pressure is > 0 and < 1.
 			=> -1 : if controlName is already a control of the ControlManager,
 				  will copy the signal.
 
@@ -132,7 +135,8 @@ ControlManager.prototype.unbindControl = function(controlName){
 
 // Swap two controls.
 // If type is 0, swap the controls' codes.
-// Otherwhise, swap the controls' functions and signals. 
+// Otherwhise, swap the controls' functions and signals.
+// In both cases, the controls' tags and their targets are swapped.
 ControlManager.prototype.swapControls = function(controlName1, controlName2, type){
 	if ((typeof(controlName1) != "string") ||
 		(typeof(controlName2) != "string")){
@@ -160,19 +164,29 @@ ControlManager.prototype.swapControls = function(controlName1, controlName2, typ
 	var controlSignal1 = control1.signal;
 	var controlSignal2 = control2.signal;
 	
+	var allTags1 = control1.allTags;
+	var allTags2 = control2.allTags;
+
+	var target1 = control1.target;
+	var target2 = control2.target;
+	
 	
 	this.unbindControl(controlName1);
 	this.unbindControl(controlName2);
 
 	// If type == 0, swap the key/buttonCodes. 
 	if (!type){
-		this.bindControl(controlName1, controlCode2, controlFunction1, controlSignal1);
-		this.bindControl(controlName2, controlCode1, controlFunction2, controlSignal2);
+		this.bindControl(controlName1, controlCode2, controlFunction1, controlSignal1,
+						 allTags2, target2);
+		this.bindControl(controlName2, controlCode1, controlFunction2, controlSignal2,
+						 allTags1, target1);
 	}
 	// Else, swap the functions (and the signals).
 	else{
-		this.bindControl(controlName1, controlCode1, controlFunction2, controlSignal2);
-		this.bindControl(controlName2, controlCode2, controlFunction1, controlSignal1);
+		this.bindControl(controlName1, controlCode1, controlFunction2, controlSignal2,
+						 allTags2, target2);
+		this.bindControl(controlName2, controlCode2, controlFunction1, controlSignal1,
+						 allTags1, target1);
 	}
 }
 
@@ -195,6 +209,41 @@ ControlManager.prototype.setTarget = function(target, controls){
 	else if (typeof(controls) === "object"){
 		for(var i = 0; i < controls.length; i++) {
 			this.allControls[controls].target = target;
+		}
+	}
+}
+
+// Set the target of every control with at least one of the tags in allTags to target.
+// If allTags is undefined, set the ControlManager's target to target.
+ControlManager.prototype.setTargetByTag = function(target, allTags){
+	if (typeof(target) === "undefined") return;
+
+	if (typeof(allTags) === "undefined"){
+		for (control in this.allControls){
+			this.allControls[control].target = target;
+		}
+	}
+	else if (typeof(allTags) === "object"){
+		for (control in this.allControls){	
+			var i = 0;
+			var found;
+			
+			while (validIndex(i, allTags) && !found){
+				if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
+					found = true;
+				}
+			}
+
+			if (found){
+				this.allControls[control].target = target;
+			}		
+		}
+	}
+	else if (typeof(allTags) === "string"){
+		for (control in this.allControls){
+			if (this.allControls[control].allTags.indexOf(allTags) != -1){
+				this.allControls[control].target = target;
+			}	
 		}
 	}
 }
@@ -274,17 +323,23 @@ var Control = function(manager, controlCode, functionName, signal,
 	this.allTags = [];
 
 	if ((typeof(signal) === "undefined") ||
-		(signal == "update")){
-		this.signal = "update";
+		(signal == "update") ||
+		(signal == "down") ||
+		(signal == "up")){
+		this.signal = signal;
 		signal = manager.onUpdate;
 	}
-	else if (signal == "down"){
-		this.signal = "down";
+	else if (signal == "onDown"){
+		this.signal = "onDown";
 		signal = this.input.onDown;
 	}
-	else if (signal == "up"){
-		this.signal = "up";
+	else if (signal == "onUp"){
+		this.signal = "onUp";
 		signal = this.input.onUp;
+	}
+	else if (signal == "onFloat"){
+		this.signal = "onFloat";
+		signal = this.input.onFloat;
 	}
 
 	signal.add(this.execute, this);
@@ -299,38 +354,58 @@ var Control = function(manager, controlCode, functionName, signal,
 	}
 }
 
-Control.prototype.execute = function(){
-	if (this.target == null){
+Control.prototype.execute = function(){	
+	var target = (this.target == -1) ? this.manager.target : this.target;
+	var actualFunction;
+
+	if (target == null){
 		if (typeof(this.functionName) === "function"){
-			this.functionName();
+			actualFunction = this.functionName;
 		}
-		
-		return;
+		else{
+			return;
+		}
+	}
+	else{
+		if (typeof(target[this.functionName]) === "function"){
+			actualFunction = target[this.functionName];
+		}
+		else{
+			return;
+		}
 	}
 	
-	var target = (this.target == -1) ? this.manager.target : this.target;
-	
-	if (typeof(target[this.functionName]) === "undefined") return;
+	switch(this.signal){
+		case "down":
+		if (this.input.isDown) actualFunction.call(target, this);;
+		break;
 
-	target[this.functionName](this);
+		case "up":
+		if (this.input.isUp) actualFunction.call(target, this);;
+		break;
+
+		default:
+		actualFunction.call(target, this);
+		break;
+	}
 }
 
 
 Control.prototype.destroy = function(){
 	switch(this.signal){
-		case "update":
-		this.manager.onUpdate.remove(this.execute, this);
-		break;
-		
-		case "down":
+		case "onDown":
 		this.input.onDown.remove(this.execute, this);
 		break;
 		
-		case "up":
+		case "onUp":
 		this.input.onUp.remove(this.execute, this);
 		break;
+		
+		case "onFloat":
+		this.input.onFloat.remove(this.execute, this);
 
 		default:
+		this.manager.onUpdate.remove(this.execute, this);
 		break;
 	}
 
