@@ -38,7 +38,7 @@ BasicGame.MainMenu.prototype.startGame = function(pointer){
 
 	this.cleanUp();
 
-	this.state.start("Game");
+	this.state.start("Level1");
 }
 
 BasicGame.MainMenu.prototype.disableOptions = function(){

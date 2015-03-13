@@ -22,6 +22,7 @@
 		<script type="text/javascript" src="js/Preloader.js"></script>
 		<script type="text/javascript" src="js/MainMenu.js"></script>
 		<script type="text/javascript" src="js/Game.js"></script>
+        <script type="text/javascript" src="js/level1.js"></script>
 		<link rel="stylesheet" href="TheScarletWitch.css" type="text/css"
 		media="screen" />
         <title>The Scarlet Witch</title>
@@ -39,6 +40,7 @@
 				game.state.add('Preloader', BasicGame.Preloader);
 				game.state.add('MainMenu', BasicGame.MainMenu);
 				game.state.add('Game', BasicGame.Game);
+                game.state.add('Level1', BasicGame.Level1);
 				// Now start the Boot state.
 				game.state.start('Boot');
             };

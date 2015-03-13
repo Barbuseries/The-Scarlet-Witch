@@ -97,6 +97,8 @@ BasicGame.Boot.prototype.startPreload = function(){
 	this.logoGroup.forEachAlive(function(logo){
 		logo.kill();
 	});
+	BasicGame.player1 = {};
+	BasicGame.player1.hero = null;
 
 	this.state.start("Preloader");
 }

@@ -22,6 +22,8 @@ BasicGame.Preloader.prototype.preload =  function(){
     
 	this.load.image("ground2", "assets/platform2.png");
 	this.load.image("perso", "assets/firstaid.png");
+	this.load.tilemap('level1', 'assets/tilemaps/Level1.json', null, Phaser.Tilemap.TILED_JSON);
+	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
     this.load.spritesheet("lucy", "assets/Lucy/SaraFullSheet.png", 64, 64);
 	this.load.spritesheet("lucy1", "assets/Lucy/SaraHairBottomLayer.png", 64, 64);
 	this.load.spritesheet("lucy2", "assets/Lucy/SaraHairShadowOnFace.png", 64, 64);
