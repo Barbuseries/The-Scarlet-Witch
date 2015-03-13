@@ -37,7 +37,10 @@ var ControlManager = function(game, type, target, pad){
 }
 
 // Call each control's function with "update" as signal.
-// "this" is not dispatched to a function binded to a control, it's the control itself.
+// "this" is not dispatched to a function binded to a control, it's
+// the control itself.
+// In the case of a pad control, the control's axis is also dispatched
+// (after the control itself).
 ControlManager.prototype.update = function(){
 	this.onUpdate.dispatch(this);
 }
@@ -52,7 +55,7 @@ ControlManager.prototype.update = function(){
 
    controlName : (string) name of the control (controlManager.allControls.controlName
                  will refer to the control)
-                 => inputName = "leftInput" => this.leftInput refers to it.
+                 => inputName = "leftInput" => this.allControls.leftInput refers to it.
 				 If a control of the ControlManager has the same name, it will be
 				 replaced.
 
@@ -81,7 +84,7 @@ ControlManager.prototype.update = function(){
 
    target : (object) object whose method will be called for this specific control.
             => -1 : if controlName is already a control of the ControlManager,
-			will copy the function.
+			will copy the target.
 */
 ControlManager.prototype.bindControl = function(controlName, controlCode, functionName,
 												signal, allTags, target){
@@ -91,6 +94,10 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 	var targ;
 	var tags;
 
+	// If we're trying to bind a button from a Gamepad, it needs to be
+	// done only after the Gamepad has been connected.
+	// That's what this function do : if the Gamepad is not currently
+	// connected, tell him to bind the button once it is.
 	var manager = this;
 
 	function setAfterCheck(){
@@ -103,6 +110,9 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 			return;
 		}
 	}
+
+	// If the control already exists, unbind it.
+	// (And, according to the parameters, save some of it's attributes)
 	if (typeof(this.allControls[controlName]) != "undefined"){
 		var control = this.allControls[controlName];
 
@@ -135,27 +145,70 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 	this.allControls[controlName] = new Control(this, code, funct, sig, tags, targ);
 } 
 
-ControlManager.prototype.bindPad = function(padName, axis, min, max, functionName,
-											signal, allTags, target){
+/*
+  Bind an axis of the Control's manager's pad to a function.
+*/
+ControlManager.prototype.bindPadControl = function(padControlName, axis, min, max, functionName,
+												   signal, allTags, target){
 	if (this.type == CONTROL_KEYBOARD){
 		return;
 	}
 
+	var ax;
+	var mi;
+	var ma;
+	var funct;
+	var sig;
+	var targ;
+	var tags;
+	
 	var manager = this;
 
 	function setAfterCheck(){
-		manager.bindPad(padName, axis, min, max, functionName, signal, allTags,
-						target);
+		manager.bindPadControl(padControlName, axis, min, max, functionName, signal, allTags,
+							   target);
 	}
 
-	
 	if (!this.pad.connected){
 		this.pad.addCallbacks(this, {onConnect: setAfterCheck});
 		return;
 	}
 
-	this.allControls[padName] = new PadControl(this, axis, min, max, functionName,
-											   signal, allTags, target);
+	if (typeof(this.allControls[padControlName]) != "undefined"){
+		var padControl = this.allControls[padControlName];
+
+		function getFinalValue(value, name, type){
+			if (type == 0){
+				return (value == -1) ? padControl[name] : value;
+			}
+			else{
+				return (value == -1) ? padControl[name] :
+					(typeof(value) == "undefined") ? padControl[name] : value;
+			}
+		}
+
+		ax = getFinalValue(axis, "axis");
+		mi = getFinalValue(min, "min");
+		ma = getFinalValue(max, "max");
+		funct = getFinalValue(functionName, "functionName");
+		sig = getFinalValue(signal, "signal");
+		targ = getFinalValue(target, "target");
+		tags = getFinalValue(allTags, "allTags");
+
+		this.unbindPadControl(padControlName);
+	}
+	else{
+		ax = axis;
+		mi = min;
+		ma = max;
+		funct = functionName;
+		sig = signal;
+		targ = target;
+		tags = allTags;
+	}
+
+	this.allControls[padControlName] = new PadControl(this, ax, mi, ma, funct,
+											   sig, tags, targ);
 }
 
 // Destroy the given control (by name).
@@ -165,6 +218,14 @@ ControlManager.prototype.unbindControl = function(controlName){
 	
 	this.allControls[controlName].destroy();
 	this.allControls[controlName] = undefined;	
+}
+
+ControlManager.prototype.unbindPadControl = function(padControlName){
+	if (typeof(padControlName) != "string") return;
+	if (typeof(this.allControls[padControlName]) === "undefined") return;
+
+	this.allControls[padControlName].destroy();
+	this.allControls[padControlName] = undefined;
 }
 
 // Swap two controls.
@@ -230,7 +291,9 @@ ControlManager.prototype.get = function(controlName){
 }
 
 // Return an array of controls with the given tags.
-// If allNeeded is true, a control must have every tags to be put into the array.
+// If allNeeded is true, a control must have every tags to be put into
+// the array.
+// (In the case of a Gamepad control, the pad's controls are also checked)
 ControlManager.prototype.getByTag = function(allTags, allNeeded){
 	if (typeof(target) === "undefined") return;
 	if (!booleanable(allNeeded)) allNeeded = false;
@@ -409,6 +472,8 @@ var Control = function(manager, controlCode, functionName, signal,
 	if (typeof(controlCode) != "number") return;
 	if (typeof(functionName) != "string") return;
 
+	if (typeof(signal) === "undefined") signal = "update";
+
 
 	if (manager.type == CONTROL_KEYBOARD){
 		this.input = manager.keyboard.addKey(controlCode);
@@ -420,26 +485,22 @@ var Control = function(manager, controlCode, functionName, signal,
 	this.manager = manager;
 	this.target = target;
 	this.functionName = functionName;
+	this.signal = signal;
 	this.code = controlCode;
 	this.allTags = [];
 
-	if ((typeof(signal) === "undefined") ||
-		(signal == "update") ||
+	if ((signal == "update") ||
 		(signal == "down") ||
 		(signal == "up")){
-		this.signal = signal;
 		signal = manager.onUpdate;
 	}
 	else if (signal == "onDown"){
-		this.signal = "onDown";
 		signal = this.input.onDown;
 	}
 	else if (signal == "onUp"){
-		this.signal = "onUp";
 		signal = this.input.onUp;
 	}
 	else if (signal == "onFloat"){
-		this.signal = "onFloat";
 		signal = this.input.onFloat;
 	}
 
@@ -536,17 +597,36 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 	if (typeof(max) != "number") return;
 	if (typeof(functionName) != "string") return;
 
+	if (typeof(signal) === "undefined") signal = "update";
+
 	this.manager = manager;
 	this.axis = axis;
 	this.min = min;
 	this.max = max;
 	this.functionName = functionName;
+	this.allTags = [];
 	this.signal = signal;
-	this.allTags = allTags;
 	this.target = target;
 
 	if (signal == "update"){
-		manager.onUpdate.add(this.execute, this);
+		signal = manager.onUpdate;
+	}
+	else if (signal == "onDown"){
+		signal = manager.pad.onDown;
+	}
+	else if (signal == "onUp"){
+		signal = manager.pad.onUp;
+	}
+
+	signal.add(this.execute, this);
+
+	if (typeof(allTags) === "object"){
+		for(var i = 0; i < allTags.length; i++) {
+			this.allTags.push(allTags[i]);
+		}
+	}
+	else{
+		this.allTags.push(allTags);
 	}
 }
 
@@ -577,6 +657,31 @@ PadControl.prototype.execute = function(){
 	if ((pad.axis(this.axis) >= this.min) && (pad.axis(this.axis) <= this.max)){
 		actualFunction.call(target, this, pad.axis(this.axis));
 	}
+}
+
+PadControl.prototype.destroy = function(){
+	var pad = this.manager.pad;
+	
+	switch(this.signal){
+		case "onDown":
+		pad.onDown.remove(this.execute, this);
+		break;
+		
+		case "onUp":
+		pad.onUp.remove(this.execute, this);
+		break;
+		
+		default:
+		this.manager.onUpdate.remove(this.execute, this);
+		break;
+	}
+
+	this.manager = null;
+	this.axis = null;
+	this.functionName = null;
+	this.signal = null;
+	this.allTags = [];
+	this.target = undefined;
 }
 /******************************************************************************/
 /* PadControl */

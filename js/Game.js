@@ -340,16 +340,16 @@ BasicGame.Game.prototype.create = function(){
 									 "goDown",
 									 "down", "movement");
 	
-	lucy.controlManager2.bindPad("rightPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
-								 0.1, 1, "goRight", "update", "movement", -1);
-	lucy.controlManager2.bindPad("leftPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
-								 -1, -0.1, "goLeft", "update", "movement", -1);
-	lucy.controlManager2.bindPad("upPad", Phaser.Gamepad.XBOX360_STICK_LEFT_Y,
-								 -1, -0.1, "goUp", "update", "movement", -1);
-	lucy.controlManager2.bindPad("downPad", Phaser.Gamepad.XBOX360_STICK_LEFT_Y,
-								 0.1, 1, "goDown", "update", "movement", -1);
+	lucy.controlManager2.bindPadControl("rightPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
+										0.1, 1, "goRight", "update", "movement", -1);
+	lucy.controlManager2.bindPadControl("leftPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
+										-1, -0.1, "goLeft", "update", "movement", -1);
+	lucy.controlManager2.bindPadControl("upPad", Phaser.Gamepad.XBOX360_STICK_LEFT_Y,
+										-1, -0.1, "goUp", "update", "movement", -1);
+	lucy.controlManager2.bindPadControl("downPad", Phaser.Gamepad.XBOX360_STICK_LEFT_Y,
+										0.1, 1, "goDown", "update", "movement", -1);
 
-	/*lucy.controlManager2.bindPad("padHorizontal", Phaser.Gamepad.XBOX360_STICK_RIGHT_X,
+	/*lucy.controlManager2.bindPadControl("padHorizontal", Phaser.Gamepad.XBOX360_STICK_RIGHT_X,
 								 0.1, 1, "goRight", "update", "movement", -1);*/
 
 	lucy.controlManager.bindControl("leftControl", Phaser.Keyboard.Q, "goLeft",
