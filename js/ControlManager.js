@@ -195,6 +195,59 @@ ControlManager.prototype.get = function(controlName){
 	return this.allControls[controlName];
 }
 
+// Return an array of controls with the given tags.
+// If allNeeded is true, a control must have every tags to be put into the array.
+ControlManager.prototype.getByTag = function(allTags, allNeeded){
+	if (typeof(target) === "undefined") return;
+	if (!booleanable(allNeeded)) allNeeded = false;
+
+	var returnControls = [];
+
+	if (typeof(allTags) === "undefined"){
+		for (control in this.allControls){
+			returnControls.push(this.allControls[control]);
+		}
+	}
+	else if (typeof(allTags) === "object"){
+		for (control in this.allControls){	
+			var i = 0;
+			var foundCount = 0;
+			
+			if (allNeeded){
+				while (validIndex(i, allTags)){
+					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
+						foundCount++;
+					}
+				}
+
+				if (foundCount == allTags.length){
+					returnControls.push(this.allControls[control]);
+				}
+			}
+			else{
+				while (validIndex(i, allTags) && !foundCount){
+					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
+						foundCount++;
+					}
+				}
+
+				if (foundCount){
+					returnControls.push(this.allControls[control]);
+				}
+			}	
+		}
+	}
+	else if (typeof(allTags) === "string"){
+		for (control in this.allControls){
+			if (this.allControls[control].allTags.indexOf(allTags) != -1){
+				returnControls.push(this.allControls[control]);
+			}	
+		}
+	}
+
+	return returnControls;
+}
+
 // Set the controls target to target.
 // If controls is undefined, set the ControlManager's target to target.
 ControlManager.prototype.setTarget = function(target, controls){
@@ -215,8 +268,9 @@ ControlManager.prototype.setTarget = function(target, controls){
 
 // Set the target of every control with at least one of the tags in allTags to target.
 // If allTags is undefined, set the ControlManager's target to target.
-ControlManager.prototype.setTargetByTag = function(target, allTags){
+ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded){
 	if (typeof(target) === "undefined") return;
+	if (!booleanable(allNeeded)) allNeeded = false;
 
 	if (typeof(allTags) === "undefined"){
 		for (control in this.allControls){
@@ -226,16 +280,29 @@ ControlManager.prototype.setTargetByTag = function(target, allTags){
 	else if (typeof(allTags) === "object"){
 		for (control in this.allControls){	
 			var i = 0;
-			var found;
-			
-			while (validIndex(i, allTags) && !found){
-				if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
-					found = true;
+			var foundCount = 0;
+
+			if (allNeeded){
+				while (validIndex(i, allTags)){
+					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
+						foundCount++;
+					}
+				}
+
+				if (foundCount == allTags.length){
+					this.allControls[control].target = target;
 				}
 			}
+			else{
+				while (validIndex(i, allTags) && !foundCount){
+					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
+						foundCount++;
+					}
+				}
 
-			if (found){
-				this.allControls[control].target = target;
+				if (found){
+					this.allControls[control].target = target;
+				}
 			}		
 		}
 	}
@@ -313,7 +380,7 @@ var Control = function(manager, controlCode, functionName, signal,
 		this.input = manager.keyboard.addKey(controlCode);
 	}
 	else if (manager.type == CONTROL_GAMEPAD){
-		this.input = manager.pad.addButton(controlCode);
+		this.input = manager.pad.getButton(controlCode);
 	}
 
 	this.manager = manager;
