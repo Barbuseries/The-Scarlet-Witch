@@ -224,25 +224,41 @@ BasicGame.Game.prototype.create = function(){
 							  H_RED, H_BLACK);
 	perso.addChild(healthBar);
 
-	lucy.goLeft = function(control){
-		lucy.animations.play("walkLeft");
-		lucy.x -= 4;
+	lucy.goLeft = function(control, factor){
+		if (typeof(factor) === "undefined"){
+			factor = 1;
+		}
+
+		lucy.animations.play("walkLeft", 15 * Math.abs(factor));
+		lucy.x -= 4 * Math.abs(factor);
 	}
 
-	lucy.goRight = function(control){
-		lucy.animations.play("walkRight");
-		lucy.x += 4;
+	lucy.goRight = function(control, factor){
+		if (typeof(factor) === "undefined"){
+			factor = 1;
+		}
+
+		lucy.animations.play("walkRight", 15 * Math.abs(factor));
+		lucy.x += 4 * Math.abs(factor);
 	}
 
-	lucy.goUp = function(control){
-		lucy.y -= 5;
+	lucy.goUp = function(control, factor){
+		if (typeof(factor) === "undefined"){
+			factor = 1;
+		}
+
+		lucy.y -= 5 * Math.abs(factor);
 	}
 
-	lucy.goDown = function(control){
-		lucy.y += 5;
+	lucy.goDown = function(control, factor){
+		if (typeof(factor) === "undefined"){
+			factor = 1;
+		}
+
+		lucy.y += 5 * Math.abs(factor);
 	}
 
-	lucy.switchTarget = function(control){
+	lucy.switchTarget = function(control, factor){
 		lucy.animations.stop();
 		control.manager.target = healthBar;
 	}
@@ -317,6 +333,18 @@ BasicGame.Game.prototype.create = function(){
 	lucy.controlManager2.bindControl("left", Phaser.Gamepad.XBOX360_DPAD_LEFT,
 									 "goLeft",
 									 "down", "movement");
+	
+	lucy.controlManager2.bindPad("rightPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
+								 0.1, 1, "goRight", "update", "movement", -1);
+	lucy.controlManager2.bindPad("leftPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
+								 -1, -0.1, "goLeft", "update", "movement", -1);
+	lucy.controlManager2.bindPad("upPad", Phaser.Gamepad.XBOX360_STICK_LEFT_Y,
+								 -1, -0.1, "goUp", "update", "movement", -1);
+	lucy.controlManager2.bindPad("downPad", Phaser.Gamepad.XBOX360_STICK_LEFT_Y,
+								 0.1, 1, "goDown", "update", "movement", -1);
+
+	/*lucy.controlManager2.bindPad("padHorizontal", Phaser.Gamepad.XBOX360_STICK_RIGHT_X,
+								 0.1, 1, "goRight", "update", "movement", -1);*/
 
 	lucy.controlManager.bindControl("leftControl", Phaser.Keyboard.Q, "goLeft",
 									"down", "movement");

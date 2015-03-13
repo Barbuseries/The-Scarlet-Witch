@@ -91,6 +91,18 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 	var targ;
 	var tags;
 
+	var manager = this;
+
+	function setAfterCheck(){
+		manager.bindControl(controlName, controlCode, functionName, signal, allTags,
+							target);
+	}
+	if (this.type == CONTROL_GAMEPAD){
+		if (!this.pad.connected){
+			this.pad.addCallbacks(this, {onConnect: setAfterCheck});
+			return;
+		}
+	}
 	if (typeof(this.allControls[controlName]) != "undefined"){
 		var control = this.allControls[controlName];
 
@@ -121,8 +133,30 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 	}
 
 	this.allControls[controlName] = new Control(this, code, funct, sig, tags, targ);
-}
+} 
 
+ControlManager.prototype.bindPad = function(padName, axis, min, max, functionName,
+											signal, allTags, target){
+	if (this.type == CONTROL_KEYBOARD){
+		return;
+	}
+
+	var manager = this;
+
+	function setAfterCheck(){
+		manager.bindPad(padName, axis, min, max, functionName, signal, allTags,
+						target);
+	}
+
+	
+	if (!this.pad.connected){
+		this.pad.addCallbacks(this, {onConnect: setAfterCheck});
+		return;
+	}
+
+	this.allControls[padName] = new PadControl(this, axis, min, max, functionName,
+											   signal, allTags, target);
+}
 
 // Destroy the given control (by name).
 ControlManager.prototype.unbindControl = function(controlName){
@@ -488,3 +522,62 @@ Control.prototype.destroy = function(){
 /******************************************************************************/
 /* Control */
 /***********/
+
+/**************/
+/* PadControl */
+/******************************************************************************/
+var PadControl = function(manager, axis, min, max, functionName, signal,
+						  allTags, target){
+	if (typeof(manager) != "object") return;
+	if ((typeof(target) != "undefined") &&
+		(typeof(target) != "object") && (target != -1)) return;
+	if (typeof(target) === "undefined") target = -1;
+	if (typeof(min) != "number") return;
+	if (typeof(max) != "number") return;
+	if (typeof(functionName) != "string") return;
+
+	this.manager = manager;
+	this.axis = axis;
+	this.min = min;
+	this.max = max;
+	this.functionName = functionName;
+	this.signal = signal;
+	this.allTags = allTags;
+	this.target = target;
+
+	if (signal == "update"){
+		manager.onUpdate.add(this.allControls[padName].execute, this.allControls[padName]);
+	}
+}
+
+PadControl.prototype.execute = function(){
+	if (typeof(this.target) === "undefined") return;
+
+	var target = (this.target == -1) ? this.manager.target : this.target;
+	var actualFunction;
+	var pad = this.manager.pad;
+
+	if (target == null){
+		if (typeof(this.functionName) === "function"){
+			actualFunction = this.functionName;
+		}
+		else{
+			return;
+		}
+	}
+	else{
+		if (typeof(target[this.functionName]) === "function"){
+			actualFunction = target[this.functionName];
+		}
+		else{
+			return;
+		}
+	}
+
+	if ((pad.axis(this.axis) >= this.min) && (pad.axis(this.axis) <= this.max)){
+		actualFunction.call(target, this, pad.axis(this.axis));
+	}
+}
+/******************************************************************************/
+/* PadControl */
+/**************/
