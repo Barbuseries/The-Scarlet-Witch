@@ -546,7 +546,7 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 	this.target = target;
 
 	if (signal == "update"){
-		manager.onUpdate.add(this.allControls[padName].execute, this.allControls[padName]);
+		manager.onUpdate.add(this.execute, this);
 	}
 }
 

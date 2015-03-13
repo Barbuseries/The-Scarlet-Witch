@@ -333,6 +333,12 @@ BasicGame.Game.prototype.create = function(){
 	lucy.controlManager2.bindControl("left", Phaser.Gamepad.XBOX360_DPAD_LEFT,
 									 "goLeft",
 									 "down", "movement");
+	lucy.controlManager2.bindControl("up", Phaser.Gamepad.XBOX360_DPAD_UP,
+									 "goUp",
+									 "down", "movement");
+	lucy.controlManager2.bindControl("down", Phaser.Gamepad.XBOX360_DPAD_DOWN,
+									 "goDown",
+									 "down", "movement");
 	
 	lucy.controlManager2.bindPad("rightPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
 								 0.1, 1, "goRight", "update", "movement", -1);
