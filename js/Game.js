@@ -308,7 +308,15 @@ BasicGame.Game.prototype.create = function(){
 	}
 
 	lucy.controlManager = new ControlManager(this.game, CONTROL_KEYBOARD, lucy);
+	lucy.controlManager2 = new ControlManager(this.game, CONTROL_GAMEPAD, lucy, "pad1");
 	//perso.control.target = healthBar;
+	
+	lucy.controlManager2.bindControl("right", Phaser.Gamepad.XBOX360_DPAD_RIGHT,
+									 "goRight",
+									 "down", "movement");
+	lucy.controlManager2.bindControl("left", Phaser.Gamepad.XBOX360_DPAD_LEFT,
+									 "goLeft",
+									 "down", "movement");
 
 	lucy.controlManager.bindControl("leftControl", Phaser.Keyboard.Q, "goLeft",
 									"down", "movement");
@@ -425,4 +433,5 @@ BasicGame.Game.prototype.update = function(){
 	}*/
 	
 	lucy.controlManager.update();
+	lucy.controlManager2.update();
 }
