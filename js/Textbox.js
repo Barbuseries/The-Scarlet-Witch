@@ -1334,16 +1334,17 @@ TextBox.prototype._del = function(){
 	}
 
 	if (this.toggleTimer != null){
-		this.toggleTimer.stop();
+		this.toggleTimer.destroy();
 		this.toggleTimer = null;
 	}
 
 	if (this.closeTimer != null){
+		this.closeTimer.destroy();
 		this.closeTimer = null;
 	}
 
 	if (this.timerNextSentence != null){
-		this.timerNextSentence.stop();
+		this.timerNextSentence.destroy();
 		this.timerNextSentence = null;
 	}
 	

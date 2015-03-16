@@ -34,7 +34,9 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.game.world.bringToTop(this.game.platforms);
 
-    this.game.platforms.debug = true;
+	this.bloodPool = this.game.add.group();
+
+    //this.game.platforms.debug = true;
 
     player1 = BasicGame.player1;
 	hero = player1.hero;
@@ -49,6 +51,26 @@ BasicGame.Level1.prototype.create = function (){
 	hero.DRAG = 500
 	hero.jumpCount = 2
 	hero.orientation = 0;
+	hero.firstSkill = new Skill(this.game, hero, undefined, undefined, 5000, "ennemy");
+	hero.firstSkill.onUse.add(function(){hero.animations.play("spellCast")});
+	
+	hero.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
+	
+	hero.secondSkill = new ProjectileSkill(this.game, hero, undefined, undefined, 1000, "blood",
+										   this.bloodPool, "enemy");
+	hero.secondSkill.onUse.add(function(){hero.animations.play("spellCast")});
+	hero.secondSkill.trajectory = [function(){	
+		this.x = hero.x + 16;
+		this.y = hero.y + 32;
+
+		this.game.physics.enable([this], Phaser.Physics.ARCADE);
+
+		this.body.velocity.x = 500 * hero.scale.x;
+		this.body.gravity.y = -500;
+
+		this.checkWorldBounds = true;
+		this.outOfBoundsKill = true;
+	}, []];
 
     this.game.physics.enable( [hero], Phaser.Physics.ARCADE);
 
@@ -130,8 +152,11 @@ BasicGame.Level1.prototype.create = function (){
 	}
 	
 	hero.cast = function(){
-		hero.animations.play("spellCast");
-		hero.body.velocity.x = 0;
+		hero.firstSkill.useSkill();
+	}
+
+	hero.castSecond = function(){
+		hero.secondSkill.useSkill();
 	}
 
     player1.controlManager = new ControlManager(this.game, CONTROL_KEYBOARD, hero);
@@ -173,11 +198,21 @@ BasicGame.Level1.prototype.create = function (){
 	player1.controlManager2.bindControl("cast", Phaser.Gamepad.XBOX360_X,
                                         "cast",
                                         "onDown", "action");
+
+	player1.controlManager.bindControl("cast", Phaser.Keyboard.ENTER,
+                                       "cast",
+                                       "onDown", "action");
+	player1.controlManager.bindControl("cast2", Phaser.Keyboard.TWO,
+                                       "castSecond",
+                                       "down", "action");
 }
 
 BasicGame.Level1.prototype.update = function (){
     //Collision
     this.game.physics.arcade.collide(hero, this.game.platforms);
+	this.game.physics.arcade.collide(this.bloodPool, this.game.platforms, function(projectile, platform){
+		projectile.kill();
+	});
 
 	if (hero.body.onFloor()){
 		hero.jumpCount = 2;
@@ -188,5 +223,5 @@ BasicGame.Level1.prototype.update = function (){
 	player1.controlManager.update();
 	player1.controlManager2.update();
 
-	this.game.debug.body(hero);
+	//this.game.debug.body(hero);
 }
