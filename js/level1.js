@@ -56,12 +56,12 @@ BasicGame.Level1.prototype.create = function (){
 	
 	hero.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
 	
-	hero.secondSkill = new ProjectileSkill(this.game, hero, undefined, undefined, 1000, "blood",
+	hero.secondSkill = new ProjectileSkill(this.game, hero, undefined, undefined, 500, "blood",
 										   this.bloodPool, "enemy");
 	hero.secondSkill.onUse.add(function(){hero.animations.play("spellCast")});
-	hero.secondSkill.trajectory = [function(){	
-		this.x = hero.x + 16;
-		this.y = hero.y + 32;
+	hero.secondSkill.initFunction = function(){	
+		this.x = hero.x + 24;
+		this.y = hero.y + 36;
 
 		this.game.physics.enable([this], Phaser.Physics.ARCADE);
 
@@ -70,7 +70,24 @@ BasicGame.Level1.prototype.create = function (){
 
 		this.checkWorldBounds = true;
 		this.outOfBoundsKill = true;
-	}, []];
+
+		this.lifespan = 1000;
+
+		this.width = 20;
+		this.height = 20;
+
+		this.anchor.setTo(0.5);
+	};
+
+	hero.secondSkill.updateFunction = function(){
+		this.alpha = this.lifespan / 1000;
+	}
+	
+	hero.secondSkill.killFunction = function(){
+		console.log("I'was KILLED !");
+
+		Phaser.Sprite.prototype.kill.call(this);
+	}
 
     this.game.physics.enable( [hero], Phaser.Physics.ARCADE);
 

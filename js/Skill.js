@@ -140,9 +140,9 @@ var ProjectileSkill = function(game, user, damageStructure, costStructure,
 	this.spriteName = spriteName;
 	this.spritePool = spritePool;
 
-	this.trajectory = [function(){return 0}, []]; // [function, arguments].
-	// Called for each created projectile.
-	// Defined init position, end position, and maybe some tweens...
+	this.initFunction = null;
+	this.updateFunction = null;
+	this.killFunction = null;
 }
 
 ProjectileSkill.prototype = Object.create(Skill.prototype);
@@ -154,27 +154,34 @@ ProjectileSkill.prototype.useSkill = function(){
 
 		if (this.spritePool != null){
 			var reusableSprite = this.spritePool.getFirstDead();
-
+			
 			if (reusableSprite == null){
-				newProjectile = this.spritePool.create(0, 0, this.spriteName);
+				newProjectile = new Projectile(this.game, 0, 0, this.spriteName,
+											   this.initFunction, this.updateFunction,
+											   this.killFunction);
+				this.spritePool.add(newProjectile);
 			}
 			else{
 				newProjectile = reusableSprite;
-				newProjectile.reset();
+				newProjectile.reset(0, 0, 1);
+				
+				newProjectile.setInitFunction(this.initFunction);
+				newProjectile.setUpdateFunction(this.updateFunction);
+				newProjectile.setKillFunction(this.killFunction);
 			}
 		}
 		else{
-			newProjectile = this.spritePool.create(0, 0, this.spriteName);
+			newProjectile = new Projectile(this.game, 0, 0, this.spriteName,
+										   initFunction, updateFunction,
+										   killFunction);
+			this.spritePool.add(newProjectile);
 		}
 
-		var trajectoryFunction = this.trajectory[0];
-		var trajectoryArguments = this.trajectory[1];
+		newProjectile.init();
 
 		var damageFunction = this.damageStructure[0];
 		var damageContext = this.damageStructure[1];
 		var damageArguments = this.damageStructure[2];
-
-		trajectoryFunction.apply(newProjectile, trajectoryArguments);
 		
 		newProjectile.damages = damageFunction.apply(damageContext, damageArguments);
 	}
@@ -182,3 +189,87 @@ ProjectileSkill.prototype.useSkill = function(){
 /******************************************************************************/
 /* ProjectileSkill */
 /*******************/
+
+/**************/
+/* Projectile */
+/******************************************************************************/
+
+var Projectile = function(game, x, y, spriteName, initFunction, updateFunction,
+						  killFunction){
+	if (typeof(game) === "undefined"){
+		return;
+	}
+
+	if (typeof(x) != "number"){
+		x = 0;
+	}
+
+	if (typeof(y) != "number"){
+		y = 0;
+	}
+
+	if (typeof(spriteName) != "string"){
+		spriteName = "";
+	}
+	
+	Phaser.Sprite.apply(this, [game, x, y, spriteName]);
+
+	this.setInitFunction(initFunction);
+	this.setUpdateFunction(updateFunction);
+	this.setKillFunction(killFunction);
+}
+
+Projectile.prototype = Object.create(Phaser.Sprite.prototype);
+Projectile.prototype.constructor = Projectile;
+
+
+Projectile.prototype.init = function(){
+	if (this.initFunction != null){
+		this.initFunction.apply(this);
+	}
+}
+
+Projectile.prototype.update = function(){
+	if (this.updateFunction != null){
+		this.updateFunction.apply(this);
+	}
+
+	Phaser.Sprite.prototype.update.apply(this);
+}
+
+// The Projectile is NOT killed in this function.
+// Only in YOUR kill function.
+Projectile.prototype.kill = function(){
+	if (this.killFunction != null){
+		this.killFunction.apply(this);
+	}
+}
+
+Projectile.prototype.setInitFunction = function(initFunction){
+	if (typeof(initFunction) != "function"){
+		initFunction = null;
+	}
+
+	this.initFunction = initFunction;
+}
+
+Projectile.prototype.setUpdateFunction = function(updateFunction){
+	if (typeof(updateFunction) != "function"){
+		updateFunction = null;
+	}
+
+	this.updateFunction = updateFunction;
+}
+
+Projectile.prototype.setKillFunction = function(killFunction){
+	if (typeof(killFunction) != "function"){
+		killFunction = function(){
+			Phaser.Sprite.prototype.kill.apply(this);
+		};
+	}
+
+	this.killFunction = killFunction;
+}
+/******************************************************************************/
+/* Projectile */
+/**************/
