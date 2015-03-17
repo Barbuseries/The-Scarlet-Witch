@@ -34,7 +34,8 @@ var Skill = function(game, user, damageStructure, costStructure, cooldown,
 
 	this.canBeUsed = true;
 
-	this.cooldownTimer = null;
+	this.cooldownTween = null;
+	this.cooldown = new Stat(this, "Cooldown", STAT_PERCENT_LINK, 0, cooldown);
 	this.setCooldown(cooldown);
 
 	this.breakable = false; // Can it be stopped by the USER while it's
@@ -52,8 +53,12 @@ var Skill = function(game, user, damageStructure, costStructure, cooldown,
 
 	this.element = Elements.None;
 
+	this.launchFunction = null;
+
 	this.onUse = new Phaser.Signal();
 	this.onFailedUse = new Phaser.Signal();
+
+	this.cooldownBar = null;
 }
 
 Skill.prototype.useSkill = function(){
@@ -78,8 +83,13 @@ Skill.prototype.useSkill = function(){
 	if (this.user.special.canSubtract(cost)){
 		this.user.special.subtract(cost);
 
+		if (typeof(this.launchFunction) === "function"){
+			this.launchFunction.apply(this);
+		}
+
 		this.canBeUsed = false;
-		resumeLoopedTimer(this.cooldownTimer);
+		this.cooldown.set(1, 1);
+		resumeLoopedTween(this.cooldownTween);
 
 		this.onUse.dispatch(this);
 		
@@ -95,15 +105,25 @@ Skill.prototype.useSkill = function(){
 Skill.prototype.setCooldown = function(cooldown){
 	if (typeof(cooldown) != "number") return;
 
-	if (this.cooldownTimer != null){
-		this.cooldownTimer.destroy();
-		this.cooldownTimer = null;
+	if (this.cooldownTween != null){
+		this.cooldownTween.stop();
+		this.cooldownTween = null;
 	}
 
-	this.cooldown = cooldown;
+	this.cooldown.setMax(cooldown);
+	this._cooldown = cooldown;
 
-	this.cooldownTimer = this.game.time.create(false);
-	this.cooldownTimer.loop(cooldown, this.refreshSkill, this);
+	this.cooldownTween = this.game.add.tween(this)
+		.to({_cooldown: 0}, cooldown);
+
+	function updateCooldown(){
+		this.cooldown.set(this._cooldown);
+	}
+
+	this.cooldownTween.onUpdateCallback(updateCooldown, this);
+	this.cooldownTween.onRepeat.add(this.refreshSkill, this);
+	this.cooldownTween.loop();
+//	this.cooldownTween.loop(cooldown, this.refreshSkill, this);
 }
 
 Skill.prototype.breakSkill = function(){
@@ -117,10 +137,29 @@ Skill.prototype._checkBreak = function(oldBreakArmor, newBreakArmor){
 }
 
 Skill.prototype.refreshSkill = function(){
-	this.cooldownTimer.pause();
+	this.cooldownTween.pause();
 
+	this.cooldown.set(0);
 	this.canBeUsed = true;
 	this.breakArmor.set(1, 1);
+}
+
+Skill.prototype.createCooldownBar = function(x, y, width, height, fillColor,
+											 backgroundColor, belowSprite, upperSprite,
+											 orientation){
+	this.cooldownBar = new MonoGauge(this.game, x, y, width, height, this.cooldown,
+									 fillColor, backgroundColor, belowSprite,
+									 upperSprite, orientation);
+
+	this.cooldownBar.allowIncreaseAnimation = false;
+	this.cooldownBar.allowDecreaseAnimation = false;
+	this.cooldownBar.valueDisplayType = GAUGE_NONE;
+	this.cooldownBar.updateValueText();
+	this.cooldownBar.backgroundFill.alpha = 0;
+
+	this.cooldownBar.onUpdate.add(function(){
+		this.visible = (this.stat.get() > 0);
+	}, this.cooldownBar);
 }
 
 /******************************************************************************/
@@ -148,7 +187,7 @@ var ProjectileSkill = function(game, user, damageStructure, costStructure,
 ProjectileSkill.prototype = Object.create(Skill.prototype);
 ProjectileSkill.prototype.constructor = ProjectileSkill;
 
-ProjectileSkill.prototype.useSkill = function(){
+/*ProjectileSkill.prototype.useSkill = function(){
 	if (Skill.prototype.useSkill.call(this)){
 		var newProjectile;
 
@@ -185,7 +224,7 @@ ProjectileSkill.prototype.useSkill = function(){
 		
 		newProjectile.damages = damageFunction.apply(damageContext, damageArguments);
 	}
-}
+}*/
 /******************************************************************************/
 /* ProjectileSkill */
 /*******************/
@@ -273,3 +312,39 @@ Projectile.prototype.setKillFunction = function(killFunction){
 /******************************************************************************/
 /* Projectile */
 /**************/
+
+
+function createProjectile(game, x, y, spriteName, spritePool, initFunction,
+						  updateFunction, killFunction){
+	var newProjectile;
+
+	if (spritePool != null){
+		var reusableSprite = spritePool.getFirstDead();
+		
+		if (reusableSprite == null){
+			newProjectile = new Projectile(game, x, y, spriteName,
+										   initFunction, updateFunction,
+										   killFunction);
+			spritePool.add(newProjectile);
+		}
+		else{
+			newProjectile = reusableSprite;
+			newProjectile.reset(0, 0, 1);
+			newProjectile.scale.x = 1;
+			newProjectile.scale.y = 1;
+				
+			newProjectile.setInitFunction(initFunction);
+			newProjectile.setUpdateFunction(updateFunction);
+			newProjectile.setKillFunction(killFunction);
+		}
+	}
+	else{
+		newProjectile = new Projectile(game, 0, 0, spriteName,
+									   initFunction, updateFunction,
+									   killFunction);
+	}
+
+	newProjectile.init();
+
+	return newProjectile;
+}

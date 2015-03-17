@@ -1725,3 +1725,12 @@ function resumeLoopedTimer(loopedTimer){
         loopedTimer.resume();
     }
 }
+
+function resumeLoopedTween(loopedTween){
+	if (loopedTween.isPaused == false){
+        loopedTween.start();
+    }
+    else{
+        loopedTween.resume();
+    }
+}
