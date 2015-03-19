@@ -60,54 +60,153 @@ BasicGame.Level1.prototype.create = function (){
 	
 	hero.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
 	
-	hero.secondSkill = new Skill(this.game, hero, undefined, undefined, 1000, "enemy");
+	/*************/
+	/* IMPORTANT */
+	/**************************************************************************/
+	hero.secondSkill = new Skill(this.game, hero, undefined, undefined, 1000,
+								 "enemy");
 
+	/* Les projectiles ont besoin d'une "piscine" de sprites.
+	   Ca permet 2 choses :
+	   => Pouvoir réutiliser un projectile déjà détruit (ne pas oublier de le
+	   réinitialiser)
+	
+	   => Gérer automatiquement les collisions, et les destruction globales
+	   (les projectiles créés sont dans la piscine, donc directement dans un groupe)
+	*/
+
+	// Je suis obligé de marquer cette ligne, car launchFunction est appelé par le
+	// skill. Donc this correspond au skill (et non à BasicGame.Level1).
 	var bloodPool = this.bloodPool;
 
+	// launchFunction est appelé dès que le skill est utilisé (le joueur appuie
+	// sur la touche et il a assez de special pour le lancer)
 	hero.secondSkill.launchFunction = function(){
+
+		/* Pour créer des projectiles, il faut 3 fonctions:
+		   => initFunction : lancé quand le projectile est créé.
+		                     Initialise le projectile.
+							 
+		   => updateFunction : lancé quand le projectile est mis à jour.
+		                       (en même temps que la fonction update globale)
+							   Attention : Dans le cas où un projectile n'est pas
+							   détruit sur le coup (animation de destruction),
+							   cette fonction sera toujours appelée (jusqu'à ce que
+							   le sprite soit détruit).
+							   Il faudra peut être vérifier que le sprite n'est pas
+							   en train d'être détruit.
+							   (Comme dans updateProjectile juste en dessous)
+
+		   => killFunction : lancé quand le projectile est tué (REMPLACE le kill par
+		                     défaut du projectile, donc ne pas oublier de le rajouter).
+							 Comme pour updateFunction, killFunction est appelé tant que
+							 le projectile n'est pas détruit. Donc ne pas oublier de
+							 vérifier qu'il n'est pas en train de l'être.
+
+		   Ces fonctions sont appelées par le projectile. this correspond donc au
+		   projectile.
+		 */
+
 		function initProjectile(){
 			this.x = hero.x + 24;
 			this.y = hero.y + 36;
 			
+			// Je remet à zéro le tint, car si le projectile vient de la piscine,
+			// il est noir.
+			this.tint = H_WHITE;
+
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
 			
-			this.body.velocity.x = 500 * hero.scale.x;
-			this.body.gravity.y = -500;
+			this.body.velocity.x = 600 * hero.scale.x;
+			this.body.velocity.y = -250;
+
+			// Même principe que pour le tint.
+			this.body.allowGravity = true;
 			
 			this.checkWorldBounds = true;
 			this.outOfBoundsKill = true;
 			
-			//this.lifespan = 1000;
+			// Temps en millisecondes d'existance du projectile.
+			this.lifespan = 1000;
 			
-			this.width /= 2;
-			this.height /= 2;
+			this.width /= 3;
+			this.height /= 3;
 			
 			this.anchor.setTo(0.5);
 
-			this.animations.add("walk", [144, 145, 146, 147, 148, 149, 150, 151], 15);
+			this.animations.add("walk", [144, 145, 146, 147, 148, 149, 150, 151],
+								15);
 			this.animations.play("walk", 15, true);
 		}
 
 		function updateProjectile(){
-			//this.alpha = this.lifespan / 1000;
+			// Si this.timer est défini, ça veut dire que le projectile est en
+			// train d'être tué.
+			if (typeof(this.timer) === "undefined"){
+				this.alpha = this.lifespan / 1000;
+			}
 		}
 
 		function killProjectile(){
-			console.log("I'was KILLED !");
+			// Si this.timer est défini, ça veut dire que le projectile est en
+			// train d'être tué.
+			if (typeof(this.timer) === "undefined"){
+				this.alpha = 1;
+			
+				this.body.velocity.x = 0;
+				this.body.velocity.y = 0;
 
-			Phaser.Sprite.prototype.kill.call(this);
+				this.body.allowGravity = false;
+				this.tint = H_BLACK;
+				
+				// Tue le sprite 250 millisecondes en retard, histoire de laisser
+				// le joueur voir où il atterrit.
+				this.timer = this.game.time.create(true);
+				
+				this.timer.add(250, function(){
+					hero.x = this.x;
+					hero.y = this.y - hero.height;
+					console.log("TELEPORTATION !");
+					
+					Phaser.Sprite.prototype.kill.call(this);
+
+					this.timer = undefined;
+				}, this);
+				
+				// Ne pas oublier de démarrer le timer !
+				this.timer.start();
+			}	
 		}
 
-		var newProjectile = createProjectile(this.game, 0, 0, "lucy", bloodPool,
-											 initProjectile, updateProjectile,
-											 killProjectile);
-	}
+		// Le héros lance une animation.
+		// N.B : Le skill a aussi un attribut owner qui correspond à hero.
+		//       this.user.animations.play("spellCast") est donc équivalent.
+		//       Par contre, un projectile n'en possède pas, il faut donc faire
+		//       quelque chose du genre:
+		//
+		//       var hero = this.owner;
+		//       Puis, dans les fonctions du projectile, utiliser hero.
+		hero.animations.play("spellCast");
 
-	hero.secondSkill.onUse.add(function(){hero.animations.play("spellCast")});
+		timer = this.game.time.create(true);
+
+		// Même raison que pour bloodPool.
+		var game = this.game;
+
+		// Crée le projectile 100 millisecondes après le lancement du skill.
+		timer.add(100, function(){createProjectile(game, 0, 0, "lucy", bloodPool,
+												  initProjectile, updateProjectile,
+												  killProjectile);});		
+		
+		// Encore une fois, ne pas oublier de démarrer le timer !
+		timer.start();
+	}
+	/******************************************************************************/
+
 	hero.secondSkill.createCooldownBar(24, 0, 20, 5, H_YELLOW);
 	hero.addChild(hero.secondSkill.cooldownBar);
 
-	hero.thirdSkill = new Skill(this.game, hero, undefined, undefined, 500, "enemy");
+	hero.thirdSkill = new Skill(this.game, hero, undefined, undefined, 100, "enemy");
 	var slashPool = this.slashPool;
 
 	hero.thirdSkill.launchFunction = function(){
@@ -127,7 +226,7 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
 
-			//this.tint = H_RED;
+			this.tint = H_GREY;
 
 			this.angle = -90 * hero.orientationV;
 		}
@@ -142,40 +241,89 @@ BasicGame.Level1.prototype.create = function (){
 			
 			this.lifespan = 1000;
 			
-			this.animations.add("slash", [0, 0, 1, 1, 2, 2, 3]);
+			this.animations.add("slash", [0, 1, 1, 2, 2, 3]);
 			
-			this.animations.play("slash", 60 / 7);
+			this.animations.play("slash", 1000 / this.lifespan * FPS / 7);
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
-			this.body.velocity.x = 200 * hero.scale.x;
+			this.body.velocity.x = 500 * hero.scale.x;
+			this.body.velocity.y = -100;
 			this.body.allowGravity = false;
 
 			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
 
-			//this.scale.x *= 0.5;
 			this.scale.y *= 0.5;
 
-			//this.tint = H_RED;
+			this.tint = H_RED;
 
 			this.angle = -90 * hero.orientationV;
+
+			this.tween = this.game.add.tween(this.body.velocity)
+				.to({y : 100}, this.lifespan / 2)
+				.to({y : -100}, this.lifespan / 2);
+
+			this.tween.loop();
+
+			this.tween.loop();
+			this.tween.start();
 		}
 
 		function updateProjectile(){
-			//this.scale.x = this.lifespan / 200;
-			//this.scale.y = this.lifespan / 200;
+			this.alpha = this.lifespan / 1000;
 		}
 
-		var newMainProjectile = createProjectile(this.game, 0, 0, "slash",
-												 slashPool, initMainProjectile);
+		function killProjectile(){
+			this.tween.stop();
+			this.tween = null;
 
-		var timer = this.game.time.create(true);
-		
-		timer.add(250, function(){
+			Phaser.Sprite.prototype.kill.call(this);
+		}
+
+		createProjectile(this.game, 0, 0, "slash", slashPool,
+						 initProjectile, updateProjectile, killProjectile);
+	}
+
+	hero.fourthSkill = new Skill(this.game, hero, undefined, undefined, 5000, "ennemy");
+
+	hero.fourthSkill.launchFunction = function(){
+		function initProjectile(angle){
+			this.anchor.setTo(0.5);
+			this.x = hero.x + hero.width / 2;
+			this.y = hero.y + hero.height / 2;
+
+			this.angle = angle;
+			this.distanceFactor = 1;
+
+			this.frame = 2;
+
+			this.lifespan = 4500;
+
+			this.tint = H_GREY;
+
+			this.x += Math.cos(this.angle) * hero.width / 2 + this.width / 2 + hero.width / 2;
+			this.y += Math.sin(this.angle) * hero.height / 2 + this.height / 2 + hero.height / 2;
+		}
+
+		function updateProjectile(){
+			this.angle += 5;
+
+			this.alpha = this.lifespan / 4500;
+
+			if (this.alpha < 0.3){
+				this.distanceFactor *= 1.02;
+			}
+			
+			this.x = hero.x + hero.width / 2 + Math.cos(this.angle / 180 * Math.PI) * hero.width / 2 * this.distanceFactor;
+			this.y = hero.y + hero.height / 2 + Math.sin(this.angle / 180 * Math.PI) * hero.height / 2 * this.distanceFactor;
+		}
+
+		var angle = 45;
+
+		for(var i = 0; i < 360 / angle; i++) {
 			createProjectile(this.game, 0, 0, "slash", slashPool,
-							 initProjectile, updateProjectile);
-		}, this);
-
-		timer.start();
+							 function(){initProjectile.call(this, i * angle)},
+							 updateProjectile);
+		}
 	}
 
     this.game.physics.enable( [hero], Phaser.Physics.ARCADE);
@@ -276,6 +424,10 @@ BasicGame.Level1.prototype.create = function (){
 		hero.thirdSkill.useSkill();
 	}
 
+	hero.castFourth = function(){
+		hero.fourthSkill.useSkill();
+	}
+
     player1.controlManager = new ControlManager(this.game, CONTROL_KEYBOARD, hero);
     player1.controlManager2 = new ControlManager(this.game, CONTROL_GAMEPAD, hero,
 												 "pad1");
@@ -328,6 +480,13 @@ BasicGame.Level1.prototype.create = function (){
 	player1.controlManager.bindControl("cast3", Phaser.Keyboard.THREE,
                                        "castThird",
                                        "down", "action");
+	player1.controlManager.bindControl("cast4", Phaser.Keyboard.FOUR,
+                                       "castFourth",
+                                       "down", "action");
+
+	player1.controlManager.bindControl("fly", Phaser.Keyboard.SPACEBAR,
+                                       "fly",
+                                       "down", "movement");
 }
 
 BasicGame.Level1.prototype.update = function (){
