@@ -43,8 +43,7 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.game.world.bringToTop(this.game.platforms);
 
-	this.bloodPool = this.game.add.group();
-	this.slashPool = this.game.add.group();
+	
 
     //this.game.platforms.debug = true;
 
@@ -67,6 +66,11 @@ BasicGame.Level1.prototype.create = function (){
 	hero.firstSkill = new Skill(hero, 1, undefined, 5000);
 	hero.firstSkill.onUse.add(function(){hero.animations.play("spellCast")});
 	hero.allStats = {};
+	BasicGame.bloodPool =  this.game.add.group();
+	BasicGame.slashPool =  this.game.add.group();
+	BasicGame.firePool =  this.game.add.group();
+	BasicGame.icePool = this.game.add.group();
+	BasicGame.Kaboum = this.game.add.group();
 
 	hero.allStats.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
 	
@@ -110,7 +114,7 @@ BasicGame.Level1.prototype.create = function (){
 
 	// Je suis obligé de marquer cette ligne, car launchFunction est appelé par le
 	// skill. Donc this correspond au skill (et non à BasicGame.Level1).
-	var bloodPool = this.bloodPool;
+	var bloodPool = BasicGame.bloodPool;
 
 	// launchFunction est appelé dès que le skill est utilisé (le joueur appuie
 	// sur la touche et il a assez de special pour le lancer)
@@ -228,12 +232,12 @@ BasicGame.Level1.prototype.create = function (){
 		}
 
 		// Le héros lance une animation.
-		// N.B : Le skill a aussi un attribut owner qui correspond à hero.
+		// N.B : Le skill a aussi un attribut user qui correspond à hero.
 		//       this.user.animations.play("spellCast") est donc équivalent.
 		//       Par contre, un projectile n'en possède pas, il faut donc faire
 		//       quelque chose du genre:
 		//
-		//       var hero = this.owner;
+		//       var hero = this.user;
 		//       Puis, dans les fonctions du projectile, utiliser hero.
 		hero.animations.play("spellCast");
 
@@ -256,9 +260,15 @@ BasicGame.Level1.prototype.create = function (){
 	hero.addChild(hero.secondSkill.cooldownBar);
 
 	hero.thirdSkill = new Skill(hero, 1, undefined, 500);
-	var slashPool = this.slashPool;
+	var slashPool = BasicGame.slashPool;
+	var firePool = BasicGame.firePool;
+	var icePool = BasicGame.icePool;
+	var kaboumPool = BasicGame.kaboumPool;
+
 
 	hero.thirdSkill.launchFunction = function(){
+		var hero = this.user;
+
 		function initProjectile(){
 			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
 			this.y = hero.y + hero.height * 0.65;
@@ -269,9 +279,9 @@ BasicGame.Level1.prototype.create = function (){
 			
 			this.lifespan = 1000;
 			
-			this.animations.add("slash", [0, 1, 1, 2, 2, 3]);
+			this.animations.add("Fireball", [32, 33, 34, 35, 36, 37, 38, 39]);
 			
-			this.animations.play("slash", 1000 / this.lifespan * FPS / 7);
+			this.animations.play("Fireball", null, true);
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
 			this.body.velocity.x = 500 * hero.scale.x;
@@ -280,9 +290,6 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
 
-			this.scale.y *= 0.5;
-
-			this.tint = H_RED;
 
 			this.angle = -90 * hero.orientationV;
 
@@ -298,23 +305,34 @@ BasicGame.Level1.prototype.create = function (){
 		}
 
 		function updateProjectile(){
-			this.alpha = this.lifespan / 1000;
+			this.scale.x = this.lifespan / 1000;
 		}
 
 		function killProjectile(){
 			this.tween.stop();
 			this.tween = null;
-
 			Phaser.Sprite.prototype.kill.call(this);
 		}
 
 		function collideFunction(obstacle){
 			console.log(1);
+			if(typeof(this.timer != "undefined")){
+			this.body.velocity.x = 0;
+			this.body.velocity.y = 0;
+			this.timer = this.game.time.create(true);
+			this.timer.add(350,this.kill,this);
+			this.timer.start();
+			}
+			this.damageFunction()
 		}
 
-		createProjectile(this.game, 0, 0, "slash", slashPool,
+		function damageFunction(obstacle){
+			obstacle.allStats.health.subtract(hero.allStats.attack.get());
+
+		}
+		createProjectile(this.game, 0, 0, "Fireball", firePool,
 						 initProjectile, updateProjectile, killProjectile,
-						 collideFunction);
+						 collideFunction,undefined,damageFunction);
 	}
 
 	hero.fourthSkill = new Skill(hero, 1, undefined, 5000);
@@ -364,6 +382,86 @@ BasicGame.Level1.prototype.create = function (){
 							 updateProjectile);
 		}
 	}
+
+	hero.fifthSkill = new Skill(hero, 1, undefined, 500);
+	hero.fifthSkill.launchFunction = function(){
+		var hero = this.user;
+
+		function initProjectile(){
+			console.log(1);
+			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
+			this.y = hero.y + hero.height * 0.65;
+
+			this.anchor.setTo(0.5);
+
+			this.frame = 0;
+			
+			this.lifespan = 1000;
+			
+			this.animations.add("Iceball", [0,1,2,3,4,5,6,7,8]);
+			
+			this.animations.play("Iceball", null, true);
+
+			this.game.physics.enable([this], Phaser.Physics.ARCADE);
+			this.body.velocity.x = 500 * hero.scale.x;
+			this.body.velocity.y = -100;
+			this.body.allowGravity = false;
+
+			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
+
+
+			this.angle = -90 * hero.orientationV;
+
+			this.targetTags.push("enemy");
+
+			this.tween = this.game.add.tween(this.body.velocity)
+				.to({y : 100}, this.lifespan / 2)
+				.to({y : -100}, this.lifespan / 2);
+
+			this.tween.loop();
+
+			this.tween.start();
+		}
+
+		/*function initExplosion(x,y){
+			this.x = x;
+			this.y = y;
+			this.frame = 0;
+			this.animations.add("Kaboum", [0,1,2,3,4,5,6,7,8]) ;
+			this.animations.play("Kaboum",null, false, true);
+		}*/
+
+		function updateProjectile(){
+			this.scale.x = this.lifespan / 1000;
+		}
+
+		function killProjectile(){
+			this.tween.stop();
+			this.tween = null;
+			var x = this.x;
+			var y = this.y;
+			var anchor = this.anchor.x;
+			Phaser.Sprite.prototype.kill.call(this);
+			//createProjectile(this.game, x,y, "Kaboum", kaboumPool, initExplosion);
+		}
+
+		function collideFunction(obstacle){
+			console.log(1);
+			this.damageFunction()
+		}
+
+		function damageFunction(obstacle){
+			obstacle.allStats.health.subtract(hero.allStats.attack.get());
+
+		}
+		createProjectile(this.game, 0, 0, "Iceball", icePool,
+						 initProjectile, updateProjectile, killProjectile,
+						 collideFunction,undefined,damageFunction);
+	}
+
+
+
+	hero.fifthSkill = new Skill(hero, 1, undefined, 5000);
 
     this.game.physics.enable( [hero], Phaser.Physics.ARCADE);
 
@@ -467,6 +565,10 @@ BasicGame.Level1.prototype.create = function (){
 		hero.fourthSkill.useSkill();
 	}
 
+	hero.castfifth = function(){
+		hero.fifthSkill.useSkill();
+	}
+
     player1.controlManager = new ControlManager(this.game, CONTROL_KEYBOARD, hero);
     player1.controlManager2 = new ControlManager(this.game, CONTROL_GAMEPAD, hero,
 												 "pad1");
@@ -513,6 +615,9 @@ BasicGame.Level1.prototype.create = function (){
 	player1.controlManager.bindControl("cast", Phaser.Keyboard.ENTER,
                                        "cast",
                                        "onDown", "action");
+	player1.controlManager.bindControl("cast5", Phaser.Keyboard.ONE,
+									 "castfifth",
+									 "down","action");
 	player1.controlManager.bindControl("cast2", Phaser.Keyboard.TWO,
                                        "castSecond",
                                        "down", "action");
@@ -531,12 +636,12 @@ BasicGame.Level1.prototype.create = function (){
 BasicGame.Level1.prototype.update = function (){
     //Collision
     this.game.physics.arcade.collide(hero, this.game.platforms);
-	this.game.physics.arcade.collide(this.slashPool, hero,
+	this.game.physics.arcade.collide(BasicGame.slashPool, hero,
 									 collideProjectile, collideProcessProjectile);
-	this.game.physics.arcade.collide(this.slashPool, this.game.platforms,
+	this.game.physics.arcade.collide(BasicGame.slashPool, this.game.platforms,
 									 collideProjectile, collideProcessProjectile);
 
-	this.game.physics.arcade.collide(this.bloodPool, this.game.platforms,
+	this.game.physics.arcade.collide(BasicGame.bloodPool, this.game.platforms,
 									 collideProjectile, collideProcessProjectile);
 	
 	if (hero.body.onFloor()){
