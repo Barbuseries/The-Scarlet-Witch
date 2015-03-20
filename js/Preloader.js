@@ -24,9 +24,9 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("perso", "assets/firstaid.png");
 	this.load.image("blood", "assets/bloodParticle.png");
 	this.load.spritesheet("slash", "assets/Spells/swoosh_0.png", 32, 32);
-	this.load.spritesheet("Fireball", "assets/Spells/Fireball.png", 64, 64);
-	this.load.spritesheet("Iceball", "assets/Spells/Iceball.png", 64, 64);
-	this.load.spritesheet("Kaboum", "assets/Spells/explosions.png", 97, 11);
+	this.load.spritesheet("fireball_0", "assets/Spells/fireball_0.png", 64, 64);
+	this.load.spritesheet("iceball_0", "assets/Spells/iceball_0.png", 64, 64);
+	this.load.spritesheet("explosion_0", "assets/Spells/explosion_0.png", 64, 64);
 	this.load.tilemap('level1', 'assets/tilemaps/Level1.json', null,
 					  Phaser.Tilemap.TILED_JSON);
 	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
@@ -37,12 +37,16 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("lucy4", "assets/Lucy/SaraLeggings.png", 64, 64);
 	this.load.spritesheet("lucy2", "assets/Lucy/SaraShirt.png", 64, 64);
 	this.load.spritesheet("lucy2", "assets/Lucy/SaraShoes.png", 64, 64);
-	console.log(BasicGame);
+
+	this.load.audio("explosion_0", "audio/SFX/explosion_0.wav");
+
 	BasicGame.bloodPool = null; 
 	BasicGame.slashPool = null; 
 	BasicGame.firePool = null;
 	BasicGame.icePool = null;
-	BasicGame.kaboumPool = null;
+	BasicGame.explosionPool = null;
+
+	BasicGame.sfx = {};
 }
 
 BasicGame.Preloader.prototype.create = function(){

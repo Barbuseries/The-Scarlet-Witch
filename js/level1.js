@@ -1,5 +1,4 @@
 BasicGame.Level1 = function(game){
-
 }
 
 BasicGame.Level1.prototype.preload = function(){
@@ -10,6 +9,7 @@ var sky;
 var player1;
 var hero;
 var secondSkillBar;
+var toto;
 
 BasicGame.Level1.prototype.create = function (){
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -43,7 +43,16 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.game.world.bringToTop(this.game.platforms);
 
-	
+	BasicGame.bloodPool =  this.game.add.group();
+	BasicGame.slashPool =  this.game.add.group();
+	BasicGame.firePool =  this.game.add.group();
+	BasicGame.icePool = this.game.add.group();
+	BasicGame.explosionPool = this.game.add.group();
+
+	BasicGame.sfx = {};
+
+	BasicGame.sfx.EXPLOSION_0 = this.game.add.audio("explosion_0");
+	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;
 
     //this.game.platforms.debug = true;
 
@@ -66,11 +75,6 @@ BasicGame.Level1.prototype.create = function (){
 	hero.firstSkill = new Skill(hero, 1, undefined, 5000);
 	hero.firstSkill.onUse.add(function(){hero.animations.play("spellCast")});
 	hero.allStats = {};
-	BasicGame.bloodPool =  this.game.add.group();
-	BasicGame.slashPool =  this.game.add.group();
-	BasicGame.firePool =  this.game.add.group();
-	BasicGame.icePool = this.game.add.group();
-	BasicGame.Kaboum = this.game.add.group();
 
 	hero.allStats.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
 	
@@ -161,6 +165,8 @@ BasicGame.Level1.prototype.create = function (){
 		function initProjectile(){
 			this.x = hero.x + 24;
 			this.y = hero.y + 36;
+
+			this.scale.x = hero.orientationH;
 			
 			// Je remet à zéro le tint, car si le projectile vient de la piscine,
 			// il est noir.
@@ -217,13 +223,57 @@ BasicGame.Level1.prototype.create = function (){
 				this.timer = this.game.time.create(true);
 				
 				this.timer.add(250, function(){
-					hero.x = this.x;
-					hero.y = this.y - hero.height;
-					console.log("TELEPORTATION !");
-					
-					Phaser.Sprite.prototype.kill.call(this);
+					var cachedScale = {};
+					cachedScale.x = hero.scale.x;
+					cachedScale.y = hero.scale.y;
 
-					this.timer = undefined;
+					this.tweenScaleHero = this.game.add.tween(hero.scale);
+					this.tweenScaleHero.to({x : this.scale.x, y : this.scale.y}, 500,
+										   Phaser.Easing.Cubic.InOut);
+
+					this.tweenPosHero = this.game.add.tween(hero);
+					this.tweenPosHero.to({x : this.x,
+										  y : this.y - this.height}, 500,
+										 Phaser.Easing.Cubic.InOut);
+
+					this.tweenShadow = this.game.add.tween(hero.scale);
+					this.tweenShadow.to({x : cachedScale.x, y : cachedScale.y}, 500,
+										Phaser.Easing.Cubic.InOut);
+
+					this.tweenShadow.onComplete.add(function(){
+						hero.tint = H_WHITE;
+						hero.body.allowGravity = true;
+
+						this.timer = undefined;
+						this.tweenScaleHero.stop();
+						this.tweenPosHero.stop();
+						this.tweenShadow.stop();
+
+						this.tweenScaleHero = null;
+						this.tweenPosHero = null;
+						this.tweenShadow = null;
+
+						Phaser.Sprite.prototype.kill.call(this);
+					}, this);
+
+					this.tweenScaleHero.onComplete.add(function(){
+						this.tweenPosHero.start()
+					}, this);
+
+					this.tweenPosHero.onComplete.add(function(){
+						this.visible = false;
+						this.tweenShadow.start();
+					}, this);
+
+					hero.tint = H_BLACK;
+					hero.body.allowGravity = false;
+					
+					console.log("TELEPORTATION !");
+
+					hero.animations.stop();
+					hero.animations.play("walk");
+
+					this.tweenScaleHero.start();
 				}, this);
 				
 				// Ne pas oublier de démarrer le timer !
@@ -259,13 +309,13 @@ BasicGame.Level1.prototype.create = function (){
 	hero.secondSkill.createCooldownBar(24, 0, 20, 5, H_YELLOW);
 	hero.addChild(hero.secondSkill.cooldownBar);
 
-	hero.thirdSkill = new Skill(hero, 1, undefined, 500);
 	var slashPool = BasicGame.slashPool;
 	var firePool = BasicGame.firePool;
 	var icePool = BasicGame.icePool;
-	var kaboumPool = BasicGame.kaboumPool;
+	var explosionPool = BasicGame.explosionPool;
 
 
+	hero.thirdSkill = new Skill(hero, 1, undefined, 500);
 	hero.thirdSkill.launchFunction = function(){
 		var hero = this.user;
 
@@ -279,9 +329,9 @@ BasicGame.Level1.prototype.create = function (){
 			
 			this.lifespan = 1000;
 			
-			this.animations.add("Fireball", [32, 33, 34, 35, 36, 37, 38, 39]);
+			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
 			
-			this.animations.play("Fireball", null, true);
+			this.animations.play("leftAnimation", null, true);
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
 			this.body.velocity.x = 500 * hero.scale.x;
@@ -291,7 +341,7 @@ BasicGame.Level1.prototype.create = function (){
 			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
 
 
-			this.angle = -90 * hero.orientationV;
+			//this.angle = -90 * hero.orientationV;
 
 			this.targetTags.push("enemy");
 
@@ -311,26 +361,51 @@ BasicGame.Level1.prototype.create = function (){
 		function killProjectile(){
 			this.tween.stop();
 			this.tween = null;
+
+			this.timer = undefined;
+			
+			var x = this.x;
+			var y = this.y;
+
+			createProjectile(this.game, x, y, "explosion_0", explosionPool,
+							 function(){initExplosion.call(this, x, y)});
+
 			Phaser.Sprite.prototype.kill.call(this);
 		}
 
 		function collideFunction(obstacle){
-			console.log(1);
-			if(typeof(this.timer != "undefined")){
-			this.body.velocity.x = 0;
-			this.body.velocity.y = 0;
-			this.timer = this.game.time.create(true);
-			this.timer.add(350,this.kill,this);
-			this.timer.start();
+			if(typeof(this.timer === "undefined")){
+				this.body.velocity.x = 0;
+				this.body.velocity.y = 0;
+
+				this.timer = this.game.time.create(true);
+				this.timer.add(350, this.kill, this);
+
+				this.timer.start();
 			}
-			this.damageFunction()
+
+			this.damageFunction();
 		}
 
 		function damageFunction(obstacle){
 			obstacle.allStats.health.subtract(hero.allStats.attack.get());
-
 		}
-		createProjectile(this.game, 0, 0, "Fireball", firePool,
+
+		function initExplosion(x, y){
+			this.x = x;
+			this.y = y;
+			this.anchor.setTo(0.5);
+			this.frame = 0;
+			this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+			this.animations.play("explosionAnimation", null, false, true);
+
+			BasicGame.sfx.EXPLOSION_0.play();
+		}
+		
+		hero.animations.stop("spellCast");
+		hero.animations.play("spellCast");
+
+		createProjectile(this.game, 0, 0, "fireball_0", firePool,
 						 initProjectile, updateProjectile, killProjectile,
 						 collideFunction,undefined,damageFunction);
 	}
@@ -388,7 +463,6 @@ BasicGame.Level1.prototype.create = function (){
 		var hero = this.user;
 
 		function initProjectile(){
-			console.log(1);
 			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
 			this.y = hero.y + hero.height * 0.65;
 
@@ -398,9 +472,9 @@ BasicGame.Level1.prototype.create = function (){
 			
 			this.lifespan = 1000;
 			
-			this.animations.add("Iceball", [0,1,2,3,4,5,6,7,8]);
+			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
 			
-			this.animations.play("Iceball", null, true);
+			this.animations.play("leftAnimation", null, true);
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
 			this.body.velocity.x = 500 * hero.scale.x;
@@ -410,7 +484,7 @@ BasicGame.Level1.prototype.create = function (){
 			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
 
 
-			this.angle = -90 * hero.orientationV;
+			//this.angle = -90 * hero.orientationV;
 
 			this.targetTags.push("enemy");
 
@@ -423,14 +497,6 @@ BasicGame.Level1.prototype.create = function (){
 			this.tween.start();
 		}
 
-		/*function initExplosion(x,y){
-			this.x = x;
-			this.y = y;
-			this.frame = 0;
-			this.animations.add("Kaboum", [0,1,2,3,4,5,6,7,8]) ;
-			this.animations.play("Kaboum",null, false, true);
-		}*/
-
 		function updateProjectile(){
 			this.scale.x = this.lifespan / 1000;
 		}
@@ -438,30 +504,32 @@ BasicGame.Level1.prototype.create = function (){
 		function killProjectile(){
 			this.tween.stop();
 			this.tween = null;
-			var x = this.x;
-			var y = this.y;
-			var anchor = this.anchor.x;
+			
 			Phaser.Sprite.prototype.kill.call(this);
-			//createProjectile(this.game, x,y, "Kaboum", kaboumPool, initExplosion);
 		}
 
 		function collideFunction(obstacle){
-			console.log(1);
-			this.damageFunction()
+			if (this.targetTags.indexOf(obstacle.tag) != -1){
+				this.damageFunction.call(this, obstacle);
+			}
+			else if (obstacle.tag == "platform"){
+				this.kill();
+			}
+		}
+
+		function collideProcess(obstacle){
+			return ((this.targetTags.indexOf(obstacle.tag) != -1) ||
+					(obstacle.tag == "platform"));
 		}
 
 		function damageFunction(obstacle){
 			obstacle.allStats.health.subtract(hero.allStats.attack.get());
-
 		}
-		createProjectile(this.game, 0, 0, "Iceball", icePool,
+
+		createProjectile(this.game, 0, 0, "iceball_0", icePool,
 						 initProjectile, updateProjectile, killProjectile,
-						 collideFunction,undefined,damageFunction);
+						 collideFunction, collideProcess, damageFunction);
 	}
-
-
-
-	hero.fifthSkill = new Skill(hero, 1, undefined, 5000);
 
     this.game.physics.enable( [hero], Phaser.Physics.ARCADE);
 
@@ -479,6 +547,7 @@ BasicGame.Level1.prototype.create = function (){
         }
 		
 		hero.orientation = 1;
+		hero.orientationH = -1;
 		hero.scale.x = -1;
 		hero.anchor.setTo(1,0);
 		hero.body.setSize(32, 48, 16+32, 16);
@@ -616,8 +685,8 @@ BasicGame.Level1.prototype.create = function (){
                                        "cast",
                                        "onDown", "action");
 	player1.controlManager.bindControl("cast5", Phaser.Keyboard.ONE,
-									 "castfifth",
-									 "down","action");
+									   "castfifth",
+									   "down","action");
 	player1.controlManager.bindControl("cast2", Phaser.Keyboard.TWO,
                                        "castSecond",
                                        "down", "action");
@@ -643,6 +712,8 @@ BasicGame.Level1.prototype.update = function (){
 
 	this.game.physics.arcade.collide(BasicGame.bloodPool, this.game.platforms,
 									 collideProjectile, collideProcessProjectile);
+	this.game.physics.arcade.collide(BasicGame.icePool, this.game.platforms,
+									collideProjectile, collideProcessProjectile);
 	
 	if (hero.body.onFloor()){
 		hero.jumpCount = 2;
