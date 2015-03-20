@@ -258,7 +258,9 @@ Projectile.prototype.setDamageFunction = function(damageFunction){
 Projectile.prototype.setCollideFunction = function(collideFunction){
 	if (typeof(collideFunction) != "function"){
 		collideFunction = function(obstacle){
-			this.damageFunction.call(this, obstacle);
+			if (this.damageFunction != null){
+				this.damageFunction.call(this, obstacle);
+			}
 
 			this.kill();
 		};
