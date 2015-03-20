@@ -23,7 +23,15 @@ BasicGame.Level1.prototype.create = function (){
 
     // Chargement du Tileset
     map.addTilesetImage('platforms', 'Level1_Tiles');
-    map.setCollisionBetween(0, 63)
+    map.setCollisionBetween(0, 63);
+
+	for(var i = 0; i < map.layer.data.length; i++) {
+		for(var j = 0; j < map.layer.data[i].length; j++) {
+			if (map.layer.data[i][j].canCollide){
+				map.layer.data[i][j].tag = "platform";
+			}
+		}
+	}
 
     this.game.platforms = map.createLayer('blockedLayer');
     this.game.platforms.resizeWorld();
@@ -55,16 +63,36 @@ BasicGame.Level1.prototype.create = function (){
 	hero.orientation = 0;
 	hero.orientationH = 1;
 	hero.orientationV = 0;
-	hero.firstSkill = new Skill(this.game, hero, undefined, undefined, 5000, "ennemy");
+	hero.tag = "Hero";
+	hero.firstSkill = new Skill(hero, 1, undefined, 5000);
 	hero.firstSkill.onUse.add(function(){hero.animations.play("spellCast")});
-	
-	hero.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
+	hero.allStats = {};
+
+	hero.allStats.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
 	
 	/*************/
 	/* IMPORTANT */
 	/**************************************************************************/
-	hero.secondSkill = new Skill(this.game, hero, undefined, undefined, 1000,
-								 "enemy");
+	
+	// Quand le joueur veut lancer un sort, il faut vérifier si il peut le lancer.
+	// C'est cette fonction qui le vérifie.
+	// Elle doit renvoyer true si le joueur peut payer, false sinon.
+	// Si aucune fonction de coût n'est passé au Skill, il en crée une qui renvoie
+	// toujours vrai.
+	// (On peut aussi directement assigner la fonction au Skill :
+	//  Skill.costFunction = function(){...};)
+	function costSkill1(){
+		if (this.user.allStats.special.canSubtract(10)){
+			this.user.allStats.special.subtract(10);
+
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
+	hero.secondSkill = new Skill(hero, 1, costSkill1, 1000);
 
 	/* Les projectiles ont besoin d'une "piscine" de sprites.
 	   Ca permet 2 choses :
@@ -73,6 +101,11 @@ BasicGame.Level1.prototype.create = function (){
 	
 	   => Gérer automatiquement les collisions, et les destruction globales
 	   (les projectiles créés sont dans la piscine, donc directement dans un groupe)
+
+	   Si aucune piscine n'est donnée (null), le projectile n'étant pas affecté à un
+	   groupe, il sera détruit des la sortie du bloc.
+	   Il faudra donc, soit le garder globalement (mauvaise idée), soit le garder dans
+	   le Skill lui même.
 	*/
 
 	// Je suis obligé de marquer cette ligne, car launchFunction est appelé par le
@@ -83,7 +116,7 @@ BasicGame.Level1.prototype.create = function (){
 	// sur la touche et il a assez de special pour le lancer)
 	hero.secondSkill.launchFunction = function(){
 
-		/* Pour créer des projectiles, il faut 3 fonctions:
+		/* Pour créer des projectiles, il faut 3 + 2 fonctions:
 		   => initFunction : lancé quand le projectile est créé.
 		                     Initialise le projectile.
 							 
@@ -102,6 +135,20 @@ BasicGame.Level1.prototype.create = function (){
 							 Comme pour updateFunction, killFunction est appelé tant que
 							 le projectile n'est pas détruit. Donc ne pas oublier de
 							 vérifier qu'il n'est pas en train de l'être.
+
+		
+
+		   => collideFunction : lancé quand le projectile entre en collision avec un
+		                        élément du niveau (collideProcess retourne true).
+								Prend l'obstacle en question en paramètre.
+								Par défaut, détruit le projectile.
+
+		   => collideProcess : lancé quand le projectile entre en collision avec un
+		                       élément du niveau (avant collideFunction).
+							   Retourne true si la collision est acceptée, false sinon.
+							   Prend l'obstacle en question en paramètre.
+							   Par défaut, retourne vrai uniquement si le projectile
+							   touche sa cible.
 
 		   Ces fonctions sont appelées par le projectile. this correspond donc au
 		   projectile.
@@ -137,6 +184,8 @@ BasicGame.Level1.prototype.create = function (){
 			this.animations.add("walk", [144, 145, 146, 147, 148, 149, 150, 151],
 								15);
 			this.animations.play("walk", 15, true);
+
+			this.targetTags.push("platform");
 		}
 
 		function updateProjectile(){
@@ -196,7 +245,7 @@ BasicGame.Level1.prototype.create = function (){
 		// Crée le projectile 100 millisecondes après le lancement du skill.
 		timer.add(100, function(){createProjectile(game, 0, 0, "lucy", bloodPool,
 												  initProjectile, updateProjectile,
-												  killProjectile);});		
+												  killProjectile);});	
 		
 		// Encore une fois, ne pas oublier de démarrer le timer !
 		timer.start();
@@ -206,31 +255,10 @@ BasicGame.Level1.prototype.create = function (){
 	hero.secondSkill.createCooldownBar(24, 0, 20, 5, H_YELLOW);
 	hero.addChild(hero.secondSkill.cooldownBar);
 
-	hero.thirdSkill = new Skill(this.game, hero, undefined, undefined, 100, "enemy");
+	hero.thirdSkill = new Skill(hero, 1, undefined, 500);
 	var slashPool = this.slashPool;
 
 	hero.thirdSkill.launchFunction = function(){
-		function initMainProjectile(){
-			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
-			this.y = hero.y + hero.height * 0.6;
-
-			this.anchor.setTo(0.5);
-
-			this.frame = 0;
-			
-			this.lifespan = 1000;
-			
-			this.animations.add("slash");
-			
-			this.animations.play("slash", 20, false, true);
-
-			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
-
-			this.tint = H_GREY;
-
-			this.angle = -90 * hero.orientationV;
-		}
-
 		function initProjectile(){
 			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
 			this.y = hero.y + hero.height * 0.65;
@@ -258,13 +286,14 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.angle = -90 * hero.orientationV;
 
+			this.targetTags.push("enemy");
+
 			this.tween = this.game.add.tween(this.body.velocity)
 				.to({y : 100}, this.lifespan / 2)
 				.to({y : -100}, this.lifespan / 2);
 
 			this.tween.loop();
 
-			this.tween.loop();
 			this.tween.start();
 		}
 
@@ -279,11 +308,16 @@ BasicGame.Level1.prototype.create = function (){
 			Phaser.Sprite.prototype.kill.call(this);
 		}
 
+		function collideFunction(obstacle){
+			console.log(1);
+		}
+
 		createProjectile(this.game, 0, 0, "slash", slashPool,
-						 initProjectile, updateProjectile, killProjectile);
+						 initProjectile, updateProjectile, killProjectile,
+						 collideFunction);
 	}
 
-	hero.fourthSkill = new Skill(this.game, hero, undefined, undefined, 5000, "ennemy");
+	hero.fourthSkill = new Skill(hero, 1, undefined, 5000);
 
 	hero.fourthSkill.launchFunction = function(){
 		function initProjectile(angle){
@@ -293,6 +327,11 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.angle = angle;
 			this.distanceFactor = 1;
+			
+			this.targetTags.push("enemy");
+
+			this.game.physics.enable([this], Phaser.Physics.ARCADE);
+			this.body.allowGravity = false;
 
 			this.frame = 2;
 
@@ -492,10 +531,14 @@ BasicGame.Level1.prototype.create = function (){
 BasicGame.Level1.prototype.update = function (){
     //Collision
     this.game.physics.arcade.collide(hero, this.game.platforms);
-	this.game.physics.arcade.collide(this.bloodPool, this.game.platforms, function(projectile, platform){
-		projectile.kill();
-	});
+	this.game.physics.arcade.collide(this.slashPool, hero,
+									 collideProjectile, collideProcessProjectile);
+	this.game.physics.arcade.collide(this.slashPool, this.game.platforms,
+									 collideProjectile, collideProcessProjectile);
 
+	this.game.physics.arcade.collide(this.bloodPool, this.game.platforms,
+									 collideProjectile, collideProcessProjectile);
+	
 	if (hero.body.onFloor()){
 		hero.jumpCount = 2;
 		hero.body.drag.setTo(hero.DRAG, 0);
@@ -506,4 +549,41 @@ BasicGame.Level1.prototype.update = function (){
 	player1.controlManager2.update();
 
 	//this.game.debug.body(hero);
+}
+
+var collideProjectile = function(projectile, obstacle){
+	if (projectile instanceof Projectile){
+		if (projectile.collideFunction == null){
+			return;
+		}
+		
+		projectile.collideFunction.call(projectile,
+										obstacle);
+	}
+}
+
+var collideProcessProjectile = function(projectile, obstacle){
+	if (projectile instanceof Projectile){
+		if (projectile.collideProcess == null){
+			return false;
+		}
+		else{
+			return projectile.collideProcess.call(projectile,
+												  obstacle);
+		}
+	}
+	else{
+		if (obstacle instanceof Projectile){
+			if (obstacle.collideProcess == null){
+				return false;
+			}
+			else{
+				return obstacle.collideProcess.call(obstacle,
+													projectile);
+			}
+		}
+		else{
+			return true;
+		}
+	}
 }

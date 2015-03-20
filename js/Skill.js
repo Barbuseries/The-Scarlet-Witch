@@ -3,34 +3,27 @@
 /******************************************************************************/
 var Elements = {};
 
-Elements.None = 0;
-Elements.Fire = 1;
-Elements.Water = 2;
-Elements.Wind = 3;
-Elements.Rock = 4;
-Elements.Thunder = 5;
+Elements.FIRE = 1;
+Elements.WATER = 2;
+Elements.WIND = 3;
+Elements.ROCK = 4;
+Elements.THUNDER = 5;
+Elements.PHYSIC = 6;
 
-var Skill = function(game, user, damageStructure, costStructure, cooldown,
-					 targetTags){
-	if (typeof(game) === "undefined") return;
-	
+var Skill = function(user, level, costFunction, cooldown){
 	if (typeof(user) != "object") user = null;
-	
-	if (typeof(damageStructure) != "object") damageStructure = [function(){return 0},
-																null, []];
-	if (typeof(costStructure) != "object") costStructure = [function(){return 0},
-															null, []];
+
+	if (typeof(level) != "number") level = 0;
+
+	if (typeof(costFunction) != "function") costFunction = function(){return true};
 	
 	if (typeof(cooldown) != "number") cooldown = 0;
-	if (typeof(targetTags) === "string") targetTags = [targetTags];
-	if (typeof(targetTags) != "object") targetTags = ["ennemy"];
 
-	this.game = game;
+	this.game = (user != null) ? user.game : null;
 	
 	this.user = user;
-	this.damageStructure = damageStructure;
-	this.costStructure = costStructure;
-	this.targetTags = targetTags;
+	this.level = level;
+	this.costFunction = costFunction;
 
 	this.canBeUsed = true;
 
@@ -51,8 +44,6 @@ var Skill = function(game, user, damageStructure, costStructure, cooldown,
 	// How much damages it does to an ENEMY
 	// breakArmor.
 
-	this.element = Elements.None;
-
 	this.launchFunction = null;
 
 	this.onUse = new Phaser.Signal();
@@ -61,42 +52,44 @@ var Skill = function(game, user, damageStructure, costStructure, cooldown,
 	this.cooldownBar = null;
 }
 
+Skill.Fail = {};
+
+Skill.Fail.NO_USER = 0;
+Skill.Fail.COOLDOWN = 1;
+Skill.Fail.COST = 2;
+
 Skill.prototype.useSkill = function(){
 	if (this.user == null){
-		this.onFailedUse.dispatch(this);
+		this.onFailedUse.dispatch(this, Skill.Fail.NO_USER);
 		
 		return false;
 	}
 	
 	if (!this.canBeUsed){
-		this.onFailedUse.dispatch(this);
+		this.onFailedUse.dispatch(this, Skill.Fail.COOLDOWN);
 		
 		return false;
 	}
-
-	var costFunction = this.costStructure[0];
-	var costContext = this.costStructure[1];
-	var costArguments = this.costStructure[2];
 	
-	var cost = costFunction.apply(costContext, costArguments);
-	
-	if (this.user.special.canSubtract(cost)){
-		this.user.special.subtract(cost);
+	if (this.costFunction.call(this)){
 
 		if (typeof(this.launchFunction) === "function"){
 			this.launchFunction.apply(this);
 		}
-
-		this.canBeUsed = false;
-		this.cooldown.set(1, 1);
-		resumeLoopedTween(this.cooldownTween);
+		
+		if (this.cooldown.getMax() > 0){
+			this.canBeUsed = false;
+			this.cooldown.set(1, 1);
+			
+			resumeLoopedTween(this.cooldownTween);
+		}
 
 		this.onUse.dispatch(this);
 		
 		return true;
 	}
 	else{
-		this.onFailedUse.dispatch(this);
+		this.onFailedUse.dispatch(this, Skill.Fail.COST);
 		
 		return false;
 	}
@@ -123,7 +116,6 @@ Skill.prototype.setCooldown = function(cooldown){
 	this.cooldownTween.onUpdateCallback(updateCooldown, this);
 	this.cooldownTween.onRepeat.add(this.refreshSkill, this);
 	this.cooldownTween.loop();
-//	this.cooldownTween.loop(cooldown, this.refreshSkill, this);
 }
 
 Skill.prototype.breakSkill = function(){
@@ -166,75 +158,13 @@ Skill.prototype.createCooldownBar = function(x, y, width, height, fillColor,
 /* Skill */
 /*********/
 
-/*******************/
-/* ProjectileSkill */ 
-/******************************************************************************/
-var ProjectileSkill = function(game, user, damageStructure, costStructure,
-							   cooldown, spriteName, spritePool, targetTags){
-	Skill.apply(this, [game, user, damageStructure, costStructure, cooldown, targetTags]);
-
-	if (typeof(spriteName) != "string") spriteName = "";
-	if (typeof(spritePool) != "object") spritePool = null;
-	
-	this.spriteName = spriteName;
-	this.spritePool = spritePool;
-
-	this.initFunction = null;
-	this.updateFunction = null;
-	this.killFunction = null;
-}
-
-ProjectileSkill.prototype = Object.create(Skill.prototype);
-ProjectileSkill.prototype.constructor = ProjectileSkill;
-
-/*ProjectileSkill.prototype.useSkill = function(){
-	if (Skill.prototype.useSkill.call(this)){
-		var newProjectile;
-
-		if (this.spritePool != null){
-			var reusableSprite = this.spritePool.getFirstDead();
-			
-			if (reusableSprite == null){
-				newProjectile = new Projectile(this.game, 0, 0, this.spriteName,
-											   this.initFunction, this.updateFunction,
-											   this.killFunction);
-				this.spritePool.add(newProjectile);
-			}
-			else{
-				newProjectile = reusableSprite;
-				newProjectile.reset(0, 0, 1);
-				
-				newProjectile.setInitFunction(this.initFunction);
-				newProjectile.setUpdateFunction(this.updateFunction);
-				newProjectile.setKillFunction(this.killFunction);
-			}
-		}
-		else{
-			newProjectile = new Projectile(this.game, 0, 0, this.spriteName,
-										   initFunction, updateFunction,
-										   killFunction);
-			this.spritePool.add(newProjectile);
-		}
-
-		newProjectile.init();
-
-		var damageFunction = this.damageStructure[0];
-		var damageContext = this.damageStructure[1];
-		var damageArguments = this.damageStructure[2];
-		
-		newProjectile.damages = damageFunction.apply(damageContext, damageArguments);
-	}
-}*/
-/******************************************************************************/
-/* ProjectileSkill */
-/*******************/
-
 /**************/
 /* Projectile */
 /******************************************************************************/
 
 var Projectile = function(game, x, y, spriteName, initFunction, updateFunction,
-						  killFunction){
+						  killFunction, collideFunction, collideProcess,
+						  damageFunction){
 	if (typeof(game) === "undefined"){
 		return;
 	}
@@ -256,6 +186,17 @@ var Projectile = function(game, x, y, spriteName, initFunction, updateFunction,
 	this.setInitFunction(initFunction);
 	this.setUpdateFunction(updateFunction);
 	this.setKillFunction(killFunction);
+	this.setCollideFunction(collideFunction);
+	this.setCollideProcess(collideProcess);
+	this.setDamageFunction(damageFunction);
+
+	this.damageRange = [1, 1];
+
+	this.criticalChance = 0;
+	
+	this.element = Elements.NONE;
+
+	this.targetTags = [];
 }
 
 Projectile.prototype = Object.create(Phaser.Sprite.prototype);
@@ -278,7 +219,7 @@ Projectile.prototype.update = function(){
 
 // The Projectile is NOT killed in this function.
 // Only in YOUR kill function.
-Projectile.prototype.kill = function(){
+Projectile.prototype.kill = function(code){
 	if (this.killFunction != null){
 		this.killFunction.apply(this);
 	}
@@ -309,13 +250,42 @@ Projectile.prototype.setKillFunction = function(killFunction){
 
 	this.killFunction = killFunction;
 }
+
+Projectile.prototype.setDamageFunction = function(damageFunction){
+	if (typeof(damageFunction) != "function"){
+		damageFunction = null;
+	}
+
+	this.damageFunction = damageFunction;
+}
+
+Projectile.prototype.setCollideFunction = function(collideFunction){
+	if (typeof(collideFunction) != "function"){
+		collideFunction = function(obstacle){
+			this.kill();
+		};
+	}
+
+	this.collideFunction = collideFunction;
+}
+
+Projectile.prototype.setCollideProcess = function(collideProcess){
+	if (typeof(collideProcess) != "function"){
+		collideProcess = function(obstacle){
+			return (this.targetTags.indexOf(obstacle.tag) != -1);
+		};
+	}
+
+	this.collideProcess = collideProcess;
+}
 /******************************************************************************/
 /* Projectile */
 /**************/
 
 
 function createProjectile(game, x, y, spriteName, spritePool, initFunction,
-						  updateFunction, killFunction){
+						  updateFunction, killFunction, collideFunction,
+						  collideProcess, damageFunction){
 	var newProjectile;
 
 	if (spritePool != null){
@@ -324,7 +294,8 @@ function createProjectile(game, x, y, spriteName, spritePool, initFunction,
 		if (reusableSprite == null){
 			newProjectile = new Projectile(game, x, y, spriteName,
 										   initFunction, updateFunction,
-										   killFunction);
+										   killFunction, collideFunction,
+										   collideProcess, damageFunction);
 			spritePool.add(newProjectile);
 		}
 		else{
@@ -336,12 +307,16 @@ function createProjectile(game, x, y, spriteName, spritePool, initFunction,
 			newProjectile.setInitFunction(initFunction);
 			newProjectile.setUpdateFunction(updateFunction);
 			newProjectile.setKillFunction(killFunction);
+			newProjectile.setCollideFunction(collideFunction);
+			newProjectile.setCollideProcess(collideProcess);
+			newProjectile.setDamageFunction(damageFunction);
 		}
 	}
 	else{
 		newProjectile = new Projectile(game, 0, 0, spriteName,
 									   initFunction, updateFunction,
-									   killFunction);
+									   killFunction, collideFunction,
+									   collideProcess, damageFunction);
 	}
 
 	newProjectile.init();
