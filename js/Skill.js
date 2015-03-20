@@ -39,10 +39,6 @@ var Skill = function(user, level, costFunction, cooldown){
 	// stop the skill while it's still being used.
 
 	this.breakArmor.onUpdate.add(this._checkBreak, this);
-	
-	this.breakStrenght = new Stat(this, "breakStrenght", STAT_BRUT_LINK, 0);
-	// How much damages it does to an ENEMY
-	// breakArmor.
 
 	this.launchFunction = null;
 
@@ -262,6 +258,8 @@ Projectile.prototype.setDamageFunction = function(damageFunction){
 Projectile.prototype.setCollideFunction = function(collideFunction){
 	if (typeof(collideFunction) != "function"){
 		collideFunction = function(obstacle){
+			this.damageFunction.call(this, obstacle);
+
 			this.kill();
 		};
 	}
