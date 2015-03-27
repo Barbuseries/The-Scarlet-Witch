@@ -11,8 +11,9 @@ var player1;
 var hero;
 
 BasicGame.Level1.prototype.create = function (){
-    this.game.physics.startSystem(Phaser.Physics.ARCADE);
+    this.game.physics.startSystem(Phaser.Physics.P2JS);
     this.game.physics.arcade.gravity.y = 600;
+    this.game.physics.p2.setImpactEvents(true);
 
     //Chargement des propriétés du tilemap
     map = this.game.add.tilemap('level1');
@@ -22,9 +23,18 @@ BasicGame.Level1.prototype.create = function (){
 
     // Chargement du Tileset
     map.addTilesetImage('platforms', 'Level1_Tiles');
-    map.setCollisionBetween(0, 63)
+    map.setCollisionBetween(0, 63);
 
-    this.game.platforms = map.createLayer('blockedLayer');
+    var playerCG = this.game.physics.p2.createCollisionGroup();
+	var platformsCG = this.game.physics.p2.createCollisionGroup();
+
+    var platforms = this.game.physics.p2.convertCollisionObjects(map, 'Collision', true);
+    for (var platform in platforms) {
+    	platforms[platform].setCollisionGroup(platformsCG);
+    	platforms[platform].collides(playerCG);
+    }
+
+    this.game.platforms = map.createLayer('Background');
     this.game.platforms.resizeWorld();
 
 	sky = this.game.add.tileSprite(0, 0,
@@ -53,6 +63,9 @@ BasicGame.Level1.prototype.create = function (){
 	hero.orientation = 0;
 	hero.firstSkill = new Skill(this.game, hero, undefined, undefined, 5000, "ennemy");
 	hero.firstSkill.onUse.add(function(){hero.animations.play("spellCast")});
+
+	hero.body.setCollisionGroup(playerCG);
+	hero.body.collides(platformsCG);	
 	
 	hero.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
 	
@@ -226,8 +239,8 @@ BasicGame.Level1.prototype.create = function (){
 
 BasicGame.Level1.prototype.update = function (){
     //Collision
-    this.game.physics.arcade.collide(hero, this.game.platforms);
-	this.game.physics.arcade.collide(this.bloodPool, this.game.platforms, function(projectile, platform){
+    this.game.physics.arcade.collide(hero, this.game.collisions);
+	this.game.physics.arcade.collide(this.bloodPool, this.game.collisions, function(projectile, platform){
 		projectile.kill();
 	});
 
