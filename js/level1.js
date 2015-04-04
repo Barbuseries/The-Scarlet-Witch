@@ -48,6 +48,7 @@ BasicGame.Level1.prototype.create = function (){
 	BasicGame.firePool =  this.game.add.group();
 	BasicGame.icePool = this.game.add.group();
 	BasicGame.explosionPool = this.game.add.group();
+	BasicGame.iceExplosionPool = this.game.add.group();
 
 	BasicGame.sfx = {};
 
@@ -166,7 +167,7 @@ BasicGame.Level1.prototype.create = function (){
 			this.x = hero.x + 24;
 			this.y = hero.y + 36;
 
-			this.scale.x = hero.orientationH;
+			
 			
 			// Je remet à zéro le tint, car si le projectile vient de la piscine,
 			// il est noir.
@@ -182,6 +183,7 @@ BasicGame.Level1.prototype.create = function (){
 			
 			this.checkWorldBounds = true;
 			this.outOfBoundsKill = true;
+                  
 			
 			// Temps en millisecondes d'existance du projectile.
 			this.lifespan = 1000;
@@ -313,6 +315,7 @@ BasicGame.Level1.prototype.create = function (){
 	var firePool = BasicGame.firePool;
 	var icePool = BasicGame.icePool;
 	var explosionPool = BasicGame.explosionPool;
+	var iceExplosionPool = BasicGame.iceExplosionPool;
 
 
 	hero.thirdSkill = new Skill(hero, 1, undefined, 500);
@@ -322,8 +325,13 @@ BasicGame.Level1.prototype.create = function (){
 		function initProjectile(){
 			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
 			this.y = hero.y + hero.height * 0.65;
-
+			this.scale.x = hero.orientationH;
 			this.anchor.setTo(0.5);
+			if (hero.orientationH == -1) {
+			    this.angle = -180;
+			} else {
+			    this.angle = 0;
+			}
 
 			this.frame = 0;
 			
@@ -337,6 +345,9 @@ BasicGame.Level1.prototype.create = function (){
 			this.body.velocity.x = 500 * hero.scale.x;
 			this.body.velocity.y = -100;
 			this.body.allowGravity = false;
+		    //Tourne le projectile si on est tourné vers la gauche
+			this.scale.x = -1 * this.scale.x;
+			
 
 			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
 
@@ -395,6 +406,7 @@ BasicGame.Level1.prototype.create = function (){
 			this.x = x;
 			this.y = y;
 			this.anchor.setTo(0.5);
+			this.tint = H_WHITE;
 			this.frame = 0;
 			this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
 			this.animations.play("explosionAnimation", null, false, true);
@@ -420,6 +432,7 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.angle = angle;
 			this.distanceFactor = 1;
+
 			
 			this.targetTags.push("enemy");
 
@@ -444,8 +457,7 @@ BasicGame.Level1.prototype.create = function (){
 			if (this.alpha < 0.3){
 				this.distanceFactor *= 1.02;
 			}
-			
-			this.x = hero.x + hero.width / 2 + Math.cos(this.angle / 180 * Math.PI) * hero.width / 2 * this.distanceFactor;
+			this.x = hero.x + Math.abs(hero.width) / 2 + Math.cos(this.angle / 180 * Math.PI) * Math.abs(hero.width) / 2 * this.distanceFactor;
 			this.y = hero.y + hero.height / 2 + Math.sin(this.angle / 180 * Math.PI) * hero.height / 2 * this.distanceFactor;
 		}
 
@@ -467,6 +479,12 @@ BasicGame.Level1.prototype.create = function (){
 			this.y = hero.y + hero.height * 0.65;
 
 			this.anchor.setTo(0.5);
+
+			if (hero.orientationH == -1) {
+			    this.angle = -180;
+			} else {
+			    this.angle = 0;
+			}
 
 			this.frame = 0;
 			
@@ -504,7 +522,12 @@ BasicGame.Level1.prototype.create = function (){
 		function killProjectile(){
 			this.tween.stop();
 			this.tween = null;
+
+			var x = this.x;
+			var y = this.y;
 			
+			createProjectile(this.game, x, y, "icekaboum", iceExplosionPool,
+							 function () { initExplosion.call(this, x, y) });
 			Phaser.Sprite.prototype.kill.call(this);
 		}
 
@@ -520,6 +543,19 @@ BasicGame.Level1.prototype.create = function (){
 		function collideProcess(obstacle){
 			return ((this.targetTags.indexOf(obstacle.tag) != -1) ||
 					(obstacle.tag == "platform"));
+		}
+
+		function initExplosion(x, y) {
+		    this.x = x;
+		    this.y = y;
+		    this.tint = H_WHITE;
+		    this.tint = 0x99ffff;
+		    this.anchor.setTo(0.5);
+		    this.frame = 0;
+		    this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+		    this.animations.play("explosionAnimation", null, false, true);
+
+		    BasicGame.sfx.EXPLOSION_0.play();
 		}
 
 		function damageFunction(obstacle){
