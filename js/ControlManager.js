@@ -32,6 +32,8 @@ var ControlManager = function(game, type, target, pad){
 	this.type = type;
 	this.target = target;
 	this.allControls = {};
+	
+	this.enabled = true;
 
 	this.onUpdate = new Phaser.Signal();
 }
@@ -217,7 +219,8 @@ ControlManager.prototype.unbindControl = function(controlName){
 	if (typeof(this.allControls[controlName]) === "undefined") return;
 	
 	this.allControls[controlName].destroy();
-	this.allControls[controlName] = undefined;	
+
+	delete this.allControls[controlName];	
 }
 
 ControlManager.prototype.unbindPadControl = function(padControlName){
@@ -225,7 +228,8 @@ ControlManager.prototype.unbindPadControl = function(padControlName){
 	if (typeof(this.allControls[padControlName]) === "undefined") return;
 
 	this.allControls[padControlName].destroy();
-	this.allControls[padControlName] = undefined;
+
+	delete this.allControls[padControlName];
 }
 
 // Swap two controls.
@@ -295,7 +299,7 @@ ControlManager.prototype.get = function(controlName){
 // the array.
 // (In the case of a Gamepad control, the pad's controls are also checked)
 ControlManager.prototype.getByTag = function(allTags, allNeeded){
-	if (typeof(target) === "undefined") return;
+	if (typeof(allTags) === "undefined") return;
 	if (!booleanable(allNeeded)) allNeeded = false;
 
 	var returnControls = [];
@@ -308,30 +312,31 @@ ControlManager.prototype.getByTag = function(allTags, allNeeded){
 	else if (typeof(allTags) === "object"){
 		for (control in this.allControls){	
 			var i = 0;
-			var foundCount = 0;
-			
+
 			if (allNeeded){
-				while (validIndex(i, allTags)){
-					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
-						foundCount++;
-					}
+				if (this.allControls[control].allTags.length < allTags.length){
+					continue;
+				}
+				
+				while (validIndex(i, allTags) &&
+					   (this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					i++;
 				}
 
-				if (foundCount == allTags.length){
+				if (i == allTags.length){
 					returnControls.push(this.allControls[control]);
 				}
 			}
 			else{
-				while (validIndex(i, allTags) && !foundCount){
-					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
-						foundCount++;
-					}
+				while (validIndex(i, allTags) &&
+					   !(this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					i++;
 				}
 
-				if (foundCount){
+				if (i < allTags.length){
 					returnControls.push(this.allControls[control]);
 				}
-			}	
+			}		
 		}
 	}
 	else if (typeof(allTags) === "string"){
@@ -370,34 +375,33 @@ ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded){
 	if (!booleanable(allNeeded)) allNeeded = false;
 
 	if (typeof(allTags) === "undefined"){
-		for (control in this.allControls){
-			this.allControls[control].target = target;
-		}
+		this.target = target;
 	}
 	else if (typeof(allTags) === "object"){
 		for (control in this.allControls){	
 			var i = 0;
-			var foundCount = 0;
 
 			if (allNeeded){
-				while (validIndex(i, allTags)){
-					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
-						foundCount++;
-					}
+				if (this.allControls[control].allTags.length < allTags.length){
+					continue;
+				}
+				
+				while (validIndex(i, allTags) &&
+					   (this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					i++;
 				}
 
-				if (foundCount == allTags.length){
+				if (i == allTags.length){
 					this.allControls[control].target = target;
 				}
 			}
 			else{
-				while (validIndex(i, allTags) && !foundCount){
-					if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
-						foundCount++;
-					}
+				while (validIndex(i, allTags) &&
+					   !(this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					i++;
 				}
 
-				if (found){
+				if (i < allTags.length){
 					this.allControls[control].target = target;
 				}
 			}		
@@ -412,44 +416,62 @@ ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded){
 	}
 }
 
-// Disable all controls with one of the tags in allTags.
+// Disable all controls with one (or all if allNeeded is true) of the tags
+// in allTags.
+// If allTags is undefined, disable the ControlManager.
 // (allTags can also be a string)
-ControlManager.prototype.disable = function(allTags){
-	this._able(allTags, false);
+ControlManager.prototype.disable = function(allTags, allNeeded){
+	this._able(allTags, allNeeded, false);
 }
 
-// Enable all controls with one of the tags in allTags.
+// Enable all controls with one (or all if allNeeded is true) of the tags
+// in allTags.
+// If allTags is undefined, enable the ControlManager.
 // (allTags can also be a string)
-ControlManager.prototype.enable = function(allTags){
-	this._able(allTags, true);
+ControlManager.prototype.enable = function(allTags, allNeeded){
+	this._able(allTags, allNeeded, true);
 }
 
-ControlManager.prototype._able = function(allTags, enabled){
+ControlManager.prototype._able = function(allTags, allNeeded, enabled){
+	if (!booleanable(allNeeded)) allNeeded = false;
+
 	if (typeof(allTags) === "undefined"){
-		for (control in this.allControls){
-			this.allControls[control].input.enabled = enabled;
-		}
+		this.enabled = enabled;
 	}
 	else if (typeof(allTags) === "object"){
 		for (control in this.allControls){	
 			var i = 0;
-			var found;
-			
-			while (validIndex(i, allTags) && !found){
-				if (this.allControls[control].allTags.indexOf(allTags[i]) != -1){
-					found = true;
+
+			if (allNeeded){
+				if (this.allControls[control].allTags.length < allTags.length){
+					continue;
+				}
+				
+				while (validIndex(i, allTags) &&
+					   (this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					i++;
+				}
+
+				if (i == allTags.length){
+					this.allControls[control].enabled = enabled;
 				}
 			}
+			else{
+				while (validIndex(i, allTags) &&
+					   !(this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					i++;
+				}
 
-			if (found){
-				this.allControls[control].input.enabled = enabled;
+				if (i < allTags.length){
+					this.allControls[control].enabled = enabled;
+				}
 			}		
 		}
 	}
 	else if (typeof(allTags) === "string"){
 		for (control in this.allControls){
 			if (this.allControls[control].allTags.indexOf(allTags) != -1){
-				this.allControls[control].input.enabled = enabled;
+				this.allControls[control].enabled = enabled;
 			}	
 		}
 	}
@@ -464,7 +486,6 @@ ControlManager.prototype._able = function(allTags, enabled){
 
 var Control = function(manager, controlCode, functionName, signal,
 					   allTags, target){
-
 	if (typeof(manager) != "object") return;
 	if ((typeof(target) != "undefined") &&
 		(typeof(target) != "object") && (target != -1)) return;
@@ -473,7 +494,6 @@ var Control = function(manager, controlCode, functionName, signal,
 	if (typeof(functionName) != "string") return;
 
 	if (typeof(signal) === "undefined") signal = "update";
-
 
 	if (manager.type == CONTROL_KEYBOARD){
 		this.input = manager.keyboard.addKey(controlCode);
@@ -488,6 +508,8 @@ var Control = function(manager, controlCode, functionName, signal,
 	this.signal = signal;
 	this.code = controlCode;
 	this.allTags = [];
+
+	this.enabled = true;
 
 	if ((signal == "update") ||
 		(signal == "down") ||
@@ -516,7 +538,39 @@ var Control = function(manager, controlCode, functionName, signal,
 	}
 }
 
-Control.prototype.execute = function(){	
+Control.prototype.change = function(controlCode, signal){
+	if ((typeof(controlCode) != "number") ||
+		(controlCode == -1)){
+		controlCode = this.controlCode;
+	}
+
+	if (typeof(signal) != "string"){
+		signal = this.signal;
+	}
+
+	var manager = this.manager;
+	var target = this.target;
+	var functionName = this.functionName;
+	var signal = signal;
+	var allTags = this.allTags;
+
+	this.destroy();
+
+	Control.call(this, manager, controlCode, functionName, signal,
+				 allTags, target);
+}
+
+Control.prototype.execute = function(){
+	if (!this.manager.enabled ||
+		!this.enabled){
+		return;
+	}
+
+	if (typeof(this.target) === "undefined"){
+		return;
+	}
+
+
 	var target = (this.target == -1) ? this.manager.target : this.target;
 	var actualFunction;
 
@@ -556,18 +610,26 @@ Control.prototype.execute = function(){
 Control.prototype.destroy = function(){
 	switch(this.signal){
 		case "onDown":
-		this.input.onDown.remove(this.execute, this);
+		if (this.input != null){
+			this.input.onDown.remove(this.execute, this);
+		}
 		break;
 		
 		case "onUp":
-		this.input.onUp.remove(this.execute, this);
+		if (this.input != null){
+			this.input.onUp.remove(this.execute, this);
+		}
 		break;
 		
 		case "onFloat":
-		this.input.onFloat.remove(this.execute, this);
+		if (this.input != null){
+			this.input.onFloat.remove(this.execute, this);
+		}
 
 		default:
-		this.manager.onUpdate.remove(this.execute, this);
+		if (this.manager != null){
+			this.manager.onUpdate.remove(this.execute, this);
+		}
 		break;
 	}
 
@@ -578,6 +640,7 @@ Control.prototype.destroy = function(){
 	this.signal = null;
 	this.allTags = [];
 	this.target = undefined;
+	this.enabled = false;
 }
 
 /******************************************************************************/
@@ -607,6 +670,8 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 	this.allTags = [];
 	this.signal = signal;
 	this.target = target;
+	
+	this.enabled = true;
 
 	if (signal == "update"){
 		signal = manager.onUpdate;
@@ -631,6 +696,11 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 }
 
 PadControl.prototype.execute = function(){
+	if (!this.manager.enabled ||
+		!this.enabled){
+		return;
+	}
+
 	if (typeof(this.target) === "undefined") return;
 
 	var target = (this.target == -1) ? this.manager.target : this.target;
@@ -682,6 +752,7 @@ PadControl.prototype.destroy = function(){
 	this.signal = null;
 	this.allTags = [];
 	this.target = undefined;
+	this.enabled = false;
 }
 /******************************************************************************/
 /* PadControl */

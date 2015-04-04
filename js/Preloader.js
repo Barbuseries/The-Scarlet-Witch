@@ -23,6 +23,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("ground2", "assets/platform2.png");
 	this.load.image("perso", "assets/firstaid.png");
 	this.load.image("blood", "assets/bloodParticle.png");
+	this.load.spritesheet("icons", "assets/icons.png", 16, 16);
 	this.load.spritesheet("slash", "assets/Spells/swoosh_0.png", 32, 32);
 	this.load.spritesheet("fireball_0", "assets/Spells/fireball_0.png", 64, 64);
 	this.load.spritesheet("iceball_0", "assets/Spells/iceball_0.png", 64, 64);

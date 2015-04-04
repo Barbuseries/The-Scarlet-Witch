@@ -1,4 +1,8 @@
-var BasicGame = {};
+var BasicGame = {
+	player1: {},
+
+	player2: {}
+};
 
 BasicGame.Boot = function (game) {
 };
