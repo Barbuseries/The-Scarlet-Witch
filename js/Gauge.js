@@ -424,7 +424,7 @@ Gauge.prototype.update = function(){
 Gauge.prototype.updateValueText = function(){
 	if (this.valueDisplayType == GAUGE_BRUT){
 		// TODO: Substitue "000" for K.
-		this.valueText.text = this.stat.get().toString() +
+		this.valueText.text = this.stat.get().toFixed(0).toString() +
 			" / " + this.stat.getMax().toString();
 	}
 	else if (this.valueDisplayType == GAUGE_PERCENT){

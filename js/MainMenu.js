@@ -1,8 +1,13 @@
 BasicGame.MainMenu = function(game){
-    this.music = null;
+	this.music = null;
 };
 
 BasicGame.MainMenu.prototype.create = function(){
+	BasicGame.sfx = {};
+
+	this.music = this.game.add.audio("mainTheme");
+	BasicGame.sfx.cursorSelect = this.game.add.audio("cursor_select");
+
 	var centerX = this.game.camera.width / 2;
 	var centerY = this.game.camera.height / 2;
 
@@ -111,6 +116,7 @@ BasicGame.MainMenu.prototype.create = function(){
 					this.game.camera.height / 2 - 75,
 					500, 150,
 					"ground2", "icons");
+	this.cancelMenu.background.tint = H_GREY;
 	this.cancelMenu.title.fontWeight = "bold";
 	this.cancelMenu.horizontal = true;
 	this.cancelMenu.showTitle = true;
@@ -171,6 +177,8 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.control.setTargetByTag(this.menu, "menu");
 
 	this.menu.toggle();
+	
+	this.music.play("", 0, 1, true);
 }
 
 BasicGame.MainMenu.prototype.update = function(){
@@ -181,11 +189,16 @@ BasicGame.MainMenu.prototype.update = function(){
 BasicGame.MainMenu.prototype.startGame = function(pointer){
 	this.cleanUp();
 
-	this.state.start("Level1");
+	this.music.fadeOut(1000);
+	this.music.onFadeComplete.addOnce(function(){
+		this.state.start("Level1");
+	}, this);
 }
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
+	this.menu.close();
 	this.menu.kill();
+	this.cancelMenu.close();
 	this.cancelMenu.kill();
 }
 
@@ -194,4 +207,3 @@ BasicGame.MainMenu.prototype.exit = function(){
 
 	window.location.replace("site.html");
 }
-

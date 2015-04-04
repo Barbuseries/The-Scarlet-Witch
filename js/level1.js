@@ -10,6 +10,7 @@ var player1;
 var hero;
 var secondSkillBar;
 var toto;
+var statusUi;
 
 BasicGame.Level1.prototype.create = function (){
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -76,8 +77,11 @@ BasicGame.Level1.prototype.create = function (){
 	hero.firstSkill = new Skill(hero, 1, undefined, 5000);
 	hero.firstSkill.onUse.add(function(){hero.animations.play("spellCast")});
 	hero.allStats = {};
+	hero.allSkills = {};
 
+	hero.allStats.level = new Stat(this.game, "level", STAT_NO_MAXSTAT, 1);
 	hero.allStats.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
+	hero.allStats.health = new Stat(this.game, "health", STAT_PERCENT_LINK, 100);
 	
 	/*************/
 	/* IMPORTANT */
@@ -101,7 +105,10 @@ BasicGame.Level1.prototype.create = function (){
 		}
 	}
 
-	hero.secondSkill = new Skill(hero, 1, costSkill1, 1000);
+	hero.allSkills.secondSkill = new Skill(hero, 1, costSkill1, 10000,
+										   Elements.ALMIGHTY,
+										   ["platform"]);
+	hero.allSkills.secondSkill.icon = "teleport_icon";
 
 	/* Les projectiles ont besoin d'une "piscine" de sprites.
 	   Ca permet 2 choses :
@@ -123,7 +130,8 @@ BasicGame.Level1.prototype.create = function (){
 
 	// launchFunction est appelé dès que le skill est utilisé (le joueur appuie
 	// sur la touche et il a assez de special pour le lancer)
-	hero.secondSkill.launchFunction = function(){
+	hero.allSkills.secondSkill.launchFunction = function(){
+		var self = this;
 
 		/* Pour créer des projectiles, il faut 3 + 2 fonctions:
 		   => initFunction : lancé quand le projectile est créé.
@@ -197,7 +205,9 @@ BasicGame.Level1.prototype.create = function (){
 								15);
 			this.animations.play("walk", 15, true);
 
-			this.targetTags.push("platform");
+			this.element = self.element;
+
+			this.targetTags = self.targetTags;
 		}
 
 		function updateProjectile(){
@@ -308,9 +318,6 @@ BasicGame.Level1.prototype.create = function (){
 	}
 	/******************************************************************************/
 
-	hero.secondSkill.createCooldownBar(24, 0, 20, 5, H_YELLOW);
-	hero.addChild(hero.secondSkill.cooldownBar);
-
 	var slashPool = BasicGame.slashPool;
 	var firePool = BasicGame.firePool;
 	var icePool = BasicGame.icePool;
@@ -318,113 +325,12 @@ BasicGame.Level1.prototype.create = function (){
 	var iceExplosionPool = BasicGame.iceExplosionPool;
 
 
-	hero.thirdSkill = new Skill(hero, 1, undefined, 500);
-	hero.thirdSkill.launchFunction = function(){
-		var hero = this.user;
+	hero.allSkills.thirdSkill = new FireBallSkill(hero, 5, ["platform", "enemy"]);
 
-		function initProjectile(){
-			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
-			this.y = hero.y + hero.height * 0.65;
-			this.scale.x = hero.orientationH;
-			this.anchor.setTo(0.5);
-			if (hero.orientationH == -1) {
-			    this.angle = -180;
-			} else {
-			    this.angle = 0;
-			}
+	hero.allSkills.fourthSkill = new Skill(hero, 1, undefined, 5000);
+	hero.allSkills.fourthSkill.icon = "barrier_icon";
 
-			this.frame = 0;
-			
-			this.lifespan = 1000;
-			
-			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
-			
-			this.animations.play("leftAnimation", null, true);
-
-			this.game.physics.enable([this], Phaser.Physics.ARCADE);
-			this.body.velocity.x = 500 * hero.scale.x;
-			this.body.velocity.y = -100;
-			this.body.allowGravity = false;
-		    //Tourne le projectile si on est tourné vers la gauche
-			this.scale.x = -1 * this.scale.x;
-			
-
-			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
-
-
-			//this.angle = -90 * hero.orientationV;
-
-			this.targetTags.push("enemy");
-
-			this.tween = this.game.add.tween(this.body.velocity)
-				.to({y : 100}, this.lifespan / 2)
-				.to({y : -100}, this.lifespan / 2);
-
-			this.tween.loop();
-
-			this.tween.start();
-		}
-
-		function updateProjectile(){
-			this.scale.x = this.lifespan / 1000;
-		}
-
-		function killProjectile(){
-			this.tween.stop();
-			this.tween = null;
-
-			this.timer = undefined;
-			
-			var x = this.x;
-			var y = this.y;
-
-			createProjectile(this.game, x, y, "explosion_0", explosionPool,
-							 function(){initExplosion.call(this, x, y)});
-
-			Phaser.Sprite.prototype.kill.call(this);
-		}
-
-		function collideFunction(obstacle){
-			if(typeof(this.timer === "undefined")){
-				this.body.velocity.x = 0;
-				this.body.velocity.y = 0;
-
-				this.timer = this.game.time.create(true);
-				this.timer.add(350, this.kill, this);
-
-				this.timer.start();
-			}
-
-			this.damageFunction();
-		}
-
-		function damageFunction(obstacle){
-			obstacle.allStats.health.subtract(hero.allStats.attack.get());
-		}
-
-		function initExplosion(x, y){
-			this.x = x;
-			this.y = y;
-			this.anchor.setTo(0.5);
-			this.tint = H_WHITE;
-			this.frame = 0;
-			this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
-			this.animations.play("explosionAnimation", null, false, true);
-
-			BasicGame.sfx.EXPLOSION_0.play();
-		}
-		
-		hero.animations.stop("spellCast");
-		hero.animations.play("spellCast");
-
-		createProjectile(this.game, 0, 0, "fireball_0", firePool,
-						 initProjectile, updateProjectile, killProjectile,
-						 collideFunction,undefined,damageFunction);
-	}
-
-	hero.fourthSkill = new Skill(hero, 1, undefined, 5000);
-
-	hero.fourthSkill.launchFunction = function(){
+	hero.allSkills.fourthSkill.launchFunction = function(){
 		function initProjectile(angle){
 			this.anchor.setTo(0.5);
 			this.x = hero.x + hero.width / 2;
@@ -470,103 +376,8 @@ BasicGame.Level1.prototype.create = function (){
 		}
 	}
 
-	hero.fifthSkill = new Skill(hero, 1, undefined, 500);
-	hero.fifthSkill.launchFunction = function(){
-		var hero = this.user;
-
-		function initProjectile(){
-			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
-			this.y = hero.y + hero.height * 0.65;
-
-			this.anchor.setTo(0.5);
-
-			if (hero.orientationH == -1) {
-			    this.angle = -180;
-			} else {
-			    this.angle = 0;
-			}
-
-			this.frame = 0;
-			
-			this.lifespan = 1000;
-			
-			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
-			
-			this.animations.play("leftAnimation", null, true);
-
-			this.game.physics.enable([this], Phaser.Physics.ARCADE);
-			this.body.velocity.x = 500 * hero.scale.x;
-			this.body.velocity.y = -100;
-			this.body.allowGravity = false;
-
-			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
-
-
-			//this.angle = -90 * hero.orientationV;
-
-			this.targetTags.push("enemy");
-
-			this.tween = this.game.add.tween(this.body.velocity)
-				.to({y : 100}, this.lifespan / 2)
-				.to({y : -100}, this.lifespan / 2);
-
-			this.tween.loop();
-
-			this.tween.start();
-		}
-
-		function updateProjectile(){
-			this.scale.x = this.lifespan / 1000;
-		}
-
-		function killProjectile(){
-			this.tween.stop();
-			this.tween = null;
-
-			var x = this.x;
-			var y = this.y;
-			
-			createProjectile(this.game, x, y, "icekaboum", iceExplosionPool,
-							 function () { initExplosion.call(this, x, y) });
-			Phaser.Sprite.prototype.kill.call(this);
-		}
-
-		function collideFunction(obstacle){
-			if (this.targetTags.indexOf(obstacle.tag) != -1){
-				this.damageFunction.call(this, obstacle);
-			}
-			else if (obstacle.tag == "platform"){
-				this.kill();
-			}
-		}
-
-		function collideProcess(obstacle){
-			return ((this.targetTags.indexOf(obstacle.tag) != -1) ||
-					(obstacle.tag == "platform"));
-		}
-
-		function initExplosion(x, y) {
-		    this.x = x;
-		    this.y = y;
-		    this.tint = H_WHITE;
-		    this.tint = 0x99ffff;
-		    this.anchor.setTo(0.5);
-		    this.frame = 0;
-		    this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
-		    this.animations.play("explosionAnimation", null, false, true);
-
-		    BasicGame.sfx.EXPLOSION_0.play();
-		}
-
-		function damageFunction(obstacle){
-			obstacle.allStats.health.subtract(hero.allStats.attack.get());
-		}
-
-		createProjectile(this.game, 0, 0, "iceball_0", icePool,
-						 initProjectile, updateProjectile, killProjectile,
-						 collideFunction, collideProcess, damageFunction);
-	}
-
+	hero.allSkills.fifthSkill = new IceBallSkill(hero, 5, ["enemy"]);
+	
     this.game.physics.enable( [hero], Phaser.Physics.ARCADE);
 
     hero.body.collideWorldBounds = true;
@@ -640,7 +451,9 @@ BasicGame.Level1.prototype.create = function (){
 
 		hero.orientationV = -1;
 		
-        hero.body.velocity.y = hero.JUMP_POWER * Math.abs(factor);
+        if (hero.body.velocity.y < 0){
+			hero.body.velocity.y = hero.JUMP_POWER;
+		}
     }
 
 	hero.stopMov = function(){
@@ -655,23 +468,23 @@ BasicGame.Level1.prototype.create = function (){
 	}
 	
 	hero.cast = function(){
-		hero.firstSkill.useSkill();
+		hero.allSkills.firstSkill.useSkill();
 	}
 
 	hero.castSecond = function(){
-		hero.secondSkill.useSkill();
+		hero.allSkills.secondSkill.useSkill();
 	}
 	
 	hero.castThird = function(){
-		hero.thirdSkill.useSkill();
+		hero.allSkills.thirdSkill.useSkill();
 	}
 
 	hero.castFourth = function(){
-		hero.fourthSkill.useSkill();
+		hero.allSkills.fourthSkill.useSkill();
 	}
 
 	hero.castfifth = function(){
-		hero.fifthSkill.useSkill();
+		hero.allSkills.fifthSkill.useSkill();
 	}
 
     player1.controlManager = new ControlManager(this.game, CONTROL_KEYBOARD, hero);
@@ -701,16 +514,16 @@ BasicGame.Level1.prototype.create = function (){
 
 
 
-    player1.controlManager.bindControl("leftControl", Phaser.Keyboard.Q, "goLeft",
+    player1.controlManager.bindControl("leftControl", Phaser.Keyboard.LEFT, "goLeft",
                                             "down", "movement");
-    player1.controlManager.bindControl("rightControl", Phaser.Keyboard.D, "goRight",
+    player1.controlManager.bindControl("rightControl", Phaser.Keyboard.RIGHT, "goRight",
                                             "down", "movement");
-    player1.controlManager.bindControl("upControl", Phaser.Keyboard.Z, "goUp",
+    player1.controlManager.bindControl("upControl", Phaser.Keyboard.UP, "goUp",
                                        "down", "movement");
-	player1.controlManager.bindControl("upControl2", Phaser.Keyboard.Z,
+	player1.controlManager.bindControl("upControl2", Phaser.Keyboard.UP,
                                         "reduceJump",
                                         "onDown", "movement");
-    player1.controlManager.bindControl("downControl", Phaser.Keyboard.S, "goDown",
+    player1.controlManager.bindControl("downControl", Phaser.Keyboard.DOWN, "goDown",
                                        "down", "movement");
 
 	player1.controlManager2.bindControl("cast", Phaser.Gamepad.XBOX360_X,
@@ -720,22 +533,26 @@ BasicGame.Level1.prototype.create = function (){
 	player1.controlManager.bindControl("cast", Phaser.Keyboard.ENTER,
                                        "cast",
                                        "onDown", "action");
-	player1.controlManager.bindControl("cast5", Phaser.Keyboard.ONE,
+	player1.controlManager.bindControl("cast5", Phaser.Keyboard.FOUR,
 									   "castfifth",
 									   "down","action");
-	player1.controlManager.bindControl("cast2", Phaser.Keyboard.TWO,
+	player1.controlManager.bindControl("cast2", Phaser.Keyboard.ONE,
                                        "castSecond",
                                        "down", "action");
-	player1.controlManager.bindControl("cast3", Phaser.Keyboard.THREE,
+	player1.controlManager.bindControl("cast3", Phaser.Keyboard.TWO,
                                        "castThird",
                                        "down", "action");
-	player1.controlManager.bindControl("cast4", Phaser.Keyboard.FOUR,
+	player1.controlManager.bindControl("cast4", Phaser.Keyboard.THREE,
                                        "castFourth",
                                        "down", "action");
 
 	player1.controlManager.bindControl("fly", Phaser.Keyboard.SPACEBAR,
                                        "fly",
                                        "down", "movement");
+
+	statusUi = new Status_UI(this.game, hero, 50, 575);
+	statusUi.profilSprite.frame = 26;
+	statusUi.scale.setTo(0.9);
 }
 
 BasicGame.Level1.prototype.update = function (){
@@ -748,6 +565,8 @@ BasicGame.Level1.prototype.update = function (){
 
 	this.game.physics.arcade.collide(BasicGame.bloodPool, this.game.platforms,
 									 collideProjectile, collideProcessProjectile);
+	this.game.physics.arcade.collide(BasicGame.firePool, this.game.platforms,
+									 collideProjectile, collideProcessProjectile);
 	this.game.physics.arcade.collide(BasicGame.icePool, this.game.platforms,
 									collideProjectile, collideProcessProjectile);
 	
@@ -757,6 +576,9 @@ BasicGame.Level1.prototype.update = function (){
 	}
 
 	hero.body.acceleration.x = 0;
+	
+	hero.allStats.special.add(1 / 60);
+
 	player1.controlManager.update();
 	player1.controlManager2.update();
 
