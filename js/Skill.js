@@ -46,16 +46,17 @@ var Skill = function(user, level, costFunction, cooldown, element, targetTags){
 	this.cooldownTween = null;
 	this.cooldown = new Stat(this, "Cooldown", STAT_PERCENT_LINK, 0,
 							 this.getCooldown());
+
 	this.setCooldown(this.getCooldown());
 
-	this.breakable = false; // Can it be stopped by the USER while it's
+	/*this.breakable = false; // Can it be stopped by the USER while it's
 	                        // still being used.
 	
 	this.breakArmor = new Stat(this, "breakArmor", STAT_BRUT_LINK, Infinity);
 	// How much it takes for an ENEMY to
 	// stop the skill while it's still being used.
 
-	this.breakArmor.onUpdate.add(this._checkBreak, this);
+	this.breakArmor.onUpdate.add(this._checkBreak, this);*/
 
 	this.launchFunction = null;
 
@@ -124,6 +125,7 @@ Skill.prototype.setCooldown = function(cooldown){
 
 	if (this.cooldownTween != null){
 		this.cooldownTween.stop();
+		this.refreshSkill();
 		this.cooldownTween = null;
 	}
 
@@ -142,6 +144,7 @@ Skill.prototype.setCooldown = function(cooldown){
 	this.cooldownTween.loop();
 }
 
+
 Skill.prototype.breakSkill = function(){
 	//this.breakArmor.set(1, 1);
 }
@@ -157,7 +160,7 @@ Skill.prototype.refreshSkill = function(){
 
 	this.cooldown.set(0);
 	this.canBeUsed = true;
-	this.breakArmor.set(1, 1);
+	//this.breakArmor.set(1, 1);
 }
 
 Skill.prototype.createCooldownBar = function(x, y, width, height, fillColor,
@@ -189,27 +192,9 @@ Skill.prototype.createCooldownBar = function(x, y, width, height, fillColor,
 var Projectile = function(game, x, y, spriteName, initFunction, updateFunction,
 						  killFunction, collideFunction, collideProcess,
 						  damageFunction){
-	if (typeof(game) === "undefined"){
-		return;
-	}
+	Entity.call(this, game, x, y, spriteName, initFunction, updateFunction,
+				killFunction, "projectile");
 
-	if (typeof(x) != "number"){
-		x = 0;
-	}
-
-	if (typeof(y) != "number"){
-		y = 0;
-	}
-
-	if (typeof(spriteName) != "string"){
-		spriteName = "";
-	}
-	
-	Phaser.Sprite.apply(this, [game, x, y, spriteName]);
-
-	this.setInitFunction(initFunction);
-	this.setUpdateFunction(updateFunction);
-	this.setKillFunction(killFunction);
 	this.setCollideFunction(collideFunction);
 	this.setCollideProcess(collideProcess);
 	this.setDamageFunction(damageFunction);
@@ -223,57 +208,8 @@ var Projectile = function(game, x, y, spriteName, initFunction, updateFunction,
 	this.targetTags = [];
 }
 
-Projectile.prototype = Object.create(Phaser.Sprite.prototype);
+Projectile.prototype = Object.create(Entity.prototype);
 Projectile.prototype.constructor = Projectile;
-
-
-Projectile.prototype.init = function(){
-	if (this.initFunction != null){
-		this.initFunction.apply(this);
-	}
-}
-
-Projectile.prototype.update = function(){
-	if (this.updateFunction != null){
-		this.updateFunction.apply(this);
-	}
-
-	Phaser.Sprite.prototype.update.apply(this);
-}
-
-// The Projectile is NOT killed in this function.
-// Only in YOUR kill function.
-Projectile.prototype.kill = function(code){
-	if (this.killFunction != null){
-		this.killFunction.apply(this);
-	}
-}
-
-Projectile.prototype.setInitFunction = function(initFunction){
-	if (typeof(initFunction) != "function"){
-		initFunction = null;
-	}
-
-	this.initFunction = initFunction;
-}
-
-Projectile.prototype.setUpdateFunction = function(updateFunction){
-	if (typeof(updateFunction) != "function"){
-		updateFunction = null;
-	}
-
-	this.updateFunction = updateFunction;
-}
-
-Projectile.prototype.setKillFunction = function(killFunction){
-	if (typeof(killFunction) != "function"){
-		killFunction = function(){
-			Phaser.Sprite.prototype.kill.apply(this);
-		};
-	}
-
-	this.killFunction = killFunction;
-}
 
 Projectile.prototype.setDamageFunction = function(damageFunction){
 	if (typeof(damageFunction) != "function"){
@@ -355,7 +291,7 @@ function createProjectile(game, x, y, spriteName, spritePool, initFunction,
 /* Common Skills */
 /******************************************************************************/
 var FireBallSkill = function(user, level, targetTags){
-	var cooldown = 1000;
+	var cooldown = user.allStats.attackSpeed.get();
 
 	function costFunction(){
 		if (this.user.allStats.special.canSubtract(5)){
@@ -376,31 +312,38 @@ var FireBallSkill = function(user, level, targetTags){
 		var self = this;
 
 		function initProjectile(){
-			this.x = user.x + user.width * 3 / 4 * user.scale.x;
-			this.y = user.y + user.height * 0.65;
-			this.scale.x = user.orientationH;
-			this.anchor.setTo(0.5);
+			this.x = user.x;
 
-			if (user.orientationH == -1) {
-				this.angle = -180;
-			} else {
-				this.angle = 0;
-			}
+			this.y = user.y + user.height * 0.65;
+
+			this.anchor.setTo(0.5);
 
 			this.frame = 0;
 			
-			this.lifespan = cooldown * Math.sqrt(self.level);
+			this.lifespan = 1000 * Math.sqrt(self.level);
 			
-			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
+			if (user.orientationH >= 0){
+				this.animations.add("animation", [0, 1, 2, 3, 4, 5, 6, 7]);
+			}
+			else{
+				this.animations.add("animation", [8, 9, 10, 11, 12, 13, 14, 15]);
+			}
 			
-			this.animations.play("leftAnimation", null, true);
+			this.animations.play("animation", null, true);
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
-			this.body.velocity.x = 500 * user.scale.x;
+			this.body.velocity.x = 500;
+
+			if (user.orientationH < 0){
+				this.x += user.width * 1 / 4;
+				this.body.velocity.x *= -1;
+			}
+			else{
+				this.x += user.width * 3 / 4;
+			}
+
 			this.body.velocity.y = -100;
 			this.body.allowGravity = false;
-
-			this.scale.x = user.scale.x / Math.abs(user.scale.x);
 
 			this.targetTags = self.targetTags;
 			this.element = self.element;
@@ -433,7 +376,7 @@ var FireBallSkill = function(user, level, targetTags){
 			createProjectile(this.game, x, y, "explosion_0", BasicGame.explosionPool,
 							 function(){initExplosion.call(this, x, y)});
 
-			Phaser.Sprite.prototype.kill.call(this);
+			return true;
 		}
 
 		function collideFunction(obstacle){
@@ -468,12 +411,19 @@ var FireBallSkill = function(user, level, targetTags){
 			BasicGame.sfx.EXPLOSION_0.play();
 		}
 
-		user.animations.stop("spellCast");
-		user.animations.play("spellCast")
+		user.animations.stop("spellCastRight");
+		user.animations.stop("spellCastLeft");
 		
 		createProjectile(this.game, 0, 0, "fireball_0", BasicGame.firePool,
 						 initProjectile, updateProjectile, killProjectile,
 						 collideFunction, collideProcess, damageFunction);
+
+		if (user.orientationH >= 0){
+			user.animations.play("spellCastRight");	
+		}
+		else{
+			user.animations.play("spellCastLeft");
+		}
 	};
 
 	this.icon = "fireball_icon";
@@ -509,32 +459,38 @@ var IceBallSkill = function(user, level, targetTags){
 		var self = this;
 
 		function initProjectile(){
-			this.x = user.x + user.width * 3 / 4 * user.scale.x;
+			this.x = user.x;
 			this.y = user.y + user.height * 0.65;
 
 			this.anchor.setTo(0.5);
-
-			if (user.orientationH == -1) {
-			    this.angle = -180;
-			} else {
-			    this.angle = 0;
-			}
 
 			this.frame = 0;
 			
 			this.lifespan = 1000 * (15000 / 3 / self.getCooldown()) *
 				(15000 / 3 / self.getCooldown());
-				
-			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
 			
-			this.animations.play("leftAnimation", null, true);
+			if (user.orientationH >= 0){
+				this.animations.add("animation", [32, 33, 34, 35, 36, 37, 38, 39]);
+			}
+			else{
+				this.animations.add("animation", [0, 1, 2, 3, 4, 5, 6, 7]);
+			}
+			
+			this.animations.play("animation", null, true);
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
-			this.body.velocity.x = 500 * user.scale.x;
+			this.body.velocity.x = 500 ;
+			
+			if (user.orientationH < 0){
+				this.x += user.width * 1 / 4;
+				this.body.velocity.x *= -1;
+			}
+			else{
+				this.x += user.width * 3 / 4;
+			}
+
 			this.body.velocity.y = -100;
 			this.body.allowGravity = false;
-
-			this.scale.x = user.scale.x / Math.abs(user.scale.x);
 
 			this.tween = this.game.add.tween(this.body.velocity)
 				.to({y : 100}, this.lifespan / 2)
@@ -565,7 +521,8 @@ var IceBallSkill = function(user, level, targetTags){
 			createProjectile(this.game, x, y, "explosion_1",
 							 BasicGame.iceExplosionPool,
 							 function () { initExplosion.call(this, x, y) });
-			Phaser.Sprite.prototype.kill.call(this);
+			
+			return true;
 		}
 
 		function collideFunction(obstacle){
@@ -628,6 +585,16 @@ var IceBallSkill = function(user, level, targetTags){
 		createProjectile(this.game, 0, 0, "iceball_0", BasicGame.icePool,
 						 initProjectile, updateProjectile, killProjectile,
 						 collideFunction, undefined, damageFunction);
+
+		user.animations.stop("spellCastRight");
+		user.animations.stop("spellCastLeft");
+
+		if (user.orientationH >= 0){
+			user.animations.play("spellCastRight");	
+		}
+		else{
+			user.animations.play("spellCastLeft");
+		}
 	};
 
 	this.icon = "iceball_icon";

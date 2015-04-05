@@ -155,7 +155,6 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.yesOption.onSelect.add(function(){
 		console.log("GoodBye !");
 		this.exit();
-		this.cancelMenu.close();
 	}, this);
 
 	this.noOption.onSelect.add(function(){
@@ -196,14 +195,15 @@ BasicGame.MainMenu.prototype.startGame = function(pointer){
 }
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
-	this.menu.close();
-	this.menu.kill();
 	this.cancelMenu.close();
 	this.cancelMenu.kill();
+	this.menu.close();
+	this.menu.kill();
 }
 
 BasicGame.MainMenu.prototype.exit = function(){
 	this.cleanUp();
+	this.music.stop();
 
 	window.location.replace("site.html");
 }

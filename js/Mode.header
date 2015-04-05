@@ -1,0 +1,67 @@
+Object Mode {
+
+Methods :
+		computeBasicStats();
+
+
+		// Compute all maxStats from their basicValue and their growthFromula,
+		// then update all stats according to type.
+		// type : 0 => do nothing
+		//        1 => restore completely
+		//        2 => conserve brute difference before computing
+		//        3 => conserve ratio before computing
+		computeStats(type);
+
+
+		// Create a statName and a maxStatName variable.
+		// If statName already exists, the new values will replace the old ones.
+		// If defaultValue is not defined, statName = maxStatName.
+		// Otherwhise, statName = defaultValue and maxStatName = basicValue.
+		// I don't check if defaultValue <= basicValue, it's for you to decide !
+		// (Don't you dare do anything stupid !)
+		addBasicStat(statName, basicValue, defaultValue);
+
+		
+		// Add a growthFormula for statName when the mode updates it's variables.
+		// If statName already exists, the new growthFormula will be ADDED to the
+		// one already present.
+		// If you want to change it completely, try using getIndexStat on the
+		// allStatsGrowth array and change it from there.			
+		addStatGrowth(staName, growthFormula);
+
+		
+		// Add the value to the given stat.
+		// The value can be positive or negative, as far as I'm concerned.
+		// If isPercentage is set to true, value will be understood as a
+		// percentage of maxStatName.
+		// If statName + value is below minValue, it will be set to minValue.
+		// If statName + value is over maxValue, it will be set to maxValue.
+		// By default, minValue = 0, maxValue = maxStat.
+		addToStat(statName, value, isPercentage, minValue, maxValue);
+
+		
+		// Do the same job as addToStat but negate the value beforehand.
+		subtractFromStat(statName, value, isPercentage, minValue, maxValue);
+		
+		
+		// Return true if the value can be added to statName.
+		// It means : minValue <= statName + value <= maxValue.
+		// By default, minValue = 0, maxValue = maxStatName.
+		canAddToStat(statName, value, isPercentage, minValue, maxValue);
+
+		
+		// Do the same job as canAddToStat but negate the value beforehand.
+		canSubtractFromStat(statName, value, isPercentage, minValue, maxValue);
+}
+
+
+// Return the index of statName in the array.
+// If not found, return -1.
+// Be aware that, even though "health" can be found, "maxHealth" won't.
+// (But if "health" exists, then "maxHealth" does too).
+getIndexStat(statName, array);
+
+
+// Return maxStatName.
+// For example, getMaxStatName("health") will return "maxHealth".
+getMaxStatName(statName);

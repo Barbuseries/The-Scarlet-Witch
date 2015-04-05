@@ -1,77 +1,43 @@
-var Mob = function(x, y, spritesheet, name){
-	NPC.apply(this, [x, y, spritesheet, name]);
+/*******/
+/* Mob */
+/******************************************************************************/
+var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
+				   updateFunction, killFunction){
+	Npc.apply(this, [game, x, y, spritesheet, name, initFunction, updateFunction,
+					killFunction]);
 
-	this.defaultMode = new Mode(this);
+	this.body.collideWorldBounds = true;
 
-	this.allAdditionalModes = [];
-	this.allModesActivationsAt = [];
+	this.tag = tag;
+
+	this.allStats = {};
+	this.allSkills = {};
 	
-	this.allIndexesActivatedModes = [];
-	
-	this.level = 1;
+	this.allStats.level = new Stat(this, "Level", STAT_NO_MAXSTAT, level, level,
+								   0, 99);
+
+	this.SPEED = 250;
+	this.ACCELERATION = 250;
+	this.JUMP_POWER = 200;
+	this.DRAG = 500;
+	this.MAXJUMP = 1;
+	this.jumpCount = this.MAXJUMP;
+
+	this.body.maxVelocity.setTo(this.SPEED, this.SPEED * 3);
+	this.body.drag.setTo(this.DRAG, 0);
 }
 
-Mob.prototype = Object.create(NPC.prototype);
+Mob.prototype = Object.create(Npc.prototype);
 Mob.prototype.constructor = Mob;
 
-Mob.prototype.getStat = function (statName, inPercentage){
-	if (typeof(statName) != "string") return undefined;
-	if (typeof(inPercentage) === "undefined") inPercentage = false;
-
-	var stat = undefined;
-	var maxStat = undefined;
-	var maxStatName = getMaxStatName(statName);
-	
-	if (this.defaultMode.isActivated){
-		if (typeof(this.defaultMode[statName]) != "undefined"){
-			stat = this.defaultMode[statName];
-		}
-		if (typeof(this.defaultMode[maxStatName]) != "undefined"){
-			maxStat = this.defaultMode[maxStatName];
-		}
+Mob.prototype.update = function(){
+	if (this.body.onFloor()){
+		this.jumpCount = this.MAXJUMP;
+		this.body.drag.setTo(this.DRAG, 0);
 	}
 
-	for(var i = 0; i < this.allIndexesActivatedModes.length; i++) {
-		var mode = this.allAdditionalModes[this.allIndexesActivatedModes[i]];
-
-		if (typeof(mode[statName]) != "undefined"){
-			if (typeof(stat) === "undefined"){
-				stat = 0;
-			}
-			stat += mode[statName];
-		}
-		if (typeof(mode[maxStatName]) != "undefined"){
-			if (typeof(maxStat) === "undefined"){
-				maxStat = 0;
-			}
-			maxStat += mode[maxStat];
-		}
-	}
-
-	if (inPercentage &&
-		(typeof(statName) != "undefined")){
-		if ((typeof(maxStat) != "undefined") &&
-			(maxStat != 0)){
-			return stat / maxStat * 100;
-		}
-
-		return 100;
-	}
-	
-	return stat;
-};
-
-Mob.prototype.addAdditionalMode = function(mode, activateAt){
-	if (typeof(mode) === "undefined") return;
-
-	this.allAdditionalModes.push(mode);
-	
-	if (typeof(activateAt) != "undefined"){
-		this.allModesActivationsAt.push(activateAt);
-	}
-	
-	if (mode.isActivated){
-		this.allIndexesActivatedModes.push(this.allAdditionalModes.length - 1);
-	}
-};
-
+	Npc.prototype.update.call(this);
+}
+/******************************************************************************/
+/* Mob */
+/*******/

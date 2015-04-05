@@ -27,7 +27,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("teleport_icon", "assets/Skills/teleport_icon.png");
 	this.load.spritesheet("icons", "assets/icons.png", 16, 16);
 	this.load.spritesheet("slash", "assets/Skills/swoosh_0.png", 32, 32);
-	this.load.spritesheet("fireball_0", "assets/Skills/fireball_0.png", 64, 64);
+	this.load.spritesheet("fireball_0", "assets/Skills/fireball_1.png", 64, 16);
 	this.load.image("fireball_icon", "assets/Skills/fireball_icon.png");
 	this.load.spritesheet("iceball_0", "assets/Skills/iceball_0.png", 64, 64);
 	this.load.image("iceball_icon", "assets/Skills/iceball_icon.png");
