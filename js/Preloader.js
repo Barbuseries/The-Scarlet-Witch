@@ -48,15 +48,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.audio("mainTheme", "audio/Music/Adventure_Meme.wav");
 	this.load.audio("cursor_select", "audio/SFX/cursor_select.wav");
 	this.load.audio("explosion_0", "audio/SFX/explosion_0.wav");
-
-	BasicGame.bloodPool = null; 
-	BasicGame.slashPool = null; 
-	BasicGame.firePool = null;
-	BasicGame.icePool = null;
-	BasicGame.explosionPool = null;
-	BasicGame.iceExplosionPool = null;
-
-	BasicGame.sfx = {};
 }
 
 BasicGame.Preloader.prototype.create = function(){

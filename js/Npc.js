@@ -7,6 +7,26 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 
 	Entity.call(this, game, x, y, spritesheet, initFunction, updateFunction,
 				killFunction, "npc");
+
+	this.animations.add("walkRight", [144, 145, 146, 147, 148, 149, 150, 151], 15);
+	this.animations.add("walkLeft", [118, 119, 120, 121, 122, 123, 124, 125], 15);
+
+	this.animations.add("spellCastLeft", [13, 14, 15, 16, 17, 18, 19, 13], 15);
+	this.animations.add("spellCastRight", [40, 41, 42, 43, 44, 45, 39], 15);
+
+	/**************/
+	/* A tester ! */
+	/******************************************************************************/
+	this.animations.add("swordRight", [170, 171, 172, 173, 174, 175, 170], 15);
+	this.animations.add("swordLeft", [195, 196, 197, 198, 199, 200, 195], 15);
+
+	this.animations.add("bowRight", [221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
+									 231, 232, 233, 222], 15);
+	this.animations.add("bowLeft", [247, 248, 249, 250, 251, 252, 253, 254, 255, 256,
+									257, 258, 259, 247], 15);
+	/******************************************************************************/
+
+	this.animations.add("death", [260, 261, 262, 264], 5)
 	
 	this.name = name;
 
@@ -14,10 +34,23 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 	this.orientationV = 0;
 
 	this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+	this._dying = false;
 }
 
 Npc.prototype = Object.create(Entity.prototype);
 Npc.prototype.constructor = Entity;
+
+Npc.prototype.kill = function(){
+	this._dying = false;
+
+	Entity.prototype.kill.call(this);
+}
+
+Npc.prototype.die = function(){
+	this.animations.play("death", null, false, true);
+	this._dying = true;
+}
 /******************************************************************************/
 /* Npc */
 /*******/

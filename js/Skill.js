@@ -198,10 +198,6 @@ var Projectile = function(game, x, y, spriteName, initFunction, updateFunction,
 	this.setCollideFunction(collideFunction);
 	this.setCollideProcess(collideProcess);
 	this.setDamageFunction(damageFunction);
-
-	this.damageRange = [1, 1];
-
-	this.criticalChance = 0;
 	
 	this.element = Elements.ALMIGHTY;
 
@@ -329,7 +325,7 @@ var FireBallSkill = function(user, level, targetTags){
 				this.animations.add("animation", [8, 9, 10, 11, 12, 13, 14, 15]);
 			}
 			
-			this.animations.play("animation", null, true);
+			this.animations.play("animation");
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
 			this.body.velocity.x = 500;
@@ -373,7 +369,13 @@ var FireBallSkill = function(user, level, targetTags){
 			var x = this.x;
 			var y = this.y;
 
-			createProjectile(this.game, x, y, "explosion_0", BasicGame.explosionPool,
+			if (this.body.velocity.x > 0){
+				x += this.width;
+			}
+			
+
+			createProjectile(this.game, x, y, "explosion_0",
+							 BasicGame.fireExplosionPool,
 							 function(){initExplosion.call(this, x, y)});
 
 			return true;
@@ -383,9 +385,8 @@ var FireBallSkill = function(user, level, targetTags){
 			if (obstacle.tag != "platform"){
 				this.damageFunction(obstacle);
 			}
-			else{
-				this.kill();
-			}
+
+			this.kill();
 		}
 
 		function collideProcess(obstacle){
@@ -394,9 +395,11 @@ var FireBallSkill = function(user, level, targetTags){
 		}
 
 		function damageFunction(obstacle){
-			var damage = this.user.attack.get();
+			var damage = self.user.allStats.attack.get();
+			var damageRange = [0.9, 1.1];
+			var criticalRate = self.user.allStats.criticalRate.get();
 			
-			obstacle.allStats.health.subtract(damage);
+			obstacle.suffer(damage, damageRange, criticalRate, this.element);
 		}
 
 		function initExplosion(x, y){
@@ -549,9 +552,9 @@ var IceBallSkill = function(user, level, targetTags){
 
 		function damageFunction(obstacle){
 			var damage = 0;
-			var userAttack = this.user.allStats.attack.get();
+			var userAttack = self.user.allStats.attack.get();
 
-			switch(this.level){
+			switch(self.level){
 				case 1:
 				damage = 2 * userAttack;
 				break;
@@ -577,9 +580,10 @@ var IceBallSkill = function(user, level, targetTags){
 				break;
 			}
 
-			console.log(damage);
-
-			obstacle.allStats.health.subtract(damage);
+			var damageRange = [0.9, 1.1];
+			var criticalRate = self.user.allStats.criticalRate.get();
+			
+			obstacle.suffer(damage, damageRange, criticalRate, this.element);
 		}
 
 		createProjectile(this.game, 0, 0, "iceball_0", BasicGame.icePool,

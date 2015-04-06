@@ -1,7 +1,18 @@
 var BasicGame = {
 	player1: {},
 
-	player2: {}
+	player2: {},
+
+	textDamagePool: null,
+
+	bloodPool: null,
+	slashPool: null,
+	firePool: null,
+	icePool: null,
+	fireExplosionPool: null,
+	iceExplosionPool: null,
+
+	sfx: {}
 };
 
 BasicGame.Boot = function (game) {

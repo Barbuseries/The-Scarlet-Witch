@@ -30,6 +30,7 @@ BasicGame.Level1.prototype.create = function (){
 		for(var j = 0; j < map.layer.data[i].length; j++) {
 			if (map.layer.data[i][j].canCollide){
 				map.layer.data[i][j].tag = "platform";
+				map.layer.data[i][j]._dying = false;
 			}
 		}
 	}
@@ -44,11 +45,13 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.game.world.bringToTop(this.game.platforms);
 
+	BasicGame.textDamagePool = this.game.add.group();
+
 	BasicGame.bloodPool =  this.game.add.group();
 	BasicGame.slashPool =  this.game.add.group();
 	BasicGame.firePool =  this.game.add.group();
 	BasicGame.icePool = this.game.add.group();
-	BasicGame.explosionPool = this.game.add.group();
+	BasicGame.fireExplosionPool = this.game.add.group();
 	BasicGame.iceExplosionPool = this.game.add.group();
 	
 	BasicGame.allHeroes = this.game.add.group();
@@ -60,8 +63,11 @@ BasicGame.Level1.prototype.create = function (){
 	this.testPlayer2.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
 													 null);
 
-	this.barton = new Barton(this.game, 550, 500, 1, this.testPlayer);
+	this.barton = new Barton(this.game, 550, 500, 99, this.testPlayer);
 	this.barton.scale.setTo(1.3);
+	this.barton.tag = "enemy";
+	this.barton.allResistances[Elements.FIRE] = 2;
+	this.barton.allStats.endurance.add(100);
 
 	this.lucy = new Lucy(this.game, 600, 500, 1, this.testPlayer2);
 	this.lucy.currentMode = "offensive";
@@ -324,7 +330,7 @@ BasicGame.Level1.prototype.create = function (){
 	}
 	/******************************************************************************/
 
-	this.lucy.allSkills["offensive"].firstSkill = new FireBallSkill(this.lucy, 5,
+	this.lucy.allSkills["offensive"].firstSkill = new FireBallSkill(this.lucy, 1,
 																	["platform",
 																	 "enemy"]);
 	this.lucy.allStats.attackSpeed.onUpdate.add(function(stat, oldValue, newValue){
@@ -478,23 +484,33 @@ BasicGame.Level1.prototype.create = function (){
 	this.lucy.statusUi.profilSprite.frame = 26;
 	this.lucy.statusUi.showStatusSkills();
 
+	this.game.world.bringToTop(BasicGame.textDamagePool);
 }
 
 BasicGame.Level1.prototype.update = function (){
     //Collision
-	this.game.physics.arcade.collide(BasicGame.slashPool, this.lucy,
+	this.game.physics.arcade.collide(BasicGame.slashPool, BasicGame.allHeroes,
 									 collideProjectile, collideProcessProjectile);
 	this.game.physics.arcade.collide(BasicGame.slashPool, this.game.platforms,
 									 collideProjectile, collideProcessProjectile);
-
+	
+	this.game.physics.arcade.collide(BasicGame.bloodPool, BasicGame.allHeroes,
+									 collideProjectile, collideProcessProjectile);
 	this.game.physics.arcade.collide(BasicGame.bloodPool, this.game.platforms,
 									 collideProjectile, collideProcessProjectile);
+
+	this.game.physics.arcade.collide(BasicGame.firePool, BasicGame.allHeroes,
+									 collideProjectile, collideProcessProjectile);
 	this.game.physics.arcade.collide(BasicGame.firePool, this.game.platforms,
+									 collideProjectile, collideProcessProjectile);
+
+	this.game.physics.arcade.collide(BasicGame.icePool, BasicGame.allHeroes,
 									 collideProjectile, collideProcessProjectile);
 	this.game.physics.arcade.collide(BasicGame.icePool, this.game.platforms,
 									 collideProjectile, collideProcessProjectile);
 	
 	this.game.physics.arcade.collide(BasicGame.allHeroes, this.game.platforms);
+	this.game.physics.arcade.collide(BasicGame.textDamagePool, this.game.platforms);
 
 	this.lucy.body.acceleration.x = 0;
 	this.lucy.allStats.special.add(0.01 / 60, 1);
@@ -527,8 +543,8 @@ var collideProcessProjectile = function(projectile, obstacle){
 			return false;
 		}
 		else{
-			return projectile.collideProcess.call(projectile,
-												  obstacle);
+			return (!obstacle._dying && projectile.collideProcess.call(projectile,
+																	   obstacle));
 		}
 	}
 	else{
@@ -537,8 +553,8 @@ var collideProcessProjectile = function(projectile, obstacle){
 				return false;
 			}
 			else{
-				return obstacle.collideProcess.call(obstacle,
-													projectile);
+				return (!projectile._dying && obstacle.collideProcess.call(obstacle,
+													projectile));
 			}
 		}
 		else{

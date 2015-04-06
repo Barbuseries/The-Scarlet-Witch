@@ -4,11 +4,6 @@
 var Hero = function(game, x, y, name, level, player){
 	Mob.apply(this, [game, x, y, name.toLowerCase(), name, level, "hero"]);
 
-	this.animations.add("walkRight", [144, 145, 146, 147, 148, 149, 150, 151], 15);
-	this.animations.add("walkLeft", [118, 119, 120, 121, 122, 123, 124, 125], 15);
-	this.animations.add("spellCastLeft", [13, 14, 15, 16, 17, 18, 19, 13], 15);
-	this.animations.add("spellCastRight", [40, 41, 42, 43, 44, 45, 39], 15);
-
 	this.body.setSize(32, 48, 16, 16);
 
 	this.currentMode = "offensive";
@@ -93,7 +88,9 @@ var Lucy = function(game, x, y, level, player){
 
 	this.allStats.mainStat = new Stat(this, "Intelligence", STAT_NO_MAXSTAT, 0);
 
-	this.allStats.health = new Stat(this, "Health", STAT_NO_LINK, 30);
+	this.allStats.health.setMax(30);
+	this.allStats.health.setBasic(30);
+	this.allStats.health.set(1, 1);
 	this.allStats.health.setGrowth(function(){
 		return this._basicValue + 5 * this.entity.allStats.level.get() +
 			2 * this.entity.allStats.endurance.get();
@@ -179,7 +176,9 @@ var Barton = function(game, x, y, level, player){
 
 	this.allStats.mainStat = new Stat(this, "Strength", STAT_NO_MAXSTAT, 0);
 
-	this.allStats.health = new Stat(this, "Health", STAT_NO_LINK, 40);
+	this.allStats.health.setMax(40);
+	this.allStats.health.setBasic(40);
+	this.allStats.health.set(1, 1);
 	this.allStats.health.setGrowth(function(){
 		return this._basicValue + 10 * this.entity.allStats.level.get() +
 			3 * this.entity.allStats.endurance.get();
