@@ -27,7 +27,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("fireball_0", "assets/Spells/fireball_0.png", 64, 64);
 	this.load.spritesheet("iceball_0", "assets/Spells/iceball_0.png", 64, 64);
 	this.load.spritesheet("explosion_0", "assets/Spells/explosion_0.png", 64, 64);
-	this.load.tilemap('level1', 'assets/tilemaps/Level1.json', null,
+	this.load.tilemap('level1', 'assets/tilemaps/Level1_v3.json', null,
 					  Phaser.Tilemap.TILED_JSON);
 	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
     this.load.spritesheet("lucy", "assets/Lucy/SaraFullSheet.png", 64, 64);

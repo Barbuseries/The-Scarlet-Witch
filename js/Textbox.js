@@ -1334,17 +1334,16 @@ TextBox.prototype._del = function(){
 	}
 
 	if (this.toggleTimer != null){
-		this.toggleTimer.destroy();
+		this.toggleTimer.stop();
 		this.toggleTimer = null;
 	}
 
 	if (this.closeTimer != null){
-		this.closeTimer.destroy();
 		this.closeTimer = null;
 	}
 
 	if (this.timerNextSentence != null){
-		this.timerNextSentence.destroy();
+		this.timerNextSentence.stop();
 		this.timerNextSentence = null;
 	}
 	
@@ -1724,5 +1723,14 @@ function resumeLoopedTimer(loopedTimer){
     }
     else{
         loopedTimer.resume();
+    }
+}
+
+function resumeLoopedTween(loopedTween){
+	if (loopedTween.isPaused == false){
+        loopedTween.start();
+    }
+    else{
+        loopedTween.resume();
     }
 }
