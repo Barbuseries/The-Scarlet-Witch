@@ -26,7 +26,7 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.logo.scale.setTo(0.5);
 	this.logo.anchor.setTo(0.5);
 
-	this.control = new ControlManager(this.game, CONTROL_KEYBOARD);
+	this.control = new ControlManager(this.game, CONTROL_KEYBOARD, null, "pad1");
 
 	this.control.bindControl("menu_next", Phaser.Keyboard.DOWN, -1,
 							 "goNext",
