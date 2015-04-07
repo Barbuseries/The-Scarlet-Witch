@@ -22,7 +22,7 @@
                  "name":"",
                  "properties":
                     {
-                     "sprite":"boss1",
+                     "sprite":"archer1",
                      "type":"baddie"
                     },
                  "rotation":0,
@@ -38,7 +38,7 @@
                  "name":"",
                  "properties":
                     {
-                     "sprite":"boss1",
+                     "sprite":"ennemi1",
                      "type":"baddie"
                     },
                  "rotation":0,

@@ -38,6 +38,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
     this.load.spritesheet("lucy", "assets/Lucy/LucyFullSheet.png", 64, 64);
 	this.load.spritesheet("barton", "assets/BartonFullSheet.png", 64, 64);
+	this.load.spritesheet("ennemi1", "assets/ennemi1.png", 64, 64);
 	this.load.spritesheet("lucy1", "assets/Lucy/SaraHairBottomLayer.png", 64, 64);
 	this.load.spritesheet("lucy2", "assets/Lucy/SaraHairShadowOnFace.png", 64, 64);
 	this.load.spritesheet("lucy3", "assets/Lucy/SaraHairTopLayer.png", 64, 64);
