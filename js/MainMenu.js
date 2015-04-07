@@ -28,18 +28,18 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	this.control = new ControlManager(this.game, CONTROL_KEYBOARD);
 
-	this.control.bindControl("menu_next", Phaser.Keyboard.DOWN,
+	this.control.bindControl("menu_next", Phaser.Keyboard.DOWN, -1,
 							 "goNext",
 							 "onDown", "menu", -1);
 	
-	this.control.bindControl("menu_previous", Phaser.Keyboard.UP,
+	this.control.bindControl("menu_previous", Phaser.Keyboard.UP, -1,
 							 "goPrevious",
 							 "onDown", "menu", -1);
 	
-	this.control.bindControl("menu_display", Phaser.Keyboard.SPACEBAR,
+	this.control.bindControl("menu_display", Phaser.Keyboard.SPACEBAR, -1,
 							 "toggle", "onDown", "menu", this);
 	
-	this.control.bindControl("menu_select", Phaser.Keyboard.ENTER,
+	this.control.bindControl("menu_select", Phaser.Keyboard.ENTER, -1,
 							 "select", "onDown", "menu", -1);
 
 	function bind(){
@@ -55,7 +55,8 @@ BasicGame.MainMenu.prototype.create = function(){
 
 		for(var i = 0; i < allOldControls.length; i++) {
 			allOldControls[i].target = this;
-			allOldCodes.push(allOldControls[i].code);
+			allOldCodes.push([allOldControls[i].keyboardCode,
+							  allOldControls[i].gamepadCode]);
 		}
 
 		this.onEndClose.add(function(){
@@ -65,14 +66,14 @@ BasicGame.MainMenu.prototype.create = function(){
 			
 			for(var i = 0; i < allOldControls.length; i++) {
 				allOldControls[i].target = oldTarget;
-				allOldControls[i].change(allOldCodes[i]);
+				allOldControls[i].change(allOldCodes[i][0], allOldCodes[i][1]);
 			}
 
 			this.manager.allControls["menu_display"].functionName = oldFunction;
 			this.manager.allControls["menu_display"].target = oldTarget;
 		}, this);
-
-		this.manager.bindControl("menu_display", -1, "close");
+		
+		this.manager.allControls["menu_display"].functionName = "close";
 		this.manager.allControls["menu_display"].target = this;
 
 		if (this.horizontal){

@@ -17,17 +17,14 @@ var CONTROL_GAMEPAD = 1;
 */
 var ControlManager = function(game, type, target, pad){
 	this.game = game;
+	
+	if (!game.input.gamepad.active){
+		game.input.gamepad.start();
+	}
+	
+	this.pad = game.input.gamepad[pad];
 
-	if(type == CONTROL_GAMEPAD){
-		if (!game.input.gamepad.active){
-			game.input.gamepad.start();
-		}
-		
-		this.pad = game.input.gamepad[pad];
-	}
-	else if (type == CONTROL_KEYBOARD){
-		this.keyboard = game.input.keyboard;
-	}
+	this.keyboard = game.input.keyboard;
 
 	this.type = type;
 	this.target = target;
@@ -49,8 +46,6 @@ ControlManager.prototype.update = function(){
 
 
 /* Bind a control to a function.
-   If ControlManager refers to a Keyboard, bind the control to a key.
-   Otherwhise, if it refers to a Gamepad, bind the control to a button.
    The function must be a method of target (otherwhise, it won't be called).
    The function, when called will be sent as parameter the control (control.input refers
    to the key/button).
@@ -61,9 +56,13 @@ ControlManager.prototype.update = function(){
 				 If a control of the ControlManager has the same name, it will be
 				 replaced.
 
-   controlCode : (number) key or button code. (Phaser.Keyboard.LEFT, for example)
+   keyboardCode : (number) key code. (Phaser.Keyboard.LEFT, for example)
                  => -1 : if controlName is already a control of the ControlManager,
-				 will copy the key.
+				 will copy the key code.
+
+   gamepaCode : (number) button code. (Phaser.Gamepad.XBOX_A, for example)
+                => -1 : if controlName is already a control of the ControlManager,
+				will copy the button code.
 
    functionName : (string) name of the function to be binded.
                   => -1 : if controlName is already a control of the ControlManager,
@@ -88,8 +87,9 @@ ControlManager.prototype.update = function(){
             => -1 : if controlName is already a control of the ControlManager,
 			will copy the target.
 */
-ControlManager.prototype.bindControl = function(controlName, controlCode, functionName,
-												signal, allTags, target){
+ControlManager.prototype.bindControl = function(controlName, keyboardCode, gamepadCode,
+												functionName, signal, allTags,
+												target){
 	var code;
 	var funct;
 	var sig;
@@ -103,9 +103,10 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 	var manager = this;
 
 	function setAfterCheck(){
-		manager.bindControl(controlName, controlCode, functionName, signal, allTags,
-							target);
+		manager.bindControl(controlName, -1, gamepadCode, functionName, signal,
+							allTags, target);
 	}
+
 	if (this.type == CONTROL_GAMEPAD){
 		if (!this.pad.connected){
 			this.pad.addCallbacks(this, {onConnect: setAfterCheck});
@@ -128,7 +129,9 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 			}
 		}
 
-		code = getFinalValue(controlCode, "code", 0);
+		kCode = getFinalValue(keyboardCode, "keyboardCode", 0);
+		gCode = getFinalValue(gamepadCode, "gamepadCode", 0);
+
 		funct = getFinalValue(functionName, "functionName");
 		sig = getFinalValue(signal, "signal");
 		targ = getFinalValue(target, "target");
@@ -137,25 +140,25 @@ ControlManager.prototype.bindControl = function(controlName, controlCode, functi
 		this.unbindControl(controlName);
 	}
 	else{
-		code = controlCode;
+		kCode = keyboardCode;
+		gCode = gamepadCode;
+
 		funct = functionName;
 		sig = signal;
 		targ = target;
 		tags = allTags;
 	}
 
-	this.allControls[controlName] = new Control(this, code, funct, sig, tags, targ);
+	this.allControls[controlName] = new Control(this, kCode, gCode, funct, sig, tags,
+												targ);
 } 
 
 /*
   Bind an axis of the Control's manager's pad to a function.
 */
-ControlManager.prototype.bindPadControl = function(padControlName, axis, min, max, functionName,
-												   signal, allTags, target){
-	if (this.type == CONTROL_KEYBOARD){
-		return;
-	}
-
+ControlManager.prototype.bindPadControl = function(padControlName, axis, min, max,
+												   functionName, signal, allTags,
+												   target){
 	var ax;
 	var mi;
 	var ma;
@@ -167,8 +170,8 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 	var manager = this;
 
 	function setAfterCheck(){
-		manager.bindPadControl(padControlName, axis, min, max, functionName, signal, allTags,
-							   target);
+		manager.bindPadControl(padControlName, axis, min, max, functionName, signal,
+							   allTags, target);
 	}
 
 	if (!this.pad.connected){
@@ -210,7 +213,7 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 	}
 
 	this.allControls[padControlName] = new PadControl(this, ax, mi, ma, funct,
-											   sig, tags, targ);
+													  sig, tags, targ);
 }
 
 // Destroy the given control (by name).
@@ -254,8 +257,11 @@ ControlManager.prototype.swapControls = function(controlName1, controlName2, typ
 	var control1 = this.allControls[controlName1];
 	var control2 = this.allControls[controlName2];
 
-	var controlCode1  = control1.code;
-	var controlCode2 = control2.code;
+	var kCode1  = control1.keyboardCode;
+	var kCode2 = control2.keyboardCode;
+
+	var gCode1 = control1.gamepadCode;
+	var gCode2 = control2.gamepadCode;
 
 	var controlFunction1 = control1.functionName;
 	var controlFunction2 = control2.functionName;
@@ -275,17 +281,17 @@ ControlManager.prototype.swapControls = function(controlName1, controlName2, typ
 
 	// If type == 0, swap the key/buttonCodes. 
 	if (!type){
-		this.bindControl(controlName1, controlCode2, controlFunction1, controlSignal1,
-						 allTags2, target2);
-		this.bindControl(controlName2, controlCode1, controlFunction2, controlSignal2,
-						 allTags1, target1);
+		this.bindControl(controlName1, kCode2, gCode2, controlFunction1,
+						 controlSignal1, allTags2, target2);
+		this.bindControl(controlName2, kCode1, gCode1, controlFunction2,
+						 controlSignal2, allTags1, target1);
 	}
 	// Else, swap the functions (and the signals).
 	else{
-		this.bindControl(controlName1, controlCode1, controlFunction2, controlSignal2,
-						 allTags2, target2);
-		this.bindControl(controlName2, controlCode2, controlFunction1, controlSignal1,
-						 allTags1, target1);
+		this.bindControl(controlName1, kCode1, gCode1, controlFunction2,
+						 controlSignal2, allTags2, target2);
+		this.bindControl(controlName2, kCode2, gCode2, controlFunction1,
+						 controlSignal1, allTags1, target1);
 	}
 }
 
@@ -484,49 +490,81 @@ ControlManager.prototype._able = function(allTags, allNeeded, enabled){
 /* Control */
 /******************************************************************************/
 
-var Control = function(manager, controlCode, functionName, signal,
+var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
 					   allTags, target){
 	if (typeof(manager) != "object") return;
 	if ((typeof(target) != "undefined") &&
 		(typeof(target) != "object") && (target != -1)) return;
 	if (typeof(target) === "undefined") target = -1;
-	if (typeof(controlCode) != "number") return;
+	if (typeof(keyboardCode) != "number") return;
+	if (typeof(gamepadCode) != "number") return;
 	if (typeof(functionName) != "string") return;
 
 	if (typeof(signal) === "undefined") signal = "update";
 
-	if (manager.type == CONTROL_KEYBOARD){
-		this.input = manager.keyboard.addKey(controlCode);
+	this.inputKeyboard = manager.keyboard.addKey(keyboardCode);
+
+	try{
+		this.inputGamepad = manager.pad.getButton(gamepadCode);
 	}
-	else if (manager.type == CONTROL_GAMEPAD){
-		this.input = manager.pad.getButton(controlCode);
+	catch(err){
+		this.inputGamepad = null;
 	}
 
 	this.manager = manager;
 	this.target = target;
 	this.functionName = functionName;
 	this.signal = signal;
-	this.code = controlCode;
+	this.keyboardCode = keyboardCode;
+	this.gamepadCode = gamepadCode;
 	this.allTags = [];
 
 	this.enabled = true;
 
+	var signalKeyboard = null;
+	var signalGamepad = null;
+
 	if ((signal == "update") ||
 		(signal == "down") ||
 		(signal == "up")){
-		signal = manager.onUpdate;
+		signalKeyboard = manager.onUpdate;
+		signalGamepad = manager.onUpdate;
 	}
 	else if (signal == "onDown"){
-		signal = this.input.onDown;
+		if (this.inputKeyboard != null){
+			signalKeyboard = this.inputKeyboard.onDown;
+		}
+
+		if (this.inputGamepad != null){
+			signalGamepad = this.inputGamepad.onDown;
+		}
 	}
 	else if (signal == "onUp"){
-		signal = this.input.onUp;
+		if (this.inputKeyboard != null){
+			signalKeyboard = this.inputKeyboard.onUp;
+		}
+		
+		if (this.inputGamepad != null){
+			signalGamepad = this.inputGamepad.onUp;
+		}
 	}
 	else if (signal == "onFloat"){
-		signal = this.input.onFloat;
+		if (this.inputKeyboard != null){
+			signalKeyboard = this.inputKeyboard.onFloat;
+		}
+		
+		if (this.inputGamepad != null){
+			signalGamepad = this.inputGamepad.onFloat;
+		}
 	}
 
-	signal.add(this.execute, this);
+	if (signalKeyboard != null){
+		signalKeyboard.add(this.executeKeyboard, this);
+	}
+
+	if (signalGamepad != null){
+		signalGamepad.add(this.executeGamepad, this);
+	}
 
 	if (typeof(allTags) === "object"){
 		for(var i = 0; i < allTags.length; i++) {
@@ -538,10 +576,15 @@ var Control = function(manager, controlCode, functionName, signal,
 	}
 }
 
-Control.prototype.change = function(controlCode, signal){
-	if ((typeof(controlCode) != "number") ||
-		(controlCode == -1)){
-		controlCode = this.controlCode;
+Control.prototype.change = function(keyboardCode, gamepadCode, signal){
+	if ((typeof(keyboardCode) != "number") ||
+		(keyboardCode == -1)){
+		keyboardCode = this.keyboardCode;
+	}
+
+	if ((typeof(gamepadCode) != "number") ||
+		(gamepadCode == -1)){
+		gamepadCode = this.gamepadCode;
 	}
 
 	if (typeof(signal) != "string"){
@@ -556,11 +599,23 @@ Control.prototype.change = function(controlCode, signal){
 
 	this.destroy();
 
-	Control.call(this, manager, controlCode, functionName, signal,
+	Control.call(this, manager, keyboardCode, gamepadCode, functionName, signal,
 				 allTags, target);
 }
 
-Control.prototype.execute = function(){
+Control.prototype.executeKeyboard = function(){
+	if (this.manager.type == CONTROL_KEYBOARD){
+		this.execute(CONTROL_KEYBOARD);
+	}
+}
+
+Control.prototype.executeGamepad = function(){
+	if (this.manager.type == CONTROL_GAMEPAD){
+		this.execute(CONTROL_GAMEPAD);
+	}
+}
+
+Control.prototype.execute = function(type){
 	if (!this.manager.enabled ||
 		!this.enabled){
 		return;
@@ -590,17 +645,31 @@ Control.prototype.execute = function(){
 			return;
 		}
 	}
-	
+
+	var input = null;
+
+	if (type == CONTROL_KEYBOARD){
+		input = this.inputKeyboard;
+	}
+
+	if (type == CONTROL_GAMEPAD){
+		input = this.inputGamepad;
+	}
+
+	if (input == null){
+		return;
+	}
+
 	switch(this.signal){
-		case "down":
-		if (this.input.isDown) actualFunction.call(target, this);;
+	case "down":
+		if (input.isDown) actualFunction.call(target, this);;
 		break;
-
-		case "up":
-		if (this.input.isUp) actualFunction.call(target, this);;
+		
+	case "up":
+		if (input.isUp) actualFunction.call(target, this);;
 		break;
-
-		default:
+		
+	default:
 		actualFunction.call(target, this);
 		break;
 	}
@@ -610,32 +679,56 @@ Control.prototype.execute = function(){
 Control.prototype.destroy = function(){
 	switch(this.signal){
 		case "onDown":
-		if (this.input != null){
-			this.input.onDown.remove(this.execute, this);
+		if (this.inputKeyboard != null){
+			this.inputKeyboard.onDown.remove(this.executeKeyboard, this);
 		}
+
+		if (this.inputName != null){
+			this.inputGamepad.onDown.remove(this.executeGamepad, this);
+		}
+
 		break;
 		
 		case "onUp":
-		if (this.input != null){
-			this.input.onUp.remove(this.execute, this);
+		if (this.inputKeyboard != null){
+			this.inputKeyboard.onUp.remove(this.executeKeyboard, this);
 		}
+
+		if (this.inputGamepad != null){
+			this.inputGamepad.onUp.remove(this.executeGamepad, this);
+		}
+
 		break;
 		
 		case "onFloat":
-		if (this.input != null){
-			this.input.onFloat.remove(this.execute, this);
+		if (this.inputKeyboard != null){
+			this.inputKeyboard.onFloat.remove(this.executeKeyboard, this);
 		}
+
+		if (this.inputGamepad != null){
+			this.inputGamepad.onFloat.remove(this.executeGamepad, this);
+		}
+
+		break;
 
 		default:
 		if (this.manager != null){
-			this.manager.onUpdate.remove(this.execute, this);
+			if (this.inputKeyboard != null){
+				this.manager.onUpdate.remove(this.executeKeyboard, this);
+			}
+			
+			if (this.inputGamepad != null){
+				this.manager.onUpdate.remove(this.executeGamepad, this);
+			}
 		}
 		break;
 	}
 
 	this.manager = null;
-	this.input = null;
-	this.code = -1;
+	this.inputKeyboard = null;
+	this.inputGamepad = null;
+	this.keyboardCode = -1;
+	this.gamepadCode = -1;
 	this.functionName = null;
 	this.signal = null;
 	this.allTags = [];
@@ -698,6 +791,10 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 PadControl.prototype.execute = function(){
 	if (!this.manager.enabled ||
 		!this.enabled){
+		return;
+	}
+
+	if (this.manager.typer != CONTROL_GAMEPAD){
 		return;
 	}
 

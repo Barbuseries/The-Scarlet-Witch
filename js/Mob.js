@@ -21,6 +21,59 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.allStats.level = new Stat(this, "Level", STAT_NO_MAXSTAT, level, level,
 								   0, 99);
 	this.allStats.health = new Stat(this, "Health", STAT_NO_LINK, 1);
+	this.allStats.special = new Stat(this, "Special", STAT_NO_LINK, 0);
+
+	this.allStats.attack = new Stat(this, "Attack", STAT_NO_MAXSTAT, 0);
+	this.allStats.defense = new Stat(this, "Defense", STAT_NO_MAXSTAT, 0, 0, 0, 100);
+
+	this.allStats.mainStat = new Stat(this, "Main Stat", STAT_NO_MAXSTAT, 0);
+	this.allStats.endurance = new Stat(this, "Endurance", STAT_NO_MAXSTAT, 0);
+	this.allStats.agility = new Stat(this, "Agility", STAT_NO_MAXSTAT, 0);
+
+	this.allStats.dodge = new Stat(this, "Dodge", STAT_NO_MAXSTAT, 0, 0, 0, 100);
+	this.allStats.criticalRate = new Stat(this, "Critical Rate", STAT_NO_MAXSTAT, 0,
+										  0, 0, 100);
+	this.allStats.attackSpeed = new Stat(this, "Attack Speed", STAT_NO_MAXSTAT, 1000,
+										 1000, 0, true);
+
+	this.allStats.level.onUpdate.add(this.allStats.health.grow,
+									 this.allStats.health);
+	this.allStats.level.onUpdate.add(this.allStats.special.grow,
+									 this.allStats.special);
+	this.allStats.level.onUpdate.add(this.allStats.attack.grow,
+									 this.allStats.attack);
+	this.allStats.level.onUpdate.add(this.allStats.mainStat.grow,
+									 this.allStats.mainStat);
+	this.allStats.level.onUpdate.add(this.allStats.endurance.grow,
+									 this.allStats.endurance);
+	this.allStats.level.onUpdate.add(this.allStats.defense.grow,
+									 this.allStats.defense);
+	this.allStats.level.onUpdate.add(this.allStats.agility.grow,
+									 this.allStats.agility);
+	this.allStats.level.onUpdate.add(this.allStats.dodge.grow,
+									 this.allStats.dodge);
+	this.allStats.level.onUpdate.add(this.allStats.criticalRate.grow,
+									 this.allStats.criticalRate);
+	this.allStats.level.onUpdate.add(this.allStats.attackSpeed.grow,
+									 this.allStats.attackSpeed);
+
+
+	this.allStats.mainStat.onUpdate.add(this.allStats.attack.grow,
+										this.allStats.attack);
+	
+	this.allStats.endurance.onUpdate.add(this.allStats.health.grow,
+										 this.allStats.health);
+	this.allStats.endurance.onUpdate.add(this.allStats.defense.grow,
+										 this.allStats.defense);
+	
+
+	this.allStats.agility.onUpdate.add(this.allStats.dodge.grow,
+									   this.allStats.dodge);
+	this.allStats.agility.onUpdate.add(this.allStats.criticalRate.grow,
+									   this.allStats.criticalRate);
+	this.allStats.agility.onUpdate.add(this.allStats.attackSpeed.grow,
+									   this.allStats.attackSpeed);
+
 
 	this.allStats.health.onUpdate.add(function(stat, oldValue, newValue){
 		if (newValue == 0){

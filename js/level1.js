@@ -447,32 +447,33 @@ BasicGame.Level1.prototype.create = function (){
 	}
 
 
-	this.testPlayer.controller.bindControl("leftControl", Phaser.Keyboard.Q,
+	this.testPlayer.controller.bindControl("leftControl", Phaser.Keyboard.Q, -1,
 										   "goLeft", "down", "movement");
-	this.testPlayer.controller.bindControl("rightControl", Phaser.Keyboard.D,
+	this.testPlayer.controller.bindControl("rightControl", Phaser.Keyboard.D, -1,
 										   "goRight", "down", "movement");
-	this.testPlayer.controller.bindControl("jumpControl", Phaser.Keyboard.Z,
+	this.testPlayer.controller.bindControl("jumpControl", Phaser.Keyboard.Z, -1,
 										   "jump", "down", "movement");
-	this.testPlayer.controller.bindControl("reduceJumpControl", Phaser.Keyboard.Z,
+	this.testPlayer.controller.bindControl("reduceJumpControl", Phaser.Keyboard.Z, -1,
 										   "reduceJump", "onDown", "movement");
 	
-	this.testPlayer2.controller.bindControl("leftControl", Phaser.Keyboard.LEFT,
+	this.testPlayer2.controller.bindControl("leftControl", Phaser.Keyboard.LEFT, -1,
 											"goLeft", "down", "movement");
-	this.testPlayer2.controller.bindControl("rightControl", Phaser.Keyboard.RIGHT,
+	this.testPlayer2.controller.bindControl("rightControl", Phaser.Keyboard.RIGHT, -1,
 											"goRight", "down", "movement");
-	this.testPlayer2.controller.bindControl("jumpControl", Phaser.Keyboard.UP,
+	this.testPlayer2.controller.bindControl("jumpControl", Phaser.Keyboard.UP, -1,
 											"jump", "down", "movement");
 	this.testPlayer2.controller.bindControl("reduceJumpControl", Phaser.Keyboard.UP,
+											-1,
 											"reduceJump", "onDown", "movement");
-	this.testPlayer2.controller.bindControl("castFirst", Phaser.Keyboard.ONE,
+	this.testPlayer2.controller.bindControl("castFirst", Phaser.Keyboard.ONE, -1,
 											"castFirst", "down", "action");
-	this.testPlayer2.controller.bindControl("castSecond", Phaser.Keyboard.TWO,
+	this.testPlayer2.controller.bindControl("castSecond", Phaser.Keyboard.TWO, -1,
 											"castSecond", "down", "action");
-	this.testPlayer2.controller.bindControl("castThird", Phaser.Keyboard.THREE,
+	this.testPlayer2.controller.bindControl("castThird", Phaser.Keyboard.THREE, -1,
 											"castThird", "down", "action");
-	this.testPlayer2.controller.bindControl("castFourth", Phaser.Keyboard.FOUR,
+	this.testPlayer2.controller.bindControl("castFourth", Phaser.Keyboard.FOUR, -1,
 											"castFourth", "down", "action");
-	this.testPlayer2.controller.bindControl("castFifth", Phaser.Keyboard.FIVE,
+	this.testPlayer2.controller.bindControl("castFifth", Phaser.Keyboard.FIVE, -1,
 											"castFifth", "down", "action");
 	
 	this.barton.statusUi.cameraOffset.x = 25;
@@ -521,7 +522,7 @@ BasicGame.Level1.prototype.update = function (){
 	this.testPlayer.controller.update();
 	this.testPlayer2.controller.update();
 	
-	this.lucy.allStats.level.add(1);
+	this.lucy.allStats.experience.add(1);
 
 	//this.game.debug.body(hero);
 }

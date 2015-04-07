@@ -72,6 +72,14 @@ var Status_UI = function(game, hero, x, y, isBarton){
 
 	this.level.anchor.setTo(0.5, 0);
 
+	this.experienceBar = new MonoGauge(game, this.level.x - 12, this.level.y - 2,
+									   24, 2, hero.allStats.experience,
+									   H_YELLOW, H_BLACK, "", "");
+	this.experienceBar.allowIncreaseAnimation = false;
+	this.experienceBar.allowDecreaseAnimation = false;
+
+	this.add(this.experienceBar);
+
 	this.allStatusSkills = {};
 
 	function Status_UI_updateLevel(stat, oldValue, newValue){
