@@ -84,7 +84,7 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.SPEED = 250;
 	this.ACCELERATION = 250;
 	this.JUMP_POWER = 200;
-	this.DRAG = 500;
+	this.DRAG = 600;
 	this.MAXJUMP = 1;
 	this.jumpCount = this.MAXJUMP;
 

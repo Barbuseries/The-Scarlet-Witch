@@ -354,7 +354,7 @@ var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 	this.belowSprite.width = width;
 	this.belowSprite.height = height;
 
-	this.valueDisplayType = GAUGE_BRUT;
+	this.valueDisplayType = GAUGE_NONE;
 	this.valueText = game.add.text(width/2, height/2, stat.get().toString() +
 								   " / " + stat.getMax().toString());
 	this.valueText.fontSize = height;

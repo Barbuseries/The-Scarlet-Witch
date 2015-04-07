@@ -18,9 +18,7 @@ var CONTROL_GAMEPAD = 1;
 var ControlManager = function(game, type, target, pad){
 	this.game = game;
 	
-	if (!game.input.gamepad.active){
-		game.input.gamepad.start();
-	}
+	game.input.gamepad.start();
 	
 	this.pad = game.input.gamepad[pad];
 
@@ -103,17 +101,15 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode, gamep
 	var manager = this;
 
 	function setAfterCheck(){
+		console.log(1);
 		manager.bindControl(controlName, -1, gamepadCode, functionName, signal,
 							allTags, target);
 	}
-
-	if (this.type == CONTROL_GAMEPAD){
-		if (!this.pad.connected){
-			this.pad.addCallbacks(this, {onConnect: setAfterCheck});
-			return;
-		}
+	
+	if (!this.pad.connected){
+		this.pad.addCallbacks(this, {onConnect: setAfterCheck});
 	}
-
+	
 	// If the control already exists, unbind it.
 	// (And, according to the parameters, save some of it's attributes)
 	if (typeof(this.allControls[controlName]) != "undefined"){
@@ -481,6 +477,10 @@ ControlManager.prototype._able = function(allTags, allNeeded, enabled){
 			}	
 		}
 	}
+}
+
+ControlManager.prototype.swapControls = function(){
+	this.type = 1 * ! this.type;
 }
 /******************************************************************************/
 /* ControlManager */

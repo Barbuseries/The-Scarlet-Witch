@@ -10,7 +10,6 @@ var player1;
 var hero;
 var secondSkillBar;
 var toto;
-var statusUi;
 
 BasicGame.Level1.prototype.create = function (){
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -58,10 +57,10 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.testPlayer = {};
 	this.testPlayer.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
-													null);
+													null, "pad1");
 	this.testPlayer2 = {};
 	this.testPlayer2.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
-													 null);
+													 null, "pad2");
 
 	this.barton = new Barton(this.game, 550, 500, 99, this.testPlayer);
 	this.barton.scale.setTo(1.3);
@@ -70,9 +69,9 @@ BasicGame.Level1.prototype.create = function (){
 	this.barton.allStats.endurance.add(100);
 
 	this.lucy = new Lucy(this.game, 600, 500, 1, this.testPlayer2);
-	this.lucy.currentMode = "offensive";
-	this.lucy.allStats.mainStat.add(500);
-	this.lucy.allStats.agility.add(99);
+	this.lucy.swapMode();
+	//this.lucy.allStats.mainStat.add(500);
+	//this.lucy.allStats.agility.add(99);
 	this.lucy.allStats.special.set(1, 1);
 
 	BasicGame.allHeroes.add(this.barton);
@@ -107,10 +106,10 @@ BasicGame.Level1.prototype.create = function (){
 		}
 	}
 
-	this.lucy.allSkills["defensive"].firstSkill = new Skill(this.lucy, 1, costSkill1,
-															10000, Elements.ALMIGHTY,
-															["platform"]);
-	this.lucy.allSkills["defensive"].firstSkill.icon = "teleport_icon";
+	this.lucy.allSkills[1].firstSkill = new Skill(this.lucy, 1, costSkill1,
+												  10000, Elements.ALMIGHTY,
+												  ["platform"]);
+	this.lucy.allSkills[1].firstSkill.icon = "teleport_icon";
 
 	/* Les projectiles ont besoin d'une "piscine" de sprites.
 	   Ca permet 2 choses :
@@ -129,7 +128,7 @@ BasicGame.Level1.prototype.create = function (){
 
 	// launchFunction est appelé dès que le skill est utilisé (le joueur appuie
 	// sur la touche et il a assez de special pour le lancer)
-	this.lucy.allSkills["defensive"].firstSkill.launchFunction = function(){
+	this.lucy.allSkills[1].firstSkill.launchFunction = function(){
 		var self = this;
 		var hero = this.user;
 
@@ -183,7 +182,7 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
 			
-			this.body.velocity.x = -600;
+			this.body.velocity.x = 600;
 			
 			if (hero.orientationH < 0){
 				this.body.velocity.x *= -1;
@@ -296,8 +295,8 @@ BasicGame.Level1.prototype.create = function (){
 			return false;
 		}
 
-		user.animations.stop("spellCastRight");
-		user.animations.stop("spellCastLeft");
+		hero.animations.stop("spellCastRight");
+		hero.animations.stop("spellCastLeft");
 
 		// Le héros lance une animation.
 		// N.B : Le skill a aussi un attribut user qui correspond à hero.
@@ -330,17 +329,17 @@ BasicGame.Level1.prototype.create = function (){
 	}
 	/******************************************************************************/
 
-	this.lucy.allSkills["offensive"].firstSkill = new FireBallSkill(this.lucy, 1,
-																	["platform",
-																	 "enemy"]);
+	this.lucy.allSkills[0].firstSkill = new FireBallSkill(this.lucy, 1,
+														  ["platform",
+														   "enemy"]);
 	this.lucy.allStats.attackSpeed.onUpdate.add(function(stat, oldValue, newValue){
-		this.allSkills["offensive"].firstSkill.setCooldown(newValue);
+		this.allSkills[0].firstSkill.setCooldown(newValue);
 	}, this.lucy);
-	this.lucy.allSkills["defensive"].secondSkill = new Skill(this.lucy, 1, undefined,
+	this.lucy.allSkills[1].secondSkill = new Skill(this.lucy, 1, undefined,
 															 5000);
-	this.lucy.allSkills["defensive"].secondSkill.icon = "barrier_icon";
+	this.lucy.allSkills[1].secondSkill.icon = "barrier_icon";
 
-	this.lucy.allSkills["defensive"].secondSkill.launchFunction = function(){
+	this.lucy.allSkills[1].secondSkill.launchFunction = function(){
 		var hero = this.user;
 
 		function initProjectile(angle){
@@ -361,7 +360,7 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.lifespan = 4500;
 
-			this.tint = H_GREY;
+			this.tint = H_ORANGE;
 
 			this.x += Math.cos(this.angle) * hero.width / 2 + this.width / 2 + hero.width / 2;
 			this.y += Math.sin(this.angle) * hero.height / 2 + this.height / 2 + hero.height / 2;
@@ -388,8 +387,8 @@ BasicGame.Level1.prototype.create = function (){
 							 updateProjectile);
 		}
 
-		user.animations.stop("spellCastRight");
-		user.animations.stop("spellCastLeft");
+		hero.animations.stop("spellCastRight");
+		hero.animations.stop("spellCastLeft");
 
 		if (hero.orientationH >= 0){
 			hero.animations.play("spellCastRight");	
@@ -399,8 +398,8 @@ BasicGame.Level1.prototype.create = function (){
 		}
 	}
 
-	this.lucy.allSkills["offensive"].secondSkill = new IceBallSkill(this.lucy, 5,
-																	["enemy"]);
+	this.lucy.allSkills[0].secondSkill = new IceBallSkill(this.lucy, 5,
+														  ["enemy"]);
 
     this.game.camera.follow(this.lucy);
 	
@@ -446,15 +445,22 @@ BasicGame.Level1.prototype.create = function (){
 		catch(err){}
 	}
 
-
-	this.testPlayer.controller.bindControl("leftControl", Phaser.Keyboard.Q, -1,
+	this.testPlayer.controller.bindControl("leftControl", Phaser.Keyboard.Q,
+										   Phaser.Gamepad.XBOX360_DPAD_LEFT,
 										   "goLeft", "down", "movement");
-	this.testPlayer.controller.bindControl("rightControl", Phaser.Keyboard.D, -1,
+	this.testPlayer.controller.bindControl("rightControl", Phaser.Keyboard.D,
+										   Phaser.Gamepad.XBOX360_DPAD_RIGHT,
 										   "goRight", "down", "movement");
-	this.testPlayer.controller.bindControl("jumpControl", Phaser.Keyboard.Z, -1,
+	this.testPlayer.controller.bindControl("jumpControl", Phaser.Keyboard.Z,
+										   Phaser.Gamepad.XBOX360_A,
 										   "jump", "down", "movement");
-	this.testPlayer.controller.bindControl("reduceJumpControl", Phaser.Keyboard.Z, -1,
+	this.testPlayer.controller.bindControl("reduceJumpControl", Phaser.Keyboard.Z,
+										   Phaser.Gamepad.XBOX360_A,
 										   "reduceJump", "onDown", "movement");
+	this.testPlayer.controller.bindControl("swapControls", Phaser.Keyboard.ENTER,
+										   Phaser.Gamepad.XBOX360_BACK,
+										   "swapControls", "onDown", "action",
+										   this.testPlayer.controller);
 	
 	this.testPlayer2.controller.bindControl("leftControl", Phaser.Keyboard.LEFT, -1,
 											"goLeft", "down", "movement");
@@ -475,14 +481,19 @@ BasicGame.Level1.prototype.create = function (){
 											"castFourth", "down", "action");
 	this.testPlayer2.controller.bindControl("castFifth", Phaser.Keyboard.FIVE, -1,
 											"castFifth", "down", "action");
+	this.testPlayer2.controller.bindControl("swapMode", Phaser.Keyboard.TAB, -1,
+											"swapMode", "onDown", "action");
 	
 	this.barton.statusUi.cameraOffset.x = 25;
 	this.barton.statusUi.cameraOffset.y = 10;
 	this.barton.statusUi.scale.setTo(1);
 
+	this.testPlayer.controller.type = CONTROL_GAMEPAD;
+
 	this.lucy.statusUi.cameraOffset.x = 50;
 	this.lucy.statusUi.cameraOffset.y = 565;
 	this.lucy.statusUi.profilSprite.frame = 26;
+	this.lucy.statusUi.updateStatusSkills();
 	this.lucy.statusUi.showStatusSkills();
 
 	this.game.world.bringToTop(BasicGame.textDamagePool);
@@ -522,7 +533,7 @@ BasicGame.Level1.prototype.update = function (){
 	this.testPlayer.controller.update();
 	this.testPlayer2.controller.update();
 	
-	this.lucy.allStats.experience.add(1);
+	this.lucy.allStats.experience.add(10);
 
 	//this.game.debug.body(hero);
 }
