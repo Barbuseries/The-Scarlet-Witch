@@ -1701,36 +1701,3 @@ Sentence.prototype._del = function(){
 /******************************************************************************/
 /* Sentence */
 /************/
-
-
-function validIndex(index, array){
-    if (typeof(index) != "number"){
-        return false;
-    }
-
-    return (index < 0) ? 0 :
-        (index >= array.length) ? 0 : 1;
-}
-
-function booleanable(value){
-    return ((typeof(value) == "number") ||
-            (typeof(value) == "boolean"));
-}
-
-function resumeLoopedTimer(loopedTimer){
-    if (loopedTimer.paused == false){
-        loopedTimer.start();
-    }
-    else{
-        loopedTimer.resume();
-    }
-}
-
-function resumeLoopedTween(loopedTween){
-	if (loopedTween.isPaused == false){
-        loopedTween.start();
-    }
-    else{
-        loopedTween.resume();
-    }
-}
