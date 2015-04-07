@@ -10,8 +10,52 @@
          "width":128,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "height":32,
+         "name":"baddies",
+         "objects":[
+                {
+                 "height":98,
+                 "id":1,
+                 "name":"",
+                 "properties":
+                    {
+                     "sprite":"boss1",
+                     "type":"baddie"
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":82,
+                 "x":3032,
+                 "y":820
+                }, 
+                {
+                 "height":98,
+                 "id":26,
+                 "name":"",
+                 "properties":
+                    {
+                     "sprite":"boss1",
+                     "type":"baddie"
+                    },
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":82,
+                 "x":3734,
+                 "y":820
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "width":128,
+         "x":0,
+         "y":0
         }],
- "nextobjectid":1,
+ "nextobjectid":27,
  "orientation":"orthogonal",
  "properties":
     {
