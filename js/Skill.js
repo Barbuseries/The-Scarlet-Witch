@@ -435,6 +435,127 @@ var FireBallSkill = function(user, level, targetTags){
 FireBallSkill.prototype = Object.create(Skill.prototype);
 FireBallSkill.prototype.constructor = FireBallSkill;
 
+var ThunderSkill = function (user, level, targetTags) {
+    var cooldown = 1500;
+
+    function costFunction() {
+        if (this.user.allStats.special.canSubtract(5)) {
+            this.user.allStats.special.subtract(5);
+
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    
+    Skill.call(this, user, level, costFunction, cooldown, Elements.THUNDER,
+            targetTags);
+
+    this.launchFunction = function () {
+        var user = this.user;
+        var self = this;
+
+        function initProjectile() {
+            this.x = user.x;
+            this.y = user.y + user.height * 0.65;
+
+            this.anchor.setTo(0.5);
+
+            this.frame = 0;
+
+            this.lifespan = 300;
+            console.log(1);
+            if (user.orientationH >= 0) {
+                this.animations.add("animation", [0]);
+            }
+            else {
+                this.animations.add("animation", [0]);
+            }
+            console.log(2);
+            
+            this.animations.play("animation");
+
+            this.game.physics.enable([this], Phaser.Physics.ARCADE);
+            console.log(3);
+
+            if (user.orientationH < 0) {
+                this.x += user.width * 1 / 4;
+                
+            }
+            else {
+                this.x += user.width * 3 / 4;
+            }
+            console.log(4);
+
+            
+            this.body.allowGravity = false;
+            console.log(5);
+
+            this.targetTags = self.targetTags;
+            console.log(6);
+            this.element = self.element;
+            console.log(7);
+            
+        }
+
+        function updateProjectile() {
+            if (this.lifespan > 250) {
+                this.scale.x = 280 / this.lifespan;
+            } else {
+                this.scale.x = this.lifespan /280;
+            }
+            this.scale.y = this.scale.x;
+        }
+
+        function killProjectile() {
+            return true;
+        }
+
+        function collideFunction(obstacle) {
+            if (obstacle.tag != "platform") {
+                this.damageFunction(obstacle);
+            }
+
+            this.kill();
+        }
+
+        function collideProcess(obstacle) {
+            return ((this.targetTags.indexOf(obstacle.tag) != -1) ||
+					(obstacle.tag == "platform"));
+        }
+
+        function damageFunction(obstacle) {
+            var damage = self.user.allStats.attack.get();
+            var damageRange = [0.9, 1.1];
+            var criticalRate = self.user.allStats.criticalRate.get();
+
+            obstacle.suffer(damage, damageRange, criticalRate, this.element);
+        }
+
+
+        user.animations.stop("spellCastRight");
+        user.animations.stop("spellCastLeft");
+
+        createProjectile(this.game, 0, 0, "thunder", BasicGame.thunderPool,
+						 initProjectile, updateProjectile, killProjectile,
+						 collideFunction, collideProcess, damageFunction);
+
+        if (user.orientationH >= 0) {
+            user.animations.play("spellCastRight");
+        }
+        else {
+            user.animations.play("spellCastLeft");
+        }
+    };
+
+    this.icon = "thunder_icon";
+}
+
+ThunderSkill.prototype = Object.create(Skill.prototype);
+ThunderSkill.prototype.constructor = ThunderSkill;
+
+
 
 var IceBallSkill = function(user, level, targetTags){
 	var cooldown = [15000 / 3, 14000 / 3, 13000 / 3,

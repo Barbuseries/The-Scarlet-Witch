@@ -37,7 +37,7 @@ BasicGame.Level1.prototype.create = function (){
     this.game.platforms = map.createLayer('blockedLayer');
     this.game.platforms.resizeWorld();
 
-   	createBaddies();
+   	//createBaddies();
 
 	sky = this.game.add.tileSprite(0, 0,
 								   map.widthInPixels,
@@ -54,6 +54,7 @@ BasicGame.Level1.prototype.create = function (){
 	BasicGame.icePool = this.game.add.group();
 	BasicGame.fireExplosionPool = this.game.add.group();
 	BasicGame.iceExplosionPool = this.game.add.group();
+	BasicGame.thunderPool = this.game.add.group();
 	
 	BasicGame.allHeroes = this.game.add.group();
 
@@ -339,6 +340,8 @@ BasicGame.Level1.prototype.create = function (){
 	}, this.lucy);
 	this.lucy.allSkills[1].secondSkill = new Skill(this.lucy, 1, undefined,
 															 5000);
+	this.lucy.allSkills[0].thirdSkill = new ThunderSkill(this.lucy, 1, ["platform", "enemy"]);
+
 	this.lucy.allSkills[1].secondSkill.icon = "barrier_icon";
 
 	this.lucy.allSkills[1].secondSkill.launchFunction = function(){
@@ -576,7 +579,7 @@ var collideProcessProjectile = function(projectile, obstacle){
 		}
 	}
 }
-
+/*
 function createBaddies() {
 	// create baddies
 	this.game.baddies = new group();
@@ -612,4 +615,4 @@ function createFromTiledObject(element, group) {
 	});
 }
 
-
+*/
