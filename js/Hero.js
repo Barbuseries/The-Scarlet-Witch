@@ -6,10 +6,11 @@ var Hero = function(game, x, y, name, level, player){
 
 	this.body.setSize(32, 48, 16, 16);
 
-	this.currentMode = "offensive";
-
-	this.allSkills["offensive"] = {};
-	this.allSkills["defensive"] = {};
+	this.currentMode = 0;
+	
+	this.allSkills = [];
+	this.allSkills[0] = {};
+	this.allSkills[1] = {};
 	
 	this.player = player;
 
@@ -31,12 +32,18 @@ var Hero = function(game, x, y, name, level, player){
 		this.set(0);
 		return this.entity.allStats.level.get() * 10;
 	}, -1, [], true);
+
+	this.onSwapMode = new Phaser.Signal();
 }
 
 Hero.prototype = Object.create(Mob.prototype);
 Hero.prototype.constructor = Hero;
 
 Hero.prototype.goLeft = function(control, factor){
+	if (this._dying != false){
+		return;
+	}
+
 	if (typeof(factor) === "undefined"){
         factor = 1;
     }
@@ -47,7 +54,11 @@ Hero.prototype.goLeft = function(control, factor){
     this.body.acceleration.x -= this.ACCELERATION * Math.abs(factor);
 }
 
-Hero.prototype.goRight = function(control, factor){	
+Hero.prototype.goRight = function(control, factor){
+	if (this._dying != false){
+		return;
+	}
+
     if (typeof(factor) === "undefined"){
         factor = 1;
     }
@@ -59,6 +70,10 @@ Hero.prototype.goRight = function(control, factor){
 }
 
 Hero.prototype.jump = function(control, factor){
+	if (this._dying != false){
+		return;
+	}
+	
     if (typeof(factor) === "undefined"){
         factor = 1;
     }
@@ -78,6 +93,10 @@ Hero.prototype.reduceJump = function(control, factor){
 }
 
 Hero.prototype.stopMovement = function(){
+	if (this._dying != false){
+		return;
+	}
+
 	if (this.orientationH == 1){
 		this.animations.stop("walkRight");
 		this.frame = 143;
@@ -90,12 +109,22 @@ Hero.prototype.stopMovement = function(){
 	this.orientationV = 0;
 }
 
+Hero.prototype.swapMode = function(){
+	if (this._dying != false){
+		return;
+	}
+
+	this.currentMode = 1 * !this.currentMode;
+
+	this.onSwapMode.dispatch(this);
+}
+
 var Lucy = function(game, x, y, level, player){
 	Hero.apply(this, [game, x, y, "Lucy", level, player]);
 
 	this.MAXJUMP = 2;
 	
-	this.currentMode = "defensive";
+	this.currentMode = 1;
 
 	this.allStats.mainStat.name = "Intelligence";
 

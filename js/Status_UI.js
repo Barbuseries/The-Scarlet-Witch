@@ -37,6 +37,8 @@ var Status_UI = function(game, hero, x, y, isBarton){
 		this._specialBar2 = new MonoGauge(game, 50, 0 + 20, 100, 10,
 										  hero.allStats.quiver,
 										  H_ORANGE, H_WHITE, "", "ground2");
+		this._specialBar1.valueDisplayType = GAUGE_BRUT;
+		this._specialBar2.valueDisplayType = GAUGE_BRUT;
 
 		this.add(this._specialBar1);
 		this.add(this._specialBar2);
@@ -48,6 +50,7 @@ var Status_UI = function(game, hero, x, y, isBarton){
 
 	this.healthBar.upperSprite.alpha = 0.2;
 	this.healthBar.backgroundFill.alpha = 0;
+	this.healthBar.valueDisplayType = GAUGE_BRUT;
 
 	this.healthBar.increaseSpeed = 0.5;
 	this.healthBar.increaseAlpha = 0.4;
@@ -57,6 +60,7 @@ var Status_UI = function(game, hero, x, y, isBarton){
 
 	this.specialBar.upperSprite.alpha = 0.2;
 	this.specialBar.backgroundFill.alpha = 0;
+	this.specialBar.valueDisplayType = GAUGE_BRUT;
 	
 	this.specialBar.allowIncreaseAnimation = false;
 	this.specialBar.allowDecreaseAnimation = false;
@@ -80,7 +84,9 @@ var Status_UI = function(game, hero, x, y, isBarton){
 
 	this.add(this.experienceBar);
 
-	this.allStatusSkills = {};
+	this.allStatusSkills = [];
+	this.allStatusSkills[0] = {};
+	this.allStatusSkills[1] = {};
 
 	function Status_UI_updateLevel(stat, oldValue, newValue){
 		this.level.text = newValue.toString();
@@ -91,28 +97,41 @@ var Status_UI = function(game, hero, x, y, isBarton){
 	this.showStatusSkills();
 
 	this.fixedToCamera = true;
+
+	hero.onSwapMode.add(this.showStatusSkills, this);
 }
 
 Status_UI.prototype = Object.create(Phaser.Group.prototype);
 Status_UI.prototype.constructor = Status_UI;
+
+Status_UI.prototype.updateStatusSkills = function(){
+	for(var j = 0; j < this.hero.allSkills.length; j++) {
+		var i = 0;
+
+		for(var skill in this.hero.allSkills[j]){
+			if (typeof(this.allStatusSkills[j][skill]) === "undefined"){
+				this.allStatusSkills[j][skill] = new StatusSkill(
+					this.hero.allSkills[j][skill], 500 + i * 70, 0);
+				i++;
+				this.allStatusSkills[j][skill].visible = false;
+				
+				this.add(this.allStatusSkills[j][skill]);
+			}
+		}
+	}
+}
 
 Status_UI.prototype.showStatusSkills = function(visible){
 	if (!booleanable(visible)){
 		visible = true;
 	}
 
-	var i = 0;
-
-	for(var skill in this.hero.allSkills[this.hero.currentMode]){
-		this.allStatusSkills[skill] = new StatusSkill(this.hero.allSkills[this.hero.currentMode][skill],
-													  500 + i * 70, 0);
-		i++;
-		
-		this.add(this.allStatusSkills[skill]);
+	for(var i in this.allStatusSkills[this.hero.currentMode]) {
+		this.allStatusSkills[this.hero.currentMode][i].visible = visible;
 	}
 
-	for(var i in this.allStatusSkills) {
-		this.allStatusSkills[i].visible = visible;
+	for(var i in this.allStatusSkills[1 * !this.hero.currentMode]){
+		this.allStatusSkills[1 * !this.hero.currentMode][i].visible = false;
 	}
 }
 /******************************************************************************/

@@ -1334,17 +1334,16 @@ TextBox.prototype._del = function(){
 	}
 
 	if (this.toggleTimer != null){
-		this.toggleTimer.destroy();
+		this.toggleTimer.stop();
 		this.toggleTimer = null;
 	}
 
 	if (this.closeTimer != null){
-		this.closeTimer.destroy();
 		this.closeTimer = null;
 	}
 
 	if (this.timerNextSentence != null){
-		this.timerNextSentence.destroy();
+		this.timerNextSentence.stop();
 		this.timerNextSentence = null;
 	}
 	
@@ -1702,27 +1701,3 @@ Sentence.prototype._del = function(){
 /******************************************************************************/
 /* Sentence */
 /************/
-
-
-function validIndex(index, array){
-    if (typeof(index) != "number"){
-        return false;
-    }
-
-    return (index < 0) ? 0 :
-        (index >= array.length) ? 0 : 1;
-}
-
-function booleanable(value){
-    return ((typeof(value) == "number") ||
-            (typeof(value) == "boolean"));
-}
-
-function resumeLoopedTimer(loopedTimer){
-    if (loopedTimer.paused == false){
-        loopedTimer.start();
-    }
-    else{
-        loopedTimer.resume();
-    }
-}
