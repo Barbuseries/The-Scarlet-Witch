@@ -55,6 +55,7 @@ BasicGame.Level1.prototype.create = function (){
 	BasicGame.fireExplosionPool = this.game.add.group();
 	BasicGame.iceExplosionPool = this.game.add.group();
 	BasicGame.thunderPool = this.game.add.group();
+	BasicGame.deathPool = this.game.add.group();
 	
 	BasicGame.allHeroes = this.game.add.group();
 
@@ -340,7 +341,7 @@ BasicGame.Level1.prototype.create = function (){
 	}, this.lucy);
 	this.lucy.allSkills[1].secondSkill = new Skill(this.lucy, 1, undefined,
 															 5000);
-	this.lucy.allSkills[0].thirdSkill = new ThunderSkill(this.lucy, 1, ["platform", "enemy"]);
+	
 
 	this.lucy.allSkills[1].secondSkill.icon = "barrier_icon";
 
@@ -405,6 +406,9 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.lucy.allSkills[0].secondSkill = new IceBallSkill(this.lucy, 5,
 														  ["enemy"]);
+	this.lucy.allSkills[0].thirdSkill = new ThunderSkill(this.lucy, 1, ["platform", "enemy"]);
+
+	this.lucy.allSkills[0].fourthSkill = new DeathSkill(this.lucy, 1, ["platform","enemy"]);
 
     this.game.camera.follow(this.lucy);
 	
