@@ -8,17 +8,11 @@ var Hero = function(game, x, y, name, level, player){
 
 	this.currentMode = 0;
 	
-	this.allSkills = [];
-	this.allSkills[0] = {};
-	this.allSkills[1] = {};
-	
 	this.player = player;
 
 	this.player.controller.target = this;
 
-	this.frame = 26;
-
-	this.allStats.experience = new Stat(this, "Experience", STAT_NO_LINK, 0);
+	this.allStats.experience = new Stat(this, "Experience", STAT_NO_LINK, 0, 10);
 	this.allStats.experience.onUpdate.add(function(stat, oldValue, newValue){
 		if (this.get(1) == 1){
 			this.entity.allStats.level.add(1);
@@ -30,7 +24,10 @@ var Hero = function(game, x, y, name, level, player){
 
 	this.allStats.experience.setGrowth(function(){
 		this.set(0);
-		return this.entity.allStats.level.get() * 10;
+		
+		var level = this.entity.allStats.level.get();
+
+		return (level == 99 ) ? 0 : this.entity.allStats.level.get() * 10;
 	}, -1, [], true);
 
 	this.onSwapMode = new Phaser.Signal();
@@ -50,7 +47,14 @@ Hero.prototype.goLeft = function(control, factor){
 
 	this.orientationH = -1;
 
-    this.animations.play("walkLeft", 15 * Math.abs(factor));
+	var currentAnim = this.animations.currentAnim;
+
+	if (!currentAnim.isRunning ||
+		!booleanable(currentAnim.allowBreak) ||
+		currentAnim.allowBreak){
+		this.animations.play("walkLeft", 15 * Math.abs(factor));
+	}
+
     this.body.acceleration.x -= this.ACCELERATION * Math.abs(factor);
 }
 
@@ -65,7 +69,14 @@ Hero.prototype.goRight = function(control, factor){
 
 	this.orientationH = 1;
 
-    this.animations.play("walkRight", 15 * Math.abs(factor));
+	var currentAnim = this.animations.currentAnim;
+
+	if (!currentAnim.isRunning ||
+		!booleanable(currentAnim.allowBreak) ||
+		currentAnim.allowBreak){
+		this.animations.play("walkRight", 15 * Math.abs(factor));
+	}
+
     this.body.acceleration.x += this.ACCELERATION * Math.abs(factor);
 }
 
@@ -244,10 +255,58 @@ var Barton = function(game, x, y, level, player){
 
 	this.statusUi = new Status_UI(this.game, this, 0, 0, true);
 	this.statusUi.profilSprite.frame = 26;
+
+	this.onSwapMode.add(function(){
+		this.specialBar.visible = false;
+		
+		if (this.specialBar == this._specialBar1){
+			this.specialBar = this._specialBar2;
+		}
+		else{
+			this.specialBar = this._specialBar1;
+		}
+
+		this.specialBar.visible = true;
+	}, this.statusUi);
 }
 
 Barton.prototype =  Object.create(Hero.prototype);
 Barton.prototype.constructor = Barton;
+
+Barton.prototype.castFirst = function(){
+	if (this.currentMode == 0){
+		this.player.controller.disable(["movement", "action"]);
+
+		if (this.orientationH >= 0){
+			this.animations.play("swordRight").onComplete.addOnce(function(){
+				this.enable(["movement", "action"]);
+			}, this.player.controller);	
+		}
+		else{
+			this.animations.play("swordLeft").onComplete.addOnce(function(){
+				this.enable(["movement", "action"]);
+			}, this.player.controller);
+		}
+	}
+	else if (this.currentMode == 1){
+		this.player.controller.disable(["movement", "action"]);
+
+		if (this.orientationH >= 0){
+			this.animations.play("bowRight").onComplete.addOnce(function(){
+				this.enable(["movement", "action"]);
+			}, this.player.controller);		
+		}
+		else{
+			this.animations.play("bowLeft").onComplete.addOnce(function(){
+				this.enable(["movement", "action"]);
+			}, this.player.controller);	
+		}
+	}
+}
+
+Barton.prototype.castSecond = function(){
+	
+}
 /******************************************************************************/
 /* Hero */
 /********/

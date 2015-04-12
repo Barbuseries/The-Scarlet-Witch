@@ -40,12 +40,21 @@ var Status_UI = function(game, hero, x, y, isBarton){
 		this._specialBar1.valueDisplayType = GAUGE_BRUT;
 		this._specialBar2.valueDisplayType = GAUGE_BRUT;
 
+		this._specialBar1.updateValueText();
+		this._specialBar2.updateValueText();
+		
+		this._specialBar2.upperSprite.alpha = 0.2;
+		this._specialBar2.backgroundFill.alpha = 0;
+		
+		this._specialBar2.allowIncreaseAnimation = false;
+		this._specialBar2.allowDecreaseAnimation = false;
+
 		this.add(this._specialBar1);
 		this.add(this._specialBar2);
 
-		this._specialBar1.visible = false;
+		this._specialBar2.visible = false;
 
-		this.specialBar = this._specialBar2;
+		this.specialBar = this._specialBar1;
 	}
 
 	this.healthBar.upperSprite.alpha = 0.2;
@@ -134,6 +143,23 @@ Status_UI.prototype.showStatusSkills = function(visible){
 		this.allStatusSkills[1 * !this.hero.currentMode][i].visible = false;
 	}
 }
+
+Status_UI.prototype.update = function(){
+	Phaser.Group.prototype.update.call(this);
+
+	for(var i in this.allStatusSkills[this.hero.currentMode]){
+		var skill = this.hero.allSkills[this.hero.currentMode][i];
+		
+		if (!skill.costFunction(0)){
+			this.allStatusSkills[this.hero.currentMode][i].iconSprite.tint = H_GREY;
+			this.allStatusSkills[this.hero.currentMode][i].iconSprite.alpha = 0.2;
+		}
+		else{
+			this.allStatusSkills[this.hero.currentMode][i].iconSprite.tint = H_WHITE;
+			this.allStatusSkills[this.hero.currentMode][i].iconSprite.alpha = 0.9;
+		}
+	}
+}
 /******************************************************************************/
 /* Status_UI */
 /*************/
@@ -142,21 +168,26 @@ var StatusSkill = function(skill, x, y){
 	
 	this.x = x;
 	this.y = y;
+	this.alpha = 0.9;
 
 	this.iconSprite = this.game.add.sprite(32, 32, skill.icon);
 	this.iconSprite.anchor.setTo(0.5);
 
-	skill.createCooldownBar(0, 64 + 5,
-							64, 5, H_YELLOW);
+	skill.createChargeBar(0, 64 + 5,
+						64, 5, H_RED, H_BLACK);
 
-	skill.cooldownBar.onUpdate.add(function(){
-		this.iconSprite.scale.y = 1 - skill.cooldownBar.stat.get(1);
+	skill.chargeBar.allowIncreaseAnimation = false;
+	skill.chargeBar.allowDecreaseAnimation = false;
+
+	skill.chargeBar.visible = false;
+
+	skill.cooldown.onUpdate.add(function(stat, oldValue, newValue){
+		this.iconSprite.scale.y = 1 - stat.get(1);
 		this.iconSprite.scale.x = this.iconSprite.scale.y;
-		skill.cooldownBar.visible = false;
 	}, this);
 
 	this.add(this.iconSprite);
-	this.add(skill.cooldownBar);
+	this.add(skill.chargeBar);
 }
 
 StatusSkill.prototype = Object.create(Phaser.Group.prototype);

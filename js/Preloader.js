@@ -31,6 +31,8 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("fireball_icon", "assets/Skills/fireball_icon.png");
 	this.load.spritesheet("iceball_0", "assets/Skills/iceball_0.png", 64, 64);
 	this.load.image("iceball_icon", "assets/Skills/iceball_icon.png");
+	this.load.spritesheet("thunder_0", "assets/Skills/thunder_0.png", 256, 64);
+	this.load.image("thunder_icon", "assets/Skills/thunder_icon.png");
 	this.load.spritesheet("explosion_0", "assets/Skills/explosion_0.png", 64, 64);
 	this.load.spritesheet("explosion_1", "assets/Skills/explosion_1.png", 64, 64);
 	this.load.tilemap('level1', 'assets/tilemaps/Level1.json', null,
@@ -38,7 +40,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
     this.load.spritesheet("lucy", "assets/Lucy/LucyFullSheet.png", 64, 64);
 	this.load.spritesheet("barton", "assets/BartonFullSheet.png", 64, 64);
-	this.load.spritesheet("ennemi1", "assets/ennemi1.png", 64, 64);
 	this.load.spritesheet("lucy1", "assets/Lucy/SaraHairBottomLayer.png", 64, 64);
 	this.load.spritesheet("lucy2", "assets/Lucy/SaraHairShadowOnFace.png", 64, 64);
 	this.load.spritesheet("lucy3", "assets/Lucy/SaraHairTopLayer.png", 64, 64);

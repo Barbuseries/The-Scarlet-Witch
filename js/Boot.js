@@ -3,14 +3,17 @@ var BasicGame = {
 
 	player2: {},
 
-	textDamagePool: null,
+	pool: {
+		textDamage: null,
 
-	bloodPool: null,
-	slashPool: null,
-	firePool: null,
-	icePool: null,
-	fireExplosionPool: null,
-	iceExplosionPool: null,
+		blood: null,
+		slash: null,
+		fire: null,
+		ice: null,
+		fireExplosion: null,
+		iceExplosion: null,
+		thunder: null
+	},
 
 	sfx: {}
 };
