@@ -1,21 +1,26 @@
 var BasicGame = {
-	player1: {},
-
-	player2: {},
-
-	pool: {
-		textDamage: null,
-
-		blood: null,
-		slash: null,
-		fire: null,
-		ice: null,
-		fireExplosion: null,
-		iceExplosion: null,
-		thunder: null
+	allPlayers: {
+		p1: {
+			controller: null,
+			hero: null,
+		},
+		
+		p2: {
+			controller: null,
+			hero: null
+		}
 	},
 
-	sfx: {}
+	pool: {
+		textDamage: null
+	},
+
+	sfx: {},
+
+	volume: {
+		sfx: 0.5,
+		music: 0.5
+	}
 };
 
 BasicGame.Boot = function (game) {
@@ -23,6 +28,7 @@ BasicGame.Boot = function (game) {
 
 BasicGame.Boot.prototype.init = function(){
     this.input.maxPointers = 1;
+	this.input.resetLocked = true;
 
 
     if (this.game.device.desktop)
@@ -43,7 +49,7 @@ BasicGame.Boot.prototype.preload = function(){
     this.load.image('preloaderBarBackground', 'assets/campfire_wood.png');
     this.load.image('preloaderBar', 'assets/campfire_fire.png');
 	this.load.image("logo", "assets/TheScarletWitch-Logo.png");
-	this.load.image("sky", "assets/background0_2.png");
+	this.load.image("sky", "assets/Backgrounds/background0_2.png");
 	this.load.image("ground", "assets/platform.png");
 }
 BasicGame.Boot.prototype.create = function(){
@@ -115,8 +121,64 @@ BasicGame.Boot.prototype.startPreload = function(){
 	this.logoGroup.forEachAlive(function(logo){
 		logo.kill();
 	});
-	BasicGame.player1 = {};
-	BasicGame.player1.hero = null;
 
+	BasicGame.allPlayers.p1.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
+															null, "pad1");
+	BasicGame.allPlayers.p2.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
+															null, "pad2");
+	
+	BasicGame.allPlayers.p1.controller
+		.bindControl("menu_toggle", Phaser.Keyboard.ESC, -1,
+					 "toggle", "onDown", "menu")
+		.bindControl("menu_next", Phaser.Keyboard.S, -1,
+					 "goNext", "onDown", "menu")
+		.bindControl("menu_previous", Phaser.Keyboard.Z, -1,
+					 "goPrevious", "onDown", "menu")
+		.bindControl("menu_select", Phaser.Keyboard.SPACEBAR, -1,
+					 "select", "onDown", "menu")
+		.bindControl(-1, Phaser.Keyboard.Q, -1,
+					 "goLeft", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.D, -1,
+					 "goRight", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.Z, -1,
+					 "goUp", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.S, -1,
+					 "goDown", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.LEFT, -1,
+					 "orientateLeft", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.RIGHT, -1,
+					 "orientateRight", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.Y, -1,
+					 "castFirst", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.U, -1,
+					 "castSecond", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.I, -1,
+					 "castThird", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.O, -1,
+					 "castFourth", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.P, -1,
+					 "castFifth", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.Y, -1,
+					 "releaseFirst", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.U, -1,
+					 "releaseSecond", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.I, -1,
+					 "releaseThird", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.O, -1,
+					 "releaseFourth", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.P, -1,
+					 "releaseFifth", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.ENTER, -1,
+					 "swapMode", "onDown", "action")
+		.bindControl(-1, Phaser.Keyboard.TAB, -1,
+					 "swapHero", "onDown", "action")
+		.bindControl(-1, Phaser.Keyboard.M, -1,
+					 "mute", "onDown", "system", null);
+
+	this.game.input.onDown.removeAll();
 	this.state.start("Preloader");
+}
+
+function mute(control){
+	control.manager.game.sound.mute = !control.manager.game.sound.mute;
 }

@@ -85,7 +85,8 @@ ControlManager.prototype.update = function(){
             => -1 : if controlName is already a control of the ControlManager,
 			will copy the target.
 */
-ControlManager.prototype.bindControl = function(controlName, keyboardCode, gamepadCode,
+ControlManager.prototype.bindControl = function(controlName, keyboardCode,
+												gamepadCode,
 												functionName, signal, allTags,
 												target){
 	var code;
@@ -99,9 +100,12 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode, gamep
 	// That's what this function do : if the Gamepad is not currently
 	// connected, tell him to bind the button once it is.
 	var manager = this;
+	
+	if (controlName == -1) {
+		controlName = functionName;
+	}
 
 	function setAfterCheck(){
-		console.log(1);
 		manager.bindControl(controlName, -1, gamepadCode, functionName, signal,
 							allTags, target);
 	}
@@ -147,6 +151,8 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode, gamep
 
 	this.allControls[controlName] = new Control(this, kCode, gCode, funct, sig, tags,
 												targ);
+
+	return this;
 } 
 
 /*
@@ -164,6 +170,10 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 	var tags;
 	
 	var manager = this;
+
+	if (padControlName == -1) {
+		padControlName = functionName;
+	}
 
 	function setAfterCheck(){
 		manager.bindPadControl(padControlName, axis, min, max, functionName, signal,
@@ -210,6 +220,8 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 
 	this.allControls[padControlName] = new PadControl(this, ax, mi, ma, funct,
 													  sig, tags, targ);
+
+	return this;
 }
 
 // Destroy the given control (by name).
@@ -219,7 +231,11 @@ ControlManager.prototype.unbindControl = function(controlName){
 	
 	this.allControls[controlName].destroy();
 
-	delete this.allControls[controlName];	
+	delete this.allControls[controlName];
+
+	this.allControls[controlName] = undefined;
+
+	return this;
 }
 
 ControlManager.prototype.unbindPadControl = function(padControlName){
@@ -229,6 +245,10 @@ ControlManager.prototype.unbindPadControl = function(padControlName){
 	this.allControls[padControlName].destroy();
 
 	delete this.allControls[padControlName];
+
+	this.allControls[padControlName] = undefined;
+
+	return this;
 }
 
 // Swap two controls.
@@ -289,6 +309,8 @@ ControlManager.prototype.swapControls = function(controlName1, controlName2, typ
 		this.bindControl(controlName2, kCode2, gCode2, controlFunction1,
 						 controlSignal1, allTags1, target1);
 	}
+
+	return this;
 }
 
 // Return the control.
@@ -625,13 +647,12 @@ Control.prototype.execute = function(type){
 		return;
 	}
 
-
 	var target = (this.target == -1) ? this.manager.target : this.target;
 	var actualFunction;
 
 	if (target == null){
-		if (typeof(this.functionName) === "function"){
-			actualFunction = this.functionName;
+		if (typeof(window[this.functionName]) === "function"){
+			actualFunction = window[this.functionName];
 		}
 		else{
 			return;
@@ -647,14 +668,8 @@ Control.prototype.execute = function(type){
 	}
 
 	var input = null;
-
-	if (type == CONTROL_KEYBOARD){
-		input = this.inputKeyboard;
-	}
-
-	if (type == CONTROL_GAMEPAD){
-		input = this.inputGamepad;
-	}
+	
+	input = (type == CONTROL_KEYBOARD) ? this.inputKeyboard : this.inputGamepad;
 
 	if (input == null){
 		return;
@@ -805,8 +820,8 @@ PadControl.prototype.execute = function(){
 	var pad = this.manager.pad;
 
 	if (target == null){
-		if (typeof(this.functionName) === "function"){
-			actualFunction = this.functionName;
+		if (typeof(window[this.functionName]) === "function"){
+			actualFunction = window[this.functionName];
 		}
 		else{
 			return;

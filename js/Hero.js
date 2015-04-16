@@ -196,6 +196,22 @@ var Lucy = function(game, x, y, level, player){
 
 	this.statusUi = new Status_UI(this.game, this, 0, 0);
 	this.statusUi.profilSprite.frame = 26;
+
+
+	// Skills.
+	this.allSkills[0].firstSkill = new FireBallSkill(this, 1,
+													 ["platform",
+													  "enemy"]);
+	this.allSkills[0].firstSkill.setChargeTime(2000);
+
+	this.allSkills[0].secondSkill = new IceBallSkill(this, 1,
+													 ["enemy"]);
+	this.allSkills[0].secondSkill.setChargeTime(3000);
+
+	this.allSkills[0].thirdSkill = new ThunderSkill(this, 1,
+													["enemy"]);
+	this.allSkills[0].thirdSkill.setChargeTime(5000);
+	
 }
 
 Lucy.prototype = Object.create(Hero.prototype);
@@ -272,9 +288,12 @@ var Barton = function(game, x, y, level, player){
 
 Barton.prototype =  Object.create(Hero.prototype);
 Barton.prototype.constructor = Barton;
+/******************************************************************************/
+/* Hero */
+/********/
 
-Barton.prototype.castFirst = function(){
-	if (this.currentMode == 0){
+/*
+if (this.currentMode == 0){
 		this.player.controller.disable(["movement", "action"]);
 
 		if (this.orientationH >= 0){
@@ -302,11 +321,4 @@ Barton.prototype.castFirst = function(){
 			}, this.player.controller);	
 		}
 	}
-}
-
-Barton.prototype.castSecond = function(){
-	
-}
-/******************************************************************************/
-/* Hero */
-/********/
+*/

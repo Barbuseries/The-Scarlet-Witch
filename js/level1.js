@@ -57,7 +57,7 @@ BasicGame.Level1.prototype.create = function (){
 	this.testPlayer2.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
 													 null, "pad2");
 
-	this.barton = new Barton(this.game, 550, 500, 99, this.testPlayer);
+	this.barton = new Barton(this.game, 1000, 200, 99, this.testPlayer);
 	this.barton.scale.setTo(1.3);
 	this.barton.tag = "enemy";
 	this.barton.allResistances[Elements.FIRE] = 2;
@@ -66,8 +66,10 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.lucy = new Lucy(this.game, 600, 500, 1, this.testPlayer2);
 	this.lucy.allStats.mainStat.add(100);
-	//this.lucy.allStats.agility.add(99);
+	this.lucy.allStats.agility.add(99);
 	this.lucy.allStats.special.set(1, 1);
+	this.lucy.allResistances[Elements.WIND] = 0.5;
+	this.lucy.allResistances[Elements.PHYSIC] = -0.5;
 
 	BasicGame.allHeroes.add(this.barton);
 	BasicGame.allHeroes.add(this.lucy);
@@ -316,8 +318,8 @@ BasicGame.Level1.prototype.create = function (){
 		var game = this.game;
 
 		// Crée le projectile 100 millisecondes après le lancement du skill.
-		timer.add(100, function(){createProjectile(game, 0, 0, hero.name.toLowerCase(),
-												   BasicGame.pool.blood,
+		timer.add(100, function(){createProjectile(game, 0, 0,
+												   hero.name.toLowerCase(),
 												   initProjectile, updateProjectile,
 												   killProjectile);});	
 		
@@ -326,16 +328,11 @@ BasicGame.Level1.prototype.create = function (){
 	}
 	/******************************************************************************/
 
-	this.lucy.allSkills[0].firstSkill = new FireBallSkill(this.lucy, 1,
-														  ["platform",
-														   "enemy"]);
-	this.lucy.allSkills[0].firstSkill.setChargeTime(2000);
-	
 	this.lucy.allStats.attackSpeed.onUpdate.add(function(stat, oldValue, newValue){
 		this.allSkills[0].firstSkill.setCooldown(newValue);
 	}, this.lucy);
 	this.lucy.allSkills[1].secondSkill = new Skill(this.lucy, 1, undefined,
-															 5000);
+												   5000, Elements.WIND);
 	this.lucy.allSkills[1].secondSkill.icon = "barrier_icon";
 
 	this.lucy.allSkills[1].secondSkill.launchFunction = function(){
@@ -356,6 +353,8 @@ BasicGame.Level1.prototype.create = function (){
 			this.body.allowGravity = false;
 
 			this.frame = 2;
+
+			this.element = Elements.WIND;
 
 			this.lifespan = 4500;
 
@@ -381,7 +380,7 @@ BasicGame.Level1.prototype.create = function (){
 		var angle = 45;
 
 		for(var i = 0; i < 360 / angle; i++) {
-			createProjectile(this.game, 0, 0, "slash", BasicGame.pool.slash,
+			createProjectile(this.game, 0, 0, "slash",
 							 function(){initProjectile.call(this, i * angle)},
 							 updateProjectile);
 		}
@@ -396,20 +395,6 @@ BasicGame.Level1.prototype.create = function (){
 			hero.animations.play("spellCastLeft");
 		}
 	}
-
-	this.lucy.allSkills[0].secondSkill = new IceBallSkill(this.lucy, 1,
-														  ["enemy"]);
-	this.lucy.allSkills[0].secondSkill.setChargeTime(3000);
-	/*this.lucy.allSkills[0].secondSkill.onChargeComplete.add(function(){
-		console.log("CHARGED !!!");
-	});
-
-	this.lucy.allSkills[0].secondSkill.createChargeBar(16, 10, 32, 2, H_YELLOW,
-													   H_BLACK, "", "");
-	this.lucy.addChild(this.lucy.allSkills[0].secondSkill.chargeBar);*/
-	this.lucy.allSkills[0].thirdSkill = new ThunderSkill(this.lucy, 5,
-														 ["enemy"]);
-	this.lucy.allSkills[0].thirdSkill.setChargeTime(5000);
 
     this.game.camera.follow(this.lucy);
 	
@@ -436,16 +421,24 @@ BasicGame.Level1.prototype.create = function (){
 										   Phaser.Gamepad.XBOX360_BACK,
 										   "swapControls", "onDown", "action",
 										   this.testPlayer.controller);
-	this.testPlayer.controller.bindControl("castFirst", Phaser.Keyboard.Y, -1,
-										   "castFirst", "down", "action");
 	this.testPlayer.controller.bindControl("swapMode", Phaser.Keyboard.U, -1,
 										   "swapMode", "onDown", "action");
+	this.testPlayer.controller.bindControl("castFirst", Phaser.Keyboard.Y, -1,
+										   "castFirst", "down", "action");
 	this.testPlayer.controller.bindControl("castThird", Phaser.Keyboard.I, -1,
 										   "castThird", "down", "action");
 	this.testPlayer.controller.bindControl("castFourth", Phaser.Keyboard.O, -1,
 										   "castFourth", "down", "action");
 	this.testPlayer.controller.bindControl("castFifth", Phaser.Keyboard.P, -1,
 										   "castFifth", "down", "action");
+	this.testPlayer.controller.bindControl("releaseFirst", Phaser.Keyboard.Y, -1,
+										   "releaseFirst", "onUp", "action");
+	this.testPlayer.controller.bindControl("releaseThird", Phaser.Keyboard.I, -1,
+										   "releaseThird", "onUp", "action");
+	this.testPlayer.controller.bindControl("releaseFourth", Phaser.Keyboard.O, -1,
+										   "releaseFourth", "onUp", "action");
+	this.testPlayer.controller.bindControl("releaseFifth", Phaser.Keyboard.P, -1,
+										   "releaseFifth", "onUp", "action");
 	
 	this.testPlayer2.controller.bindControl("leftControl", Phaser.Keyboard.LEFT, -1,
 											"goLeft", "down", "movement");
@@ -478,12 +471,189 @@ BasicGame.Level1.prototype.create = function (){
 											"releaseFourth", "onUp", "action");
 	this.testPlayer2.controller.bindControl("releaseFifth", Phaser.Keyboard.FIVE, -1,
 											"releaseFifth", "onUp", "action");
-	
-	this.barton.statusUi.cameraOffset.x = 25;
-	this.barton.statusUi.cameraOffset.y = 10;
-	this.barton.statusUi.scale.setTo(1);
 
 	//this.testPlayer.controller.type = CONTROL_GAMEPAD;
+
+	this.barton.allSkills[1].firstSkill = new Skill(this.barton, 1,	undefined,
+													this.barton.allStats.attackSpeed.get(),
+													Elements.PHYSIC, ["platform",
+																	  "hero"]);
+	this.barton.allSkills[1].firstSkill.costFunction = function(applyCost){
+		if (this.user.allStats.quiver.canSubtract(1)){
+			if (applyCost){
+				this.user.allStats.quiver.subtract(1);
+			}
+			
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
+	this.barton.allSkills[1].firstSkill.launchFunction = function(factor){
+		if (!this.user.animations.currentAnim.isFinished){
+			this.user.animations.currentAnim.onComplete.addOnce(
+				function(){
+					this.launchFunction.call(this, factor);
+				}, this);
+			return;
+		}
+		
+		var self = this;
+		var hero = this.user;
+
+		function initProjectile(){
+			var speed = -600 * (1 + factor);
+
+			this.anchor.set(0, 0.5);
+			
+			this.x = hero.x;
+			this.y = hero.y + 2 * hero.width / 4;
+
+			this.frame = 0;
+
+			if (hero.orientationH >= 0){
+				this.x += hero.width / 2;
+				speed *= -1;
+
+				this.frame = 1;
+			}
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+			this.body.allowGravity = true;
+			this.body.velocity.y = -35 * (1 + factor);
+
+			this.body.velocity.x = speed;
+
+			this.lifespan = 2000;
+
+			this.alpha = 1;
+
+			this.tint = H_WHITE;
+
+			this.element = self.element;
+		}
+
+		function damageFunction(obstacle){
+			// Les dégâts sont aussi en fonction de la distance parcourue.
+			var damage = self.user.allStats.attack.get() * (1 + factor +
+															(1 - (this.lifespan - 1200) / 800));
+			var damageRange = [0.9, 1.1];
+			var criticalRate = self.user.allStats.criticalRate.get();
+			
+			obstacle.suffer(damage, damageRange, criticalRate, this.element);
+		}
+
+		function updateFunction(){
+			if (this.lifespan < 1000){
+				this.alpha = this.lifespan / 1000;
+			}
+
+			this.rotation = Math.atan2(this.body.velocity.y, this.body.velocity.x);
+		}
+
+		function collideFunction(obstacle){
+			if (obstacle.tag != "platform"){
+				this.damageFunction(obstacle);
+				this.kill();
+			}
+			else{
+				// Remplace la flêche par un sprite, parce que ça fait classe !
+
+				var selfSprite = this.game.add.sprite(this.x, this.y, this.key);
+
+				selfSprite.anchor.x = this.anchor.x;
+				selfSprite.anchor.y = this.anchor.y;
+				selfSprite.frame = this.frame;
+				selfSprite.rotation = this.rotation;
+				selfSprite.tint = this.tint;
+				selfSprite.scale.x = this.scale.x;
+				selfSprite.scale.y = this.scale.y;
+
+				selfSprite.tween = this.game.add.tween(selfSprite)
+					.to({alpha: 0}, 3000, Phaser.Easing.Quadratic.Out);
+
+				selfSprite.tween.start();
+
+				this.kill();
+			}
+		}
+
+		function collideProcess(obstacle){
+			// La flêche change d'élément en fonction de ce qu'elle rencontre.
+			if (obstacle.tag == "projectile"){
+				this.tint = H_WHITE;
+
+				switch(obstacle.element){
+				case Elements.ALMIGHTY:
+					this.tint = H_BLACK;
+					break;
+				case Elements.FIRE:
+					this.tint = H_RED;
+					break;
+				case Elements.ICE:
+					this.tint = H_BLUE;
+					break;
+				case Elements.WIND:
+					this.tint = H_GREEN;
+					break;
+				case Elements.ROCK:
+					this.tint = H_ORANGE;
+					break;
+				case Elements.THUNDER:
+					this.tint = H_YELLOW;
+					break;
+				default:
+					break;
+				}
+
+				this.element = obstacle.element;
+			}
+			return (this.targetTags.indexOf(obstacle.tag) != -1) &&
+				this.body.allowGravity;
+		}
+
+		createProjectile(this.game, 0, 0, "arrow",
+						 initProjectile, updateFunction, 
+						 undefined, collideFunction,
+						 collideProcess, damageFunction).targetTags = this.targetTags;
+
+		var animation = null;
+
+		if (this.user.orientationH >= 0){
+			animation = this.user.animations.play("unbendBowRight", 15);
+		}
+		else{
+			animation = this.user.animations.play("unbendBowLeft", 15);
+		}
+		
+		animation.onComplete.addOnce(
+			function(){
+				if (typeof(this.user.player)!= "undefined"){
+					this.user.player.controller.enable(["movement", "action"]);
+				}
+			}, this);
+	}
+	
+	this.barton.allSkills[1].firstSkill.setChargeTime(2 * this.barton.allStats.attackSpeed.get());
+	this.barton.allSkills[1].firstSkill.icon = "arrow_icon";
+	this.barton.allSkills[1].firstSkill.onCharge.add(function(){
+		if (this.user.orientationH >= 0){
+			this.user.animations.play("bendBowRight", 20);
+		}
+		else{
+			this.user.animations.play("bendBowLeft", 20);
+		}
+
+		if (typeof(this.user.player)!= "undefined"){
+			this.user.player.controller.disable(["movement", "action"]);
+			this.user.player.controller.get("releaseFirst").enabled = true;
+			this.user.player.controller.get("castFirst").enabled = true;
+			this.user.player.controller.get("jumpControl").enabled = true;
+			this.user.player.controller.get("reduceJumpControl").enabled = true;
+		}
+	}, this.barton.allSkills[1].firstSkill);
 
 
 	this.lucy.statusUi.cameraOffset.x = 50;
@@ -491,6 +661,19 @@ BasicGame.Level1.prototype.create = function (){
 	this.lucy.statusUi.profilSprite.frame = 26;
 	this.lucy.statusUi.updateStatusSkills();
 	this.lucy.statusUi.showStatusSkills();
+
+	this.barton.statusUi.updateStatusSkills();
+	this.barton.statusUi.showStatusSkills();
+	this.barton.statusUi.cameraOffset.x = 25;
+	this.barton.statusUi.cameraOffset.y = 10;
+	this.barton.statusUi.scale.setTo(1);
+
+	this.barton.quiverRegen = this.game.time.create(false);
+	this.barton.quiverRegen.loop(this.barton.allStats.attackSpeed.get() * 6, function(){
+		this.quiver.add(1);
+	}, this.barton.allStats);
+
+	this.barton.quiverRegen.start();
 
 	this.game.world.bringToTop(BasicGame.pool.textDamage);
 }
@@ -505,12 +688,23 @@ BasicGame.Level1.prototype.update = function (){
 			this.game.physics.arcade.overlap(BasicGame.pool[i], BasicGame.allHeroes,
 											 collideProjectile,
 											 collideProcessProjectile);
+
+			for(var j in BasicGame.pool){
+				if (i == j){
+					continue;
+				}
+
+				this.game.physics.arcade.overlap(BasicGame.pool[i], BasicGame.pool[j],
+												 collideProjectile,
+												 collideProcessProjectile);
+			}
 		}
 	}
 	
 	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
 
 	this.lucy.allStats.special.add(0.01 / 60, 1);
+	this.lucy.allStats.health.add(0.01, 1);
 
 	this.barton.body.acceleration.x = 0;
 	this.lucy.body.acceleration.x = 0;

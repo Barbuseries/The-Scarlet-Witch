@@ -312,7 +312,7 @@ Projectile.prototype.setCollideFunction = function(collideFunction){
 	if (typeof(collideFunction) != "function"){
 		collideFunction = function(obstacle){
 			if (this.damageFunction != null){
-				this.damageFunction(this, obstacle);
+				this.damageFunction(obstacle);
 			}
 
 			this.kill();
@@ -335,10 +335,11 @@ Projectile.prototype.setCollideProcess = function(collideProcess){
 /* Projectile */
 /**************/
 
-function createProjectile(game, x, y, spriteName, spritePool, initFunction,
+function createProjectile(game, x, y, spriteName, initFunction,
 						  updateFunction, killFunction, collideFunction,
 						  collideProcess, damageFunction){
 	var newProjectile;
+	var spritePool = BasicGame.pool[spriteName];
 
 	if (spritePool != null){
 		var reusableSprite = spritePool.getFirstDead();
@@ -365,12 +366,16 @@ function createProjectile(game, x, y, spriteName, spritePool, initFunction,
 		}
 	}
 	else{
+		BasicGame.pool[spriteName] = game.add.group();
+
 		newProjectile = new Projectile(game, 0, 0, spriteName,
 									   initFunction, updateFunction,
 									   killFunction, collideFunction,
 									   collideProcess, damageFunction);
+		BasicGame.pool[spriteName].add(newProjectile);
 	}
 
+	newProjectile.tag = "projectile";
 	newProjectile.init();
 
 	return newProjectile;
@@ -475,7 +480,6 @@ var FireBallSkill = function(user, level, targetTags){
 			
 
 			createProjectile(this.game, x, y, "explosion_0",
-							 BasicGame.pool.fireExplosion,
 							 function(){initExplosion.call(this, x, y)});
 
 			return true;
@@ -511,12 +515,10 @@ var FireBallSkill = function(user, level, targetTags){
 			this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
 			this.animations.play("explosionAnimation", null, false, true);
 
-			BasicGame.sfx.EXPLOSION_0.play();
+			BasicGame.sfx.EXPLOSION_0.play("", 0, BasicGame.volume.sfx);
 		}
-
-		this.user.player.controller.disable(["movement", "action"]);
 		
-		createProjectile(this.game, 0, 0, "fireball_0", BasicGame.pool.fire,
+		createProjectile(this.game, 0, 0, "fireball_0",
 						 initProjectile, updateProjectile, killProjectile,
 						 collideFunction, collideProcess, damageFunction);
 		
@@ -529,9 +531,13 @@ var FireBallSkill = function(user, level, targetTags){
 			animation = this.user.animations.play("spellCastLeft");
 		}
 
-		animation.onComplete.addOnce(function(){
-			this.user.player.controller.enable(["movement", "action"]);
-		}, this);
+		if (typeof(this.user.player)!= "undefined"){
+			this.user.player.controller.disable(["movement", "action"]);
+
+			animation.onComplete.addOnce(function(){
+				this.user.player.controller.enable(["movement", "action"]);
+			}, this);
+		}
 	};
 
 	this.icon = "fireball_icon";
@@ -647,7 +653,6 @@ var IceBallSkill = function(user, level, targetTags){
 			}
 			
 			createProjectile(this.game, x, y, "explosion_1",
-							 BasicGame.pool.iceExplosion,
 							 function () { initExplosion.call(this, x, y) });
 			
 			return true;
@@ -672,7 +677,7 @@ var IceBallSkill = function(user, level, targetTags){
 		    this.animations.add("explosionAnimation", [1, 2, 3, 4, 5, 6, 7, 8]);
 		    this.animations.play("explosionAnimation", null, false, true);
 
-		    BasicGame.sfx.EXPLOSION_0.play();
+		    BasicGame.sfx.EXPLOSION_0.play("", 0, BasicGame.volume.sfx);
 		}
 
 		function damageFunction(obstacle){
@@ -712,14 +717,12 @@ var IceBallSkill = function(user, level, targetTags){
 							this.element);
 		}
 
-		this.user.player.controller.disable(["movement", "action"]);
-
-		createProjectile(this.game, 0, 0, "iceball_0", BasicGame.pool.ice,
+		createProjectile(this.game, 0, 0, "iceball_0",
 						 initProjectile1, updateProjectile, killProjectile,
 						 collideFunction, undefined, damageFunction);
 		
 		if (factor >= 0.5){
-			createProjectile(this.game, 0, 0, "iceball_0", BasicGame.pool.ice,
+			createProjectile(this.game, 0, 0, "iceball_0",
 							 initProjectile2, updateProjectile, killProjectile,
 							 collideFunction, undefined, damageFunction);
 		}
@@ -733,9 +736,13 @@ var IceBallSkill = function(user, level, targetTags){
 			animation = this.user.animations.play("spellCastLeft");
 		}
 		
-		animation.onComplete.addOnce(function(){
-			this.user.player.controller.enable(["movement", "action"]);
-		}, this);
+		if (typeof(this.user.player)!= "undefined"){
+			this.user.player.controller.disable(["movement", "action"]);
+
+			animation.onComplete.addOnce(function(){
+				this.user.player.controller.enable(["movement", "action"]);
+			}, this);
+		}
 	};
 	
 	this.icon = "iceball_icon";
@@ -779,12 +786,11 @@ var ThunderSkill = function (user, level, targetTags) {
             this.lifespan = 500;
 			this.maxLifespan = this.lifespan;
             
-            if (user.orientationH >= 0) {
-                this.x += user.width / 2;
+            if (this.orientationH >= 0) {
+                this.x += user.width;
             }
 
 			this.animations.add("animation", [0, 1, 2]);
-           
             
             this.animations.play("animation", null, true);
 
@@ -807,7 +813,8 @@ var ThunderSkill = function (user, level, targetTags) {
 			this.alpha = 0;
 
 			this.tween = this.game.add.tween(this)
-				.to({alpha : 1}, this.lifespan / 2, Phaser.Easing.Elastic.Out);
+				.to({alpha : 1},
+					this.lifespan / 2, Phaser.Easing.Elastic.Out);
 
 			this.tween.yoyo();
 
@@ -829,18 +836,21 @@ var ThunderSkill = function (user, level, targetTags) {
 		}
 
         function updateProjectile(){
-			this.scale.x = (this.maxLifespan - this.lifespan) / 300;
+			//this.scale.x = (this.maxLifespan - this.lifespan) / 300;
 			
 			this.x = user.x;
 
-			if (user.orientationH >= 0) {
-                this.x += user.width / 2;
+			if (this.orientationH >= 0) {
+                this.x += user.width;
             }
 
 			this.y = user.y + user.height * 0.65;
         }
 
         function killProjectile() {
+			this.tween.stop();
+			this.tween = null;
+
             return true;
         }
 
@@ -894,20 +904,18 @@ var ThunderSkill = function (user, level, targetTags) {
             obstacle.suffer(damage, damageRange, criticalRate, this.element);
         }
 
-        this.user.player.controller.disable(["movement", "action"]);
-
         var animation = null;
 		
 		if (factor < 0.5){
 			if (this.user.orientationH >= 0){
-				createProjectile(this.game, 0, 0, "thunder_0", BasicGame.pool.thunder,
-						 initProjectile1, updateProjectile, killProjectile,
-						 collideFunction, collideProcess, damageFunction);
-
+				createProjectile(this.game, 0, 0, "thunder_0",
+								 initProjectile1, updateProjectile, killProjectile,
+								 collideFunction, collideProcess, damageFunction);
+				
 				animation = this.user.animations.play("spellCastRight");
 			}
 			else{
-				createProjectile(this.game, 0, 0, "thunder_0", BasicGame.pool.thunder,
+				createProjectile(this.game, 0, 0, "thunder_0",
 								 initProjectile2, updateProjectile, killProjectile,
 								 collideFunction, collideProcess, damageFunction);
 
@@ -915,20 +923,24 @@ var ThunderSkill = function (user, level, targetTags) {
 			}
 		}
 		else{
-			createProjectile(this.game, 0, 0, "thunder_0", BasicGame.pool.thunder,
+			createProjectile(this.game, 0, 0, "thunder_0",
 							 initProjectile1, updateProjectile, killProjectile,
 							 collideFunction, collideProcess, damageFunction);
 			
-			createProjectile(this.game, 0, 0, "thunder_0", BasicGame.pool.thunder,
+			createProjectile(this.game, 0, 0, "thunder_0",
 							 initProjectile2, updateProjectile, killProjectile,
 							 collideFunction, collideProcess, damageFunction);
 			
 			animation = this.user.animations.play("spellCastBoth");
 		}
-			
-		animation.onComplete.addOnce(function(){
-			this.user.player.controller.enable(["movement", "action"]);
-		}, this);
+		
+		if (typeof(this.user.player)!= "undefined"){
+			this.user.player.controller.disable(["movement", "action"]);
+
+			animation.onComplete.addOnce(function(){
+				this.user.player.controller.enable(["movement", "action"]);
+			}, this);
+		}
     };
 
     this.icon = "thunder_icon";

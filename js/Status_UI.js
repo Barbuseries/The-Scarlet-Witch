@@ -174,7 +174,7 @@ var StatusSkill = function(skill, x, y){
 	this.iconSprite.anchor.setTo(0.5);
 
 	skill.createChargeBar(0, 64 + 5,
-						64, 5, H_RED, H_BLACK);
+						  64, 5, H_RED, H_BLACK);
 
 	skill.chargeBar.allowIncreaseAnimation = false;
 	skill.chargeBar.allowDecreaseAnimation = false;

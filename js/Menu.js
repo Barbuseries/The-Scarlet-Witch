@@ -74,7 +74,7 @@ Menu.prototype.enableMouse = function(){
 		var option = self.getCurrentOption();
 		
 		if (oldIndex != sprite._index){
-			BasicGame.sfx.cursorSelect.play();
+			BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
 
 			oldOption.onOut.dispatch(oldOption);
 			option.onOver.dispatch(option);
@@ -122,7 +122,7 @@ Menu.prototype.goNext = function(control, factor){
 	}
 
 	if (oldIndex != this.indexCurrentOption){
-		BasicGame.sfx.cursorSelect.play();
+		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
 
 		var oldOption = this.allOptions[oldIndex];
 		var option = this.getCurrentOption();
@@ -156,7 +156,7 @@ Menu.prototype.goPrevious = function(control, factor){
 	}
 
 	if (oldIndex != this.indexCurrentOption){
-		BasicGame.sfx.cursorSelect.play();
+		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
 
 		var oldOption = this.allOptions[oldIndex];
 		var option = this.getCurrentOption();
@@ -245,7 +245,7 @@ Menu.prototype.toggle = function(){
 		var option = this.getCurrentOption();
 		
 		if (option != null){
-		option.onOver.dispatch(option);
+			option.onOver.dispatch(option);
 		}
 		
 		this.updateCursorPosition();
@@ -275,7 +275,7 @@ Menu.prototype.select = function(){
 		var option = this.getCurrentOption();
 		
 		if (option != null){
-			BasicGame.sfx.cursorSelect.play();
+			BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
 
 			option.onSelect.dispatch(option);
 		}
@@ -343,7 +343,7 @@ Option.prototype.enableMouse = function(){
 	this.display.inputEnabled = true;
 
 	this.display.events.onInputDown.add(function(){
-		BasicGame.sfx.cursorSelect.play();
+		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
 
 		this.onSelect.dispatch(this);
 	}, this);

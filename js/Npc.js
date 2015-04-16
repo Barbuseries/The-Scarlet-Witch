@@ -27,14 +27,21 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 		.allowBreak = false;
 	this.animations.add("swordLeft", [169, 170, 171, 172, 173, 174, 174, 169], 15)
 		.allowBreak = false;
-
-	this.animations.add("bowLeft", [221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
-									 231, 232, 233, 221], 15)
-		.allowBreak = false;
-	this.animations.add("bowRight", [247, 248, 249, 250, 251, 252, 253, 254, 255, 256,
-									257, 258, 259, 247], 15)
-		.allowBreak = false;
 	/******************************************************************************/
+
+	this.animations.add("bendBowLeft", [221, 222, 223, 224, 225, 226, 227, 228, 229],
+						15)
+		.allowBreak = false;
+	this.animations.add("unbendBowLeft", [230, 231, 232, 233, 221], 15)
+		.allowBreak = false;
+	this.animations.add("bendBowRight", [247, 248, 249, 250, 251, 252, 253, 254, 255],
+						15)
+		.allowBreak = false;
+	this.animations.add("unbendBowRight", [256, 257, 258, 259, 247], 15)
+		.allowBreak = false;
+	this.animations.add("fullBowRight", [247, 248, 249, 250, 251, 252, 253, 254, 255,
+										 256, 257, 258, 259, 247], 15)
+		.allowBreak = false;
 
 	this.animations.add("death", [260, 261, 262, 264], 5)
 		.allowBreak = false;
