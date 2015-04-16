@@ -587,7 +587,7 @@ BasicGame.Level1.prototype.create = function (){
 
 				switch(obstacle.element){
 				case Elements.ALMIGHTY:
-					this.tint = H_BLACK;
+					this.tint = H_GREY;
 					break;
 				case Elements.FIRE:
 					this.tint = H_RED;

@@ -115,7 +115,8 @@ Mob.prototype.update = function(){
 Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, element){
 	var actualDamage = (Math.random() * (damageRange[1] - damageRange[0]) +
 						damageRange[0]) * brutDamages;
-	var color = WHITE;
+	var color = (this.tag == "hero") ? RED : WHITE;
+	var stroke = BLACK;
 
 	if (Math.random() * 100 < criticalChance){
 		actualDamage *= 1.5;
@@ -136,10 +137,33 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 		color = GREY;
 	}
 
+	switch(element){
+	case Elements.ALMIGHTY:
+		stroke = GREY;
+		break;
+	case Elements.FIRE:
+		stroke = RED;
+		break;
+	case Elements.ICE:
+		stroke = BLUE;
+		break;
+	case Elements.WIND:
+		stroke = GREEN;
+		break;
+	case Elements.ROCK:
+		stroke = ORANGE;
+		break;
+	case Elements.THUNDER:
+		stroke = YELLOW;
+		break;
+	default:
+		break;
+	}
+
 	actualDamage = actualDamage.toFixed(0);
 	
 	createTextDamage(this.game, this.x + this.width / 2, this.y + this.height / 2,
-					 actualDamage, color);
+					 actualDamage, color).text.stroke = stroke;
 
 	this.allStats.health.subtract(actualDamage);
 	this._textDamageDir *= -1;
