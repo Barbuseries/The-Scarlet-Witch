@@ -83,7 +83,7 @@ BasicGame.Level1.prototype.create = function (){
 	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;
 
     //this.game.platforms.debug = true;
-	
+
 	/*************/
 	/* IMPORTANT */
 	/**************************************************************************/
@@ -704,6 +704,41 @@ BasicGame.Level1.prototype.update = function (){
 	}
 	
 	this.lucy.allStats.experience.add(100);
+}
+
+BasicGame.Level1.prototype.createBaddies = function() {
+	// create baddies
+	this.game.baddies = this.game.add.group();
+	this.game.baddies.enableBody = true;
+	var baddie;
+	result = findObjectsByType('enemy', this.game.platforms.map, 'baddies');
+	result.forEach(function(element){
+		createFromTiledObject(element, this.game.baddies);
+	});
+}
+
+BasicGame.Level1.prototype.findObjectsByType = function(type, map, layer){
+	var result = new Array();
+	map.objects[layer].forEach(function(element) {
+		if (element.properties.type === type) {
+			// Phaser uses top left, Tiled bottom left so we have to adjust the y position
+			// also keep in mind that the cup images are a bit smaller than the tile which is 16x16
+			// so they might not be placed in the exact pixel position as in Tiled
+			element.y -= map.tileHeight;
+			result.push(element); 
+		}
+	});
+	return result;
+}
+
+BasicGame.Level1.protoype.createFromTiledObject = function(element, group) {
+	var sprite = group.create(element.x, element.y, element.properties.sprite);
+
+
+	// copy all properties to the sprite
+	Object.keys(element.properties).forEach(function(key){
+		sprite[key] = element.properties[key];
+	});
 }
 
 var collideProjectile = function(projectile, obstacle){
