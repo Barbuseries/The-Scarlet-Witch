@@ -50,7 +50,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	// Levels
 	var levelsDir = "";
 
-	this.load.tilemap('level1', 'assets/tilemaps/Level1.json', null,
+	this.load.tilemap('level1', 'assets/tilemaps/Level1_v3.json', null,
 					  Phaser.Tilemap.TILED_JSON);
 	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
 
