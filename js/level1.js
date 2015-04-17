@@ -14,17 +14,19 @@ var toto;
 BasicGame.Level1.prototype.create = function (){
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
     this.game.physics.arcade.gravity.y = 600;
+    this.game.baddies = this.game.add.group();
+    this.game.physics.enable(this.game.baddies, Phaser.Physics.ARCADE);
 
     //Chargement des propriétés du tilemap
     map = this.game.add.tilemap('level1');
-
     this.game.world.setBounds(0, 0,
                               map.widthInPixels, map.heightInPixels);
 
     // Chargement du Tileset
     map.addTilesetImage('platforms', 'Level1_Tiles');
-    map.setCollisionBetween(0, 63);
 
+    map.setCollisionBetween(0, 63);
+    
 	for(var i = 0; i < map.layer.data.length; i++) {
 		for(var j = 0; j < map.layer.data[i].length; j++) {
 			if (map.layer.data[i][j].canCollide){
@@ -37,7 +39,7 @@ BasicGame.Level1.prototype.create = function (){
     this.game.platforms = map.createLayer('blockedLayer');
     this.game.platforms.resizeWorld();
 
-   	//createBaddies();
+   	this.createBaddies();
 
 	sky = this.game.add.tileSprite(0, 0,
 								   map.widthInPixels,
@@ -528,6 +530,7 @@ BasicGame.Level1.prototype.update = function (){
 	
 	this.game.physics.arcade.collide(BasicGame.allHeroes, this.game.platforms);
 	this.game.physics.arcade.collide(BasicGame.textDamagePool, this.game.platforms);
+	this.game.physics.arcade.collide(this.game.baddies, this.game.platforms);
 
 	this.lucy.body.acceleration.x = 0;
 	this.lucy.allStats.special.add(0.01 / 60, 1);
@@ -541,6 +544,8 @@ BasicGame.Level1.prototype.update = function (){
 	this.lucy.allStats.experience.add(10);
 
 	//this.game.debug.body(hero);
+
+	console.log(this.game.baddies);
 }
 
 var collideProjectile = function(projectile, obstacle){
@@ -579,22 +584,23 @@ var collideProcessProjectile = function(projectile, obstacle){
 		}
 	}
 }
-/*
-function createBaddies() {
+
+BasicGame.Level1.prototype.createBaddies = function () {
 	// create baddies
-	this.game.baddies = new group();
 	this.game.baddies.enableBody = true;
-	var baddie;
-	result = findObjectsByType('baddie', this.game.map, 'baddies');
+	result = this.findObjectsByType('enemy', this.game.platforms.map, 'baddies');
 	result.forEach(function(element){
-		createFromTiledObject(element, this.game.baddies);
-	}, this.game);
+		this.createFromTiledObject(element, this.game.baddies);
+	}, this);
 }
 
-function findObjectsByType(type, map, layer){
+BasicGame.Level1.prototype.findObjectsByType = function(type, map, layer){
 	var result = new Array();
+	console.log(map.objects[layer]);
 	map.objects[layer].forEach(function(element) {
+
 		if (element.properties.type === type) {
+			console.log("1 trouvé!");
 			// Phaser uses top left, Tiled bottom left so we have to adjust the y position
 			// also keep in mind that the cup images are a bit smaller than the tile which is 16x16
 			// so they might not be placed in the exact pixel position as in Tiled
@@ -605,14 +611,10 @@ function findObjectsByType(type, map, layer){
 	return result;
 }
 
-function createFromTiledObject(element, group) {
+BasicGame.Level1.prototype.createFromTiledObject = function(element, group) {
 	var sprite = group.create(element.x, element.y, element.properties.sprite);
-
-
 	// copy all properties to the sprite
 	Object.keys(element.properties).forEach(function(key){
 		sprite[key] = element.properties[key];
 	});
 }
-
-*/
