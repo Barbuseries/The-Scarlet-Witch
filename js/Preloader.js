@@ -8,6 +8,8 @@ BasicGame.Preloader.prototype.preload =  function(){
 	var centerX = this.game.camera.width / 2;
 	var centerY = this.game.camera.height / 2; 
 
+	var assetsDir = "assets/";
+
     this.preloadBar = this.game.add.sprite(centerX - 50,
 										   centerY,
 										   'preloaderBar');
@@ -20,12 +22,16 @@ BasicGame.Preloader.prototype.preload =  function(){
     this.load.setPreloadSprite(this.preloadBar);
 	this.preloadBar.angle = -90;
     
-	this.load.image("ground2", "assets/platform2.png");
-	this.load.image("perso", "assets/firstaid.png");
-	this.load.image("blood", "assets/bloodParticle.png");
-	this.load.image("barrier_icon", "assets/Skills/barrier_icon.png");
-	this.load.image("teleport_icon", "assets/Skills/teleport_icon.png");
+	this.load.image("ground2", assetsDir + "platform2.png");
+	this.load.image("blood", assetsDir + "bloodParticle.png");
+
+	// Skills
+	var skillDir = assetsDir + "Skills/";
+
+	this.load.image("barrier_icon", skillDir + "barrier_icon.png");
+	this.load.image("teleport_icon", skillDir + "teleport_icon.png");
 	this.load.spritesheet("icons", "assets/icons.png", 16, 16);
+<<<<<<< HEAD
 	this.load.spritesheet("slash", "assets/Skills/swoosh_0.png", 32, 32);
 	this.load.spritesheet("fireball_0", "assets/Skills/fireball_1.png", 64, 16);
 	this.load.image("fireball_icon", "assets/Skills/fireball_icon.png");
@@ -50,6 +56,47 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.audio("mainTheme", "audio/Music/Adventure_Meme.wav");
 	this.load.audio("cursor_select", "audio/SFX/cursor_select.wav");
 	this.load.audio("explosion_0", "audio/SFX/explosion_0.wav");
+=======
+	this.load.spritesheet("slash", skillDir + "swoosh_0.png", 32, 32);
+	this.load.spritesheet("fireball_0", skillDir + "fireball_1.png", 64, 16);
+	this.load.image("fireball_icon", skillDir + "fireball_icon.png");
+	this.load.spritesheet("iceball_0", skillDir + "iceball_0.png", 64, 64);
+	this.load.image("iceball_icon", skillDir + "iceball_icon.png");
+	this.load.spritesheet("thunder_0", skillDir + "thunder_0.png", 256, 64);
+	this.load.image("thunder_icon", skillDir + "thunder_icon.png");
+	this.load.image("arrow_icon", skillDir + "arrow_icon.png");
+	this.load.spritesheet("explosion_0", skillDir + "explosion_0.png", 64, 64);
+	this.load.spritesheet("explosion_1", skillDir + "explosion_1.png", 64, 64);
+
+	// Ammo
+	var ammoDir = assetsDir + "Ammo/";
+
+	this.load.spritesheet("arrow", ammoDir + "arrow.png", 25, 4);
+
+	// Levels
+	var levelsDir = "";
+
+	this.load.tilemap('level1', 'assets/tilemaps/Level1.json', null,
+					  Phaser.Tilemap.TILED_JSON);
+	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
+
+	// Heroes
+	var charactersDir = assetsDir + "Characters/";
+	var heroesDir = charactersDir + "Heroes/";
+
+    this.load.spritesheet("lucy", heroesDir + "lucy_full.png", 64, 64);
+	this.load.spritesheet("barton", heroesDir + "barton_full.png", 64, 64);
+
+
+	// Audio
+	var audioDir = "audio/";
+	var musicDir = audioDir + "Music/";
+	var sfxDir = audioDir + "SFX/";
+
+	this.load.audio("mainTheme", musicDir + "Adventure_Meme.wav");
+	this.load.audio("cursor_select", sfxDir + "cursor_select.wav");
+	this.load.audio("explosion_0", sfxDir + "explosion_0.wav");
+>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 }
 
 BasicGame.Preloader.prototype.create = function(){

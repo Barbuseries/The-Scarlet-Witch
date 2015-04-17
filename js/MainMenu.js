@@ -26,25 +26,10 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.logo.scale.setTo(0.5);
 	this.logo.anchor.setTo(0.5);
 
-	this.control = new ControlManager(this.game, CONTROL_KEYBOARD, null, "pad1");
-
-	this.control.bindControl("menu_next", Phaser.Keyboard.DOWN, -1,
-							 "goNext",
-							 "onDown", "menu", -1);
-	
-	this.control.bindControl("menu_previous", Phaser.Keyboard.UP, -1,
-							 "goPrevious",
-							 "onDown", "menu", -1);
-	
-	this.control.bindControl("menu_display", Phaser.Keyboard.SPACEBAR, -1,
-							 "toggle", "onDown", "menu", this);
-	
-	this.control.bindControl("menu_select", Phaser.Keyboard.ENTER, -1,
-							 "select", "onDown", "menu", -1);
-
 	function bind(){
-		var allOldControls = this.manager.getByTag("menu");
-		var toRemove = allOldControls.indexOf(this.manager.allControls["menu_display"]);
+		var controller = BasicGame.allPlayers.p1.controller;
+		var allOldControls = controller.getByTag("menu");
+		var toRemove = allOldControls.indexOf(controller.allControls["menu_toggle"]);
 		var allOldCodes = [];
 		var oldTarget = allOldControls[0].target;
 		var oldFunction = null;
@@ -69,22 +54,27 @@ BasicGame.MainMenu.prototype.create = function(){
 				allOldControls[i].change(allOldCodes[i][0], allOldCodes[i][1]);
 			}
 
-			this.manager.allControls["menu_display"].functionName = oldFunction;
-			this.manager.allControls["menu_display"].target = oldTarget;
+			controller.allControls["menu_toggle"].functionName = oldFunction;
+			controller.allControls["menu_toggle"].target = oldTarget;
 		}, this);
 		
-		this.manager.allControls["menu_display"].functionName = "close";
-		this.manager.allControls["menu_display"].target = this;
+		controller.allControls["menu_toggle"].functionName = "close";
+		controller.allControls["menu_toggle"].target = this;
 
 		if (this.horizontal){
-			this.manager.allControls["menu_next"].change(Phaser.Keyboard.RIGHT);
-			this.manager.allControls["menu_previous"].change(Phaser.Keyboard.LEFT);
+			var leftControl = controller.allControls["goLeft"];
+			var rightControl = controller.allControls["goRight"];
+
+			controller.allControls["menu_next"].change(rightControl.keyboardCode,
+													   rightControl.gamepadCode);
+			controller.allControls["menu_previous"].change(leftControl.keyboardCode,
+														   rightControl.gamepadCode);
 		}
 		
 		this.setFocus(true);
 	}
 
-	this.menu = new Menu(this.game, this.control, "MainMenu",
+	this.menu = new Menu(this.game, BasicGame.allPlayers.p1.controller, "MainMenu",
 						 centerX - 250, 0,
 						 500,
 						 500,
@@ -174,16 +164,19 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	this.menu.enableMouse();
 	
-	this.control.setTargetByTag(this.menu, "menu");
+	BasicGame.allPlayers.p1.controller.setTargetByTag(this.menu, "menu");
 
 	this.menu.toggle();
 	
-	this.music.play("", 0, 1, true);
+	this.music.play("", 0, BasicGame.volume.music, true);
 }
 
 BasicGame.MainMenu.prototype.update = function(){
 	this.background.tilePosition.x -= 1;
-	this.control.update();
+	
+	for(var i in BasicGame.allPlayers) {
+		BasicGame.allPlayers[i].controller.update();
+	}
 }
 
 BasicGame.MainMenu.prototype.startGame = function(pointer){
@@ -197,9 +190,15 @@ BasicGame.MainMenu.prototype.startGame = function(pointer){
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
 	this.cancelMenu.close();
-	this.cancelMenu.kill();
+	this.cancelMenu.destroy();
+	this.cancelMenu = null;
+
 	this.menu.close();
-	this.menu.kill();
+	this.menu.destroy();
+	this.menu = null;
+
+	BasicGame.allPlayers.p1.controller.setTargetByTag(null, "menu");
+	BasicGame.allPlayers.p2.controller.setTargetByTag(null, "menu");
 }
 
 BasicGame.MainMenu.prototype.exit = function(){

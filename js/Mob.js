@@ -11,7 +11,13 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.tag = tag;
 
 	this.allStats = {};
-	this.allSkills = {};
+
+	this.currentMode = 0;
+
+	this.allSkills = [];
+	this.allSkills[0] = {};
+	this.allSkills[1] = {};
+
 	this.allResistances = [];
 
 	for(var i = 0; i <= Elements.PHYSIC; i++) {
@@ -82,14 +88,16 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	}, this);
 
 	this.SPEED = 250;
-	this.ACCELERATION = 250;
+	this.ACCELERATION = 200;
 	this.JUMP_POWER = 200;
-	this.DRAG = 600;
+	this.DRAG = 1000;
 	this.MAXJUMP = 1;
 	this.jumpCount = this.MAXJUMP;
 
-	this.body.maxVelocity.setTo(this.SPEED, this.SPEED * 3);
+	this.body.maxVelocity.setTo(this.SPEED, this.SPEED * 1.5);
 	this.body.drag.setTo(this.DRAG, 0);
+
+	this._textDamageDir = 1;
 }
 
 Mob.prototype = Object.create(Npc.prototype);
@@ -107,7 +115,8 @@ Mob.prototype.update = function(){
 Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, element){
 	var actualDamage = (Math.random() * (damageRange[1] - damageRange[0]) +
 						damageRange[0]) * brutDamages;
-	var color = WHITE;
+	var color = (this.tag == "hero") ? RED : WHITE;
+	var stroke = BLACK;
 
 	if (Math.random() * 100 < criticalChance){
 		actualDamage *= 1.5;
@@ -127,11 +136,107 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	if (actualDamage == 0){
 		color = GREY;
 	}
+
+	switch(element){
+	case Elements.ALMIGHTY:
+		stroke = GREY;
+		break;
+	case Elements.FIRE:
+		stroke = RED;
+		break;
+	case Elements.ICE:
+		stroke = BLUE;
+		break;
+	case Elements.WIND:
+		stroke = GREEN;
+		break;
+	case Elements.ROCK:
+		stroke = ORANGE;
+		break;
+	case Elements.THUNDER:
+		stroke = YELLOW;
+		break;
+	default:
+		break;
+	}
+
+	actualDamage = actualDamage.toFixed(0);
 	
 	createTextDamage(this.game, this.x + this.width / 2, this.y + this.height / 2,
-					 actualDamage, color);
+					 actualDamage, color).text.stroke = stroke;
 
 	this.allStats.health.subtract(actualDamage);
+	this._textDamageDir *= -1;
+}
+
+Mob.prototype.castFirst = function(){
+	try{
+		this.allSkills[this.currentMode].firstSkill.charge();
+	}
+	catch(err){}
+}
+
+Mob.prototype.castSecond = function(){
+	try{
+		this.allSkills[this.currentMode].secondSkill.charge();
+	}
+	catch(err){}
+}
+
+Mob.prototype.castThird = function(){
+	try{
+		this.allSkills[this.currentMode].thirdSkill.charge();
+	}
+	catch(err){}
+}
+
+Mob.prototype.castFourth = function(){
+	try{
+		this.allSkills[this.currentMode].fourthSkill.charge();
+	}
+	catch(err){}
+}
+
+Mob.prototype.castFifth = function(){
+	try{
+		this.allSkills[this.currentMode].fifthSkill.charge();
+	}
+	catch(err){}
+}
+
+Mob.prototype.releaseFirst = function(){
+	try{
+		this.allSkills[this.currentMode].firstSkill.release();
+	}
+	catch(err){}
+}
+
+Mob.prototype.releaseSecond = function(){
+	try{
+		this.allSkills[this.currentMode].secondSkill.release();
+	}
+	catch(err){}
+}
+
+Mob.prototype.releaseThird = function(){
+	try{
+		this.allSkills[this.currentMode].thirdSkill.release();
+	}
+	catch(err){}
+}
+
+Mob.prototype.releaseFourth = function(){
+	try{
+		this.allSkills[this.currentMode].fourthSkill.release();
+	}
+	catch(err){}
+}
+
+Mob.prototype.releaseFifth = function(){
+	try{
+		this.allSkills[this.currentMode].fifthSkill.release();
+	}
+	catch(err){}
 }
 /******************************************************************************/
 /* Mob */

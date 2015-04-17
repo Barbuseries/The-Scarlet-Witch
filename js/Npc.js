@@ -8,25 +8,46 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 	Entity.call(this, game, x, y, spritesheet, initFunction, updateFunction,
 				killFunction, "npc");
 
-	this.animations.add("walkRight", [144, 145, 146, 147, 148, 149, 150, 151], 15);
-	this.animations.add("walkLeft", [118, 119, 120, 121, 122, 123, 124, 125], 15);
+	this.animations.add("walkRight", [144, 145, 146, 147, 148, 149, 150, 151], 15)
+		.allowBreak = true;
+	this.animations.add("walkLeft", [118, 119, 120, 121, 122, 123, 124, 125], 15)
+		.allowBreak = true;
 
-	this.animations.add("spellCastLeft", [13, 14, 15, 16, 17, 18, 19, 13], 15);
-	this.animations.add("spellCastRight", [40, 41, 42, 43, 44, 45, 39], 15);
+	this.animations.add("spellCastLeft", [14, 15, 16, 17, 18, 19, 13], 15)
+		.allowBreak = false;
+	this.animations.add("spellCastRight", [40, 41, 42, 43, 44, 45, 39], 15)
+		.allowBreak = false;
+	this.animations.add("spellCastBoth", [27, 28, 29, 30, 31, 32, 26], 15)
+		.allowBreak = false;
 
 	/**************/
 	/* A tester ! */
 	/******************************************************************************/
-	this.animations.add("swordRight", [170, 171, 172, 173, 174, 175, 170], 15);
-	this.animations.add("swordLeft", [195, 196, 197, 198, 199, 200, 195], 15);
-
-	this.animations.add("bowRight", [221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
-									 231, 232, 233, 222], 15);
-	this.animations.add("bowLeft", [247, 248, 249, 250, 251, 252, 253, 254, 255, 256,
-									257, 258, 259, 247], 15);
+	this.animations.add("swordRight", [195, 196, 197, 198, 199, 200, 200, 195], 15)
+		.allowBreak = false;
+	this.animations.add("swordLeft", [169, 170, 171, 172, 173, 174, 174, 169], 15)
+		.allowBreak = false;
 	/******************************************************************************/
 
+	this.animations.add("bendBowLeft", [221, 222, 223, 224, 225, 226, 227, 228, 229],
+						15)
+		.allowBreak = false;
+	this.animations.add("unbendBowLeft", [230, 231, 232, 233, 221], 15)
+		.allowBreak = false;
+	this.animations.add("bendBowRight", [247, 248, 249, 250, 251, 252, 253, 254, 255],
+						15)
+		.allowBreak = false;
+	this.animations.add("unbendBowRight", [256, 257, 258, 259, 247], 15)
+		.allowBreak = false;
+	this.animations.add("fullBowRight", [247, 248, 249, 250, 251, 252, 253, 254, 255,
+										 256, 257, 258, 259, 247], 15)
+		.allowBreak = false;
+
 	this.animations.add("death", [260, 261, 262, 264], 5)
+		.allowBreak = false;
+
+	this.animations.add("idle", [26])
+		.allowBreak = true;
 	
 	this.name = name;
 
@@ -35,7 +56,17 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 
 	this.game.physics.enable(this, Phaser.Physics.ARCADE);
 
+	this._cached = {};
+	this._cached.velocity = {};
+	this._cached.acceleration = {};
+	this._cached.velocity.x = 0;
+	this._cached.velocity.y = 0;
+	this._cached.acceleration.x = 0;
+	this._cached.acceleration.y = 0;
+
 	this._dying = false;
+
+	this.animations.play("idle");
 }
 
 Npc.prototype = Object.create(Entity.prototype);

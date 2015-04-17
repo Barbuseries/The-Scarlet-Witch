@@ -10,8 +10,8 @@ var TextDamage = function (game, x, y){
 	this.anchor.setTo(0.5, 0.5);
 
 	this.body.bounce.y = 0.5;
-	this.body.velocity.y = -200;
-	this.body.velocity.x = 40;
+	this.body.velocity.y = -300;
+	this.body.velocity.x = 50;
 
 	if (Math.random()){
 		this.body.velocity.x *= -1;
@@ -19,7 +19,7 @@ var TextDamage = function (game, x, y){
 
 	this.game.add.existing(this);
 	
-	BasicGame.textDamagePool.add(this);
+	BasicGame.pool.textDamage.add(this);
 }
 
 TextDamage.prototype = Object.create(Phaser.Sprite.prototype);
@@ -44,8 +44,8 @@ TextDamage.prototype.kill = function(){
 function createTextDamage(game, x, y, value, color){
 	var newTextDamage = null;
 
-	if (BasicGame.textDamagePool != null){
-		var reusableSprite = BasicGame.textDamagePool.getFirstDead();
+	if (BasicGame.pool.textDamage != null){
+		var reusableSprite = BasicGame.pool.textDamage.getFirstDead();
 	} 
 
 	if (reusableSprite == null){
@@ -58,14 +58,16 @@ function createTextDamage(game, x, y, value, color){
 		newTextDamage.x = x;
 		newTextDamage.y = y;
 	}
-	
-	newTextDamage.body.velocity.y = -200;
-	newTextDamage.body.velocity.x = 40;
+
+	newTextDamage.body.velocity.y = -300;
+	newTextDamage.body.velocity.x = 50;
+
+	newTextDamage.body.velocity.x *= (1 + Math.random() * 0.5);
 	
 	if (Math.random() > 0.5){
 		newTextDamage.body.velocity.x *= -1;
 	}
-		
+	
 	newTextDamage.text = game.add.text(0, 0, Math.abs(value).toFixed(0).toString());
 
 	newTextDamage.lifespan = 2500;

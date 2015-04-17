@@ -17,38 +17,36 @@
          "name":"baddies",
          "objects":[
                 {
-                 "gid":352,
-                 "height":0,
-                 "id":32,
+                 "height":98,
+                 "id":1,
                  "name":"",
                  "properties":
                     {
-                     "sprite":"ennemi1",
-                     "type":"enemy"
+                     "sprite":"boss1",
+                     "type":"baddie"
                     },
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":0,
-                 "x":2824,
-                 "y":926
+                 "width":82,
+                 "x":3032,
+                 "y":820
                 }, 
                 {
-                 "gid":79,
-                 "height":0,
-                 "id":34,
+                 "height":98,
+                 "id":26,
                  "name":"",
                  "properties":
                     {
-                     "sprite":"archer1",
-                     "type":"enemy"
+                     "sprite":"boss1",
+                     "type":"baddie"
                     },
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":0,
-                 "x":3712,
-                 "y":926
+                 "width":82,
+                 "x":3734,
+                 "y":820
                 }],
          "opacity":0.970000028610229,
          "type":"objectgroup",
@@ -57,7 +55,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":35,
+ "nextobjectid":27,
  "orientation":"orthogonal",
  "properties":
     {
@@ -85,36 +83,6 @@
                 }],
          "tileheight":32,
          "tilewidth":32
-        }, 
-        {
-         "firstgid":65,
-         "image":"..\/..\/..\/..\/..\/Users\/Flavien\/Downloads\/archer1.png",
-         "imageheight":1344,
-         "imagewidth":832,
-         "margin":0,
-         "name":"archer",
-         "properties":
-            {
-
-            },
-         "spacing":0,
-         "tileheight":64,
-         "tilewidth":64
-        }, 
-        {
-         "firstgid":338,
-         "image":"..\/..\/..\/..\/..\/Users\/Flavien\/Downloads\/ennemi1.png",
-         "imageheight":1344,
-         "imagewidth":832,
-         "margin":0,
-         "name":"ennemi",
-         "properties":
-            {
-
-            },
-         "spacing":0,
-         "tileheight":64,
-         "tilewidth":64
         }],
  "tilewidth":32,
  "version":1,
