@@ -1,7 +1,31 @@
 var BasicGame = {
-	player1: {},
+	allPlayers: {
+		p1: null,
+		
+		p2: null
+	},
 
-	player2: {}
+	pool: {
+		textDamage: null
+	},
+
+	sfx: {},
+
+	volume: {
+		sfx: 0.1,
+		music: 0.1
+	},
+
+	mute: function(control){
+		control.manager.game.sound.mute = !control.manager.game.sound.mute;
+	},
+
+	swapHeroes: function(){
+		var temp = BasicGame.allPlayers.p1.getHero();
+		
+		BasicGame.allPlayers.p1.setHero(BasicGame.allPlayers.p2.getHero());
+		BasicGame.allPlayers.p2.setHero(temp);
+	}
 };
 
 BasicGame.Boot = function (game) {
@@ -9,6 +33,7 @@ BasicGame.Boot = function (game) {
 
 BasicGame.Boot.prototype.init = function(){
     this.input.maxPointers = 1;
+	this.input.resetLocked = true;
 
 
     if (this.game.device.desktop)
@@ -29,7 +54,7 @@ BasicGame.Boot.prototype.preload = function(){
     this.load.image('preloaderBarBackground', 'assets/campfire_wood.png');
     this.load.image('preloaderBar', 'assets/campfire_fire.png');
 	this.load.image("logo", "assets/TheScarletWitch-Logo.png");
-	this.load.image("sky", "assets/background0_2.png");
+	this.load.image("sky", "assets/Backgrounds/background0_2.png");
 	this.load.image("ground", "assets/platform.png");
 }
 BasicGame.Boot.prototype.create = function(){
@@ -101,8 +126,64 @@ BasicGame.Boot.prototype.startPreload = function(){
 	this.logoGroup.forEachAlive(function(logo){
 		logo.kill();
 	});
-	BasicGame.player1 = {};
-	BasicGame.player1.hero = null;
 
+	BasicGame.allPlayers.p1 = new Player(this.game, "1");
+	BasicGame.allPlayers.p1.isMain = true;
+
+	BasicGame.allPlayers.p2 = new Player(this.game, "2");
+
+	BasicGame.allPlayers.p1.controller
+		.bindControl("menu_toggle", Phaser.Keyboard.ESC, -1,
+					 "toggle", "onDown", "menu")
+		.bindControl("menu_next", Phaser.Keyboard.S, -1,
+					 "goNext", "onDown", "menu")
+		.bindControl("menu_previous", Phaser.Keyboard.Z, -1,
+					 "goPrevious", "onDown", "menu")
+		.bindControl("menu_select", Phaser.Keyboard.SPACEBAR, -1,
+					 "select", "onDown", "menu")
+		.bindControl(-1, Phaser.Keyboard.Q, -1,
+					 "goLeft", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.D, -1,
+					 "goRight", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.Z, -1,
+					 "goUp", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.S, -1,
+					 "goDown", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.Z, -1,
+					 "jump", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.Z, -1,
+					 "reduceJump", "onDown", "movement")
+		.bindControl(-1, Phaser.Keyboard.LEFT, -1,
+					 "orientateLeft", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.RIGHT, -1,
+					 "orientateRight", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.Y, -1,
+					 "castFirst", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.U, -1,
+					 "castSecond", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.I, -1,
+					 "castThird", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.O, -1,
+					 "castFourth", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.P, -1,
+					 "castFifth", "down", "action")
+		.bindControl(-1, Phaser.Keyboard.Y, -1,
+					 "releaseFirst", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.U, -1,
+					 "releaseSecond", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.I, -1,
+					 "releaseThird", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.O, -1,
+					 "releaseFourth", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.P, -1,
+					 "releaseFifth", "onUp", "action")
+		.bindControl(-1, Phaser.Keyboard.ENTER, -1,
+					 "swapMode", "onDown", "action")
+		.bindControl(-1, Phaser.Keyboard.TAB, -1,
+					 "swapHeroes", "onDown", ["system" ,"action"])
+		.bindControl(-1, Phaser.Keyboard.M, -1,
+					 "mute", "onDown", "system");
+
+	this.game.input.onDown.removeAll();
 	this.state.start("Preloader");
 }

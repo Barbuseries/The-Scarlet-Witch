@@ -3,6 +3,11 @@
 /******************************************************************************/
 var Menu = function(game, manager, title, x, y, width, height, sprite, cursor){
 	Interface.call(this, game, x, y, width, height, sprite);
+
+	if (typeof(BasicGame.sfx.cursorSelect) === "undefined"){
+		BasicGame.sfx.cursorSelect = this.game.audio.load("cursor_select");
+	}
+
 	
 	this.manager = manager;
 	
@@ -69,6 +74,8 @@ Menu.prototype.enableMouse = function(){
 		var option = self.getCurrentOption();
 		
 		if (oldIndex != sprite._index){
+			BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
+
 			oldOption.onOut.dispatch(oldOption);
 			option.onOver.dispatch(option);
 
@@ -115,6 +122,8 @@ Menu.prototype.goNext = function(control, factor){
 	}
 
 	if (oldIndex != this.indexCurrentOption){
+		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
+
 		var oldOption = this.allOptions[oldIndex];
 		var option = this.getCurrentOption();
 
@@ -147,6 +156,8 @@ Menu.prototype.goPrevious = function(control, factor){
 	}
 
 	if (oldIndex != this.indexCurrentOption){
+		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
+
 		var oldOption = this.allOptions[oldIndex];
 		var option = this.getCurrentOption();
 
@@ -227,40 +238,45 @@ Menu.prototype.update = function(){
 }
 
 Menu.prototype.toggle = function(){
-	this.indexCurrentOption = 0;
-	this.title.visible = this.showTitle;
-
-	var option = this.getCurrentOption();
-
-	if (option != null){
-		option.onOver.dispatch(option);
+	if (this.state == Interface.State.CLOSED){
+		this.indexCurrentOption = 0;
+		this.title.visible = this.showTitle;
+		
+		var option = this.getCurrentOption();
+		
+		if (option != null){
+			option.onOver.dispatch(option);
+		}
+		
+		this.updateCursorPosition();
+		
+		this.updateCursorTween();
+		
+		Interface.prototype.toggle.call(this);
 	}
-
-	this.updateCursorPosition();
-
-	this.updateCursorTween();
-
-	Interface.prototype.toggle.call(this);
 }
 
 Menu.prototype.close = function(){
-	var option = this.getCurrentOption();
-
-	if (option != null){
-		option.onOut.dispatch(option);
-	}
-
-	this.stopCursorTween();
-
-	Interface.prototype.close.call(this);
+	if (this.state == Interface.State.TOGGLED){
+		var option = this.getCurrentOption();
+		
+		if (option != null){
+			option.onOut.dispatch(option);
+		}
+		
+		this.stopCursorTween();
+		
+		Interface.prototype.close.call(this);
+	}	
 }
-
 
 Menu.prototype.select = function(){
 	if (this.state == Interface.State.TOGGLED){
 		var option = this.getCurrentOption();
 		
 		if (option != null){
+			BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
+
 			option.onSelect.dispatch(option);
 		}
 		
@@ -327,6 +343,8 @@ Option.prototype.enableMouse = function(){
 	this.display.inputEnabled = true;
 
 	this.display.events.onInputDown.add(function(){
+		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
+
 		this.onSelect.dispatch(this);
 	}, this);
 }

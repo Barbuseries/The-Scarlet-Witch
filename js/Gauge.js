@@ -325,8 +325,9 @@ Gauge.prototype.pulse = function(deltaX, deltaY, goToDelay,
 
 var GAUGE_NONE = 0;
 var GAUGE_BRUT = 1;
-var GAUGE_PERCENT = 2;
-var GAUGE_FACTOR = 3;
+var GAUGE_REDUCE = 2;
+var GAUGE_PERCENT = 3;
+var GAUGE_FACTOR = 4;
 
 
 var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
@@ -347,22 +348,22 @@ var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 
 	this.width = width;
 	this.height = height;
-
+	
 	this.stat = stat;
 
 	this.belowSprite = game.add.sprite(0, 0, belowSprite);
 	this.belowSprite.width = width;
 	this.belowSprite.height = height;
 
-	this.valueDisplayType = GAUGE_BRUT;
-	this.valueText = game.add.text(width/2, height/2, stat.get().toString() +
-								   " / " + stat.getMax().toString());
+	this.valueDisplayType = GAUGE_NONE;
+	this.valueText = game.add.text(width/2, height/2, "");
 	this.valueText.fontSize = height;
 	this.valueText.font = "Arial";
 	this.valueText.fill = WHITE;
 	this.valueText.stroke = BLACK;
 	this.valueText.strokeThickness = 3;
 	this.valueText.anchor.setTo(0.5, 0.4);
+	this.updateValueText();
 	
 	this.upperSprite = game.add.sprite(0, 0, upperSprite);
 	this.upperSprite.width = width;
@@ -423,9 +424,26 @@ Gauge.prototype.update = function(){
 
 Gauge.prototype.updateValueText = function(){
 	if (this.valueDisplayType == GAUGE_BRUT){
-		// TODO: Substitue "000" for K.
-		this.valueText.text = this.stat.get().toString() +
+		this.valueText.text = this.stat.get().toFixed(0).toString() +
 			" / " + this.stat.getMax().toString();
+	}
+	else if (this.valueDisplayType == GAUGE_REDUCE){
+		function simplify(value){
+			var index = 0;
+			var arrayValue = value.toFixed(0).toString().split("");
+			
+			while(validIndex(index + 3, arrayValue)){
+				arrayValue.splice(index + 1, 3, " K");
+				
+				index += 3;
+			}
+			
+			return arrayValue.join("");
+		}
+		
+		
+		this.valueText.text = simplify(this.stat.get()) + " / "
+			+ simplify(this.stat.getMax());
 	}
 	else if (this.valueDisplayType == GAUGE_PERCENT){
 		this.valueText.text = (this.stat.get(1) * 100).toFixed(2).toString() + "%";
@@ -441,7 +459,7 @@ Gauge.prototype.updateValueText = function(){
 Gauge.prototype.nextValueDisplayType = function(){
 	this.valueDisplayType++;
 
-	this.valueDisplayType %= 4;
+	this.valueDisplayType %= (GAUGE_FACTOR + 1);
 
 	this.updateValueText();
 }
@@ -538,15 +556,19 @@ MonoGauge.prototype._createIncreaseTween = function(newValue){
 
 	this.updateAnimationType = 1;
 
+	var initScale = this.currentValue / this.stat.getMax();
 	var maxScale = newValue / this.stat.getMax();
 	
-	var duration = Math.abs(1000 * (this.currentValue - newValue) / this.stat.getMax());
+	var duration = Math.abs(1000 * (maxScale - initScale));
 	duration /= this.increaseSpeed;
 
-	this.additionalFill.scale.x = -(newValue - this.currentValue) / this.stat.getMax();
+	this.additionalFill.scale.x = (maxScale - initScale);
 
-	this.additionalFill.position.x = (this.currentValue / this.stat.getMax() - this.additionalFill.scale.x) * this.width;
-				
+	this.additionalFill.x = maxScale * this.width;
+	this.additionalFill.y = this.height / 2 - this.scale.x;
+	
+	this.additionalFill.angle = 180;
+	
 	this.additionalFill.tint = this.increaseColor;
 	
 	this.additionalFill.alpha = this.increaseAlpha;
@@ -555,7 +577,7 @@ MonoGauge.prototype._createIncreaseTween = function(newValue){
 		.to({x: 0}, duration);
 	
 	function updateCurrentValue(){
-		this.fill.scale.x = this.additionalFill.position.x / this.width + this.additionalFill.scale.x;
+		this.fill.scale.x = maxScale - Math.abs(this.additionalFill.scale.x);
 
 		this.currentValue = this.fill.scale.x * this.stat.getMax();
 	}
@@ -592,16 +614,20 @@ MonoGauge.prototype._createDecreaseTween = function(newValue){
 
 	this.updateAnimationType = 0;
 
-	
-	var duration = Math.abs(1000 * (this.currentValue - newValue) / this.stat.getMax());
+	var initScale = this.currentValue / this.stat.getMax();
+	var maxScale = newValue / this.stat.getMax();
+
+	var duration = Math.abs(1000 * (initScale - maxScale));
 	duration /= this.decreaseSpeed;
 
-	this.additionalFill.scale.x += -(newValue - this.currentValue) / this.stat.getMax();
+	this.additionalFill.scale.x += (initScale - maxScale);
 	
 	this.currentValue = newValue;
-	this.fill.scale.x = this.currentValue / this.stat.getMax();
+	this.fill.scale.x = maxScale;
 
-	this.additionalFill.position.x = this.fill.scale.x * this.width;
+	this.additionalFill.x = maxScale * this.width;
+	this.additionalFill.angle = 0;
+	this.additionalFill.y = 0;
 				
 	this.additionalFill.tint = this.decreaseColor;
 	

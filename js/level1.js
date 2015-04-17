@@ -29,6 +29,7 @@ BasicGame.Level1.prototype.create = function (){
 		for(var j = 0; j < map.layer.data[i].length; j++) {
 			if (map.layer.data[i][j].canCollide){
 				map.layer.data[i][j].tag = "platform";
+				map.layer.data[i][j]._dying = false;
 			}
 		}
 	}
@@ -43,12 +44,38 @@ BasicGame.Level1.prototype.create = function (){
 
 	this.game.world.bringToTop(this.game.platforms);
 
-	BasicGame.bloodPool =  this.game.add.group();
-	BasicGame.slashPool =  this.game.add.group();
-	BasicGame.firePool =  this.game.add.group();
-	BasicGame.icePool = this.game.add.group();
-	BasicGame.explosionPool = this.game.add.group();
-	BasicGame.iceExplosionPool = this.game.add.group();
+	for(var i in BasicGame.pool) {
+		BasicGame.pool[i] = this.game.add.group();
+	}
+	
+	BasicGame.allHeroes = this.game.add.group();
+
+	this.testPlayer = {};
+	this.testPlayer.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
+													null, "pad1");
+	this.testPlayer2 = {};
+	this.testPlayer2.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
+													 null, "pad2");
+
+	this.barton = new Barton(this.game, 1000, 200, 99, this.testPlayer);
+	this.barton.scale.setTo(1.3);
+	this.barton.tag = "enemy";
+	this.barton.allResistances[Elements.FIRE] = 2;
+	this.barton.allStats.endurance.add(100);
+	this.barton.allStats.health.set(1, 1);
+
+	this.lucy = new Lucy(this.game, 600, 500, 1, this.testPlayer2);
+	this.lucy.allStats.mainStat.add(100);
+	this.lucy.allStats.agility.add(99);
+	this.lucy.allStats.special.set(1, 1);
+	this.lucy.allResistances[Elements.WIND] = 0.5;
+	this.lucy.allResistances[Elements.PHYSIC] = -0.5;
+
+	BasicGame.allHeroes.add(this.barton);
+	BasicGame.allHeroes.add(this.lucy);
+
+	BasicGame.allPlayers.p1.setHero(this.barton);
+	BasicGame.allPlayers.p2.setHero(this.lucy);
 
 	BasicGame.sfx = {};
 
@@ -56,33 +83,11 @@ BasicGame.Level1.prototype.create = function (){
 	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;
 
     //this.game.platforms.debug = true;
-
-    player1 = BasicGame.player1;
-	hero = player1.hero;
-
-    hero = this.game.add.sprite(0, 600 - 64, "lucy");
-    hero.animations.add("walk", [144, 145, 146, 147, 148, 149, 150, 151], 15);
-	hero.animations.add("spellCast", [39, 41, 42, 43, 44, 45, 45, 39], 15);
-	hero.frame = 26;
-	hero.SPEED = 250;
-	hero.ACCELERATION = 250;
-	hero.JUMP_POWER = 200;
-	hero.DRAG = 500
-	hero.jumpCount = 2
-	hero.orientation = 0;
-	hero.orientationH = 1;
-	hero.orientationV = 0;
-	hero.tag = "Hero";
-	hero.firstSkill = new Skill(hero, 1, undefined, 5000);
-	hero.firstSkill.onUse.add(function(){hero.animations.play("spellCast")});
-	hero.allStats = {};
-
-	hero.allStats.special = new Stat(this.game, "special", STAT_PERCENT_LINK, 100);
 	
 	/*************/
 	/* IMPORTANT */
 	/**************************************************************************/
-	
+
 	// Quand le joueur veut lancer un sort, il faut vérifier si il peut le lancer.
 	// C'est cette fonction qui le vérifie.
 	// Elle doit renvoyer true si le joueur peut payer, false sinon.
@@ -90,9 +95,11 @@ BasicGame.Level1.prototype.create = function (){
 	// toujours vrai.
 	// (On peut aussi directement assigner la fonction au Skill :
 	//  Skill.costFunction = function(){...};)
-	function costSkill1(){
+	function costSkill1(applyCost){
 		if (this.user.allStats.special.canSubtract(10)){
-			this.user.allStats.special.subtract(10);
+			if (applyCost){
+				this.user.allStats.special.subtract(10);
+			}
 
 			return true;
 		}
@@ -101,7 +108,10 @@ BasicGame.Level1.prototype.create = function (){
 		}
 	}
 
-	hero.secondSkill = new Skill(hero, 1, costSkill1, 1000);
+	this.lucy.allSkills[1].firstSkill = new Skill(this.lucy, 1, costSkill1,
+												  10000, Elements.ALMIGHTY,
+												  ["platform"]);
+	this.lucy.allSkills[1].firstSkill.icon = "teleport_icon";
 
 	/* Les projectiles ont besoin d'une "piscine" de sprites.
 	   Ca permet 2 choses :
@@ -117,13 +127,12 @@ BasicGame.Level1.prototype.create = function (){
 	   le Skill lui même.
 	*/
 
-	// Je suis obligé de marquer cette ligne, car launchFunction est appelé par le
-	// skill. Donc this correspond au skill (et non à BasicGame.Level1).
-	var bloodPool = BasicGame.bloodPool;
 
 	// launchFunction est appelé dès que le skill est utilisé (le joueur appuie
 	// sur la touche et il a assez de special pour le lancer)
-	hero.secondSkill.launchFunction = function(){
+	this.lucy.allSkills[1].firstSkill.launchFunction = function(){
+		var self = this;
+		var hero = this.user;
 
 		/* Pour créer des projectiles, il faut 3 + 2 fonctions:
 		   => initFunction : lancé quand le projectile est créé.
@@ -175,7 +184,12 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.game.physics.enable([this], Phaser.Physics.ARCADE);
 			
-			this.body.velocity.x = 600 * hero.scale.x;
+			this.body.velocity.x = 600;
+			
+			if (hero.orientationH < 0){
+				this.body.velocity.x *= -1;
+			}
+
 			this.body.velocity.y = -250;
 
 			// Même principe que pour le tint.
@@ -193,11 +207,9 @@ BasicGame.Level1.prototype.create = function (){
 			
 			this.anchor.setTo(0.5);
 
-			this.animations.add("walk", [144, 145, 146, 147, 148, 149, 150, 151],
-								15);
-			this.animations.play("walk", 15, true);
+			this.element = self.element;
 
-			this.targetTags.push("platform");
+			this.targetTags = self.targetTags;
 		}
 
 		function updateProjectile(){
@@ -280,8 +292,13 @@ BasicGame.Level1.prototype.create = function (){
 				
 				// Ne pas oublier de démarrer le timer !
 				this.timer.start();
-			}	
+			}
+			
+			return false;
 		}
+
+		hero.animations.stop("spellCastRight");
+		hero.animations.stop("spellCastLeft");
 
 		// Le héros lance une animation.
 		// N.B : Le skill a aussi un attribut user qui correspond à hero.
@@ -291,7 +308,12 @@ BasicGame.Level1.prototype.create = function (){
 		//
 		//       var hero = this.user;
 		//       Puis, dans les fonctions du projectile, utiliser hero.
-		hero.animations.play("spellCast");
+		if (hero.orientationH >= 0){
+			hero.animations.play("spellCastRight");	
+		}
+		else{
+			hero.animations.play("spellCastLeft");
+		}
 
 		timer = this.game.time.create(true);
 
@@ -299,132 +321,26 @@ BasicGame.Level1.prototype.create = function (){
 		var game = this.game;
 
 		// Crée le projectile 100 millisecondes après le lancement du skill.
-		timer.add(100, function(){createProjectile(game, 0, 0, "lucy", bloodPool,
-												  initProjectile, updateProjectile,
-												  killProjectile);});	
+		timer.add(100, function(){createProjectile(game, 0, 0,
+												   hero.name.toLowerCase(),
+												   initProjectile, updateProjectile,
+												   killProjectile);});	
 		
 		// Encore une fois, ne pas oublier de démarrer le timer !
 		timer.start();
 	}
 	/******************************************************************************/
 
-	hero.secondSkill.createCooldownBar(24, 0, 20, 5, H_YELLOW);
-	hero.addChild(hero.secondSkill.cooldownBar);
+	this.lucy.allStats.attackSpeed.onUpdate.add(function(stat, oldValue, newValue){
+		this.allSkills[0].firstSkill.setCooldown(newValue);
+	}, this.lucy);
+	this.lucy.allSkills[1].secondSkill = new Skill(this.lucy, 1, undefined,
+												   5000, Elements.WIND);
+	this.lucy.allSkills[1].secondSkill.icon = "barrier_icon";
 
-	var slashPool = BasicGame.slashPool;
-	var firePool = BasicGame.firePool;
-	var icePool = BasicGame.icePool;
-	var explosionPool = BasicGame.explosionPool;
-	var iceExplosionPool = BasicGame.iceExplosionPool;
-
-
-	hero.thirdSkill = new Skill(hero, 1, undefined, 500);
-	hero.thirdSkill.launchFunction = function(){
+	this.lucy.allSkills[1].secondSkill.launchFunction = function(){
 		var hero = this.user;
 
-		function initProjectile(){
-			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
-			this.y = hero.y + hero.height * 0.65;
-			this.scale.x = hero.orientationH;
-			this.anchor.setTo(0.5);
-			if (hero.orientationH == -1) {
-			    this.angle = -180;
-			} else {
-			    this.angle = 0;
-			}
-
-			this.frame = 0;
-			
-			this.lifespan = 1000;
-			
-			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
-			
-			this.animations.play("leftAnimation", null, true);
-
-			this.game.physics.enable([this], Phaser.Physics.ARCADE);
-			this.body.velocity.x = 500 * hero.scale.x;
-			this.body.velocity.y = -100;
-			this.body.allowGravity = false;
-		    //Tourne le projectile si on est tourné vers la gauche
-			this.scale.x = -1 * this.scale.x;
-			
-
-			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
-
-
-			//this.angle = -90 * hero.orientationV;
-
-			this.targetTags.push("enemy");
-
-			this.tween = this.game.add.tween(this.body.velocity)
-				.to({y : 100}, this.lifespan / 2)
-				.to({y : -100}, this.lifespan / 2);
-
-			this.tween.loop();
-
-			this.tween.start();
-		}
-
-		function updateProjectile(){
-			this.scale.x = this.lifespan / 1000;
-		}
-
-		function killProjectile(){
-			this.tween.stop();
-			this.tween = null;
-
-			this.timer = undefined;
-			
-			var x = this.x;
-			var y = this.y;
-
-			createProjectile(this.game, x, y, "explosion_0", explosionPool,
-							 function(){initExplosion.call(this, x, y)});
-
-			Phaser.Sprite.prototype.kill.call(this);
-		}
-
-		function collideFunction(obstacle){
-			if(typeof(this.timer === "undefined")){
-				this.body.velocity.x = 0;
-				this.body.velocity.y = 0;
-
-				this.timer = this.game.time.create(true);
-				this.timer.add(350, this.kill, this);
-
-				this.timer.start();
-			}
-
-			this.damageFunction();
-		}
-
-		function damageFunction(obstacle){
-			obstacle.allStats.health.subtract(hero.allStats.attack.get());
-		}
-
-		function initExplosion(x, y){
-			this.x = x;
-			this.y = y;
-			this.anchor.setTo(0.5);
-			this.tint = H_WHITE;
-			this.frame = 0;
-			this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
-			this.animations.play("explosionAnimation", null, false, true);
-
-			BasicGame.sfx.EXPLOSION_0.play();
-		}
-		
-		hero.animations.stop("spellCast");
-		hero.animations.play("spellCast");
-
-		createProjectile(this.game, 0, 0, "fireball_0", firePool,
-						 initProjectile, updateProjectile, killProjectile,
-						 collideFunction,undefined,damageFunction);
-	}
-
-	hero.fourthSkill = new Skill(hero, 1, undefined, 5000);
-
-	hero.fourthSkill.launchFunction = function(){
 		function initProjectile(angle){
 			this.anchor.setTo(0.5);
 			this.x = hero.x + hero.width / 2;
@@ -441,9 +357,11 @@ BasicGame.Level1.prototype.create = function (){
 
 			this.frame = 2;
 
+			this.element = Elements.WIND;
+
 			this.lifespan = 4500;
 
-			this.tint = H_GREY;
+			this.tint = H_ORANGE;
 
 			this.x += Math.cos(this.angle) * hero.width / 2 + this.width / 2 + hero.width / 2;
 			this.y += Math.sin(this.angle) * hero.height / 2 + this.height / 2 + hero.height / 2;
@@ -457,6 +375,7 @@ BasicGame.Level1.prototype.create = function (){
 			if (this.alpha < 0.3){
 				this.distanceFactor *= 1.02;
 			}
+			
 			this.x = hero.x + Math.abs(hero.width) / 2 + Math.cos(this.angle / 180 * Math.PI) * Math.abs(hero.width) / 2 * this.distanceFactor;
 			this.y = hero.y + hero.height / 2 + Math.sin(this.angle / 180 * Math.PI) * hero.height / 2 * this.distanceFactor;
 		}
@@ -464,334 +383,362 @@ BasicGame.Level1.prototype.create = function (){
 		var angle = 45;
 
 		for(var i = 0; i < 360 / angle; i++) {
-			createProjectile(this.game, 0, 0, "slash", slashPool,
+			createProjectile(this.game, 0, 0, "slash",
 							 function(){initProjectile.call(this, i * angle)},
 							 updateProjectile);
 		}
+
+		hero.animations.stop("spellCastRight");
+		hero.animations.stop("spellCastLeft");
+
+		if (hero.orientationH >= 0){
+			hero.animations.play("spellCastRight");	
+		}
+		else{
+			hero.animations.play("spellCastLeft");
+		}
+	}
+	
+	this.lucy.fly = function(){
+		if (this.lucy.body.velocity.y > 0){
+			this.lucy.body.velocity.y /= 1.5;
+			this.lucy.body.drag.setTo(0, 0);
+		}
 	}
 
-	hero.fifthSkill = new Skill(hero, 1, undefined, 500);
-	hero.fifthSkill.launchFunction = function(){
+	/*this.testPlayer.controller.bindControl("leftControl", Phaser.Keyboard.Q,
+										   Phaser.Gamepad.XBOX360_DPAD_LEFT,
+										   "goLeft", "down", "movement");
+	this.testPlayer.controller.bindControl("rightControl", Phaser.Keyboard.D,
+										   Phaser.Gamepad.XBOX360_DPAD_RIGHT,
+										   "goRight", "down", "movement");
+	this.testPlayer.controller.bindControl("jumpControl", Phaser.Keyboard.Z,
+										   Phaser.Gamepad.XBOX360_A,
+										   "jump", "down", "movement");
+	this.testPlayer.controller.bindControl("reduceJumpControl", Phaser.Keyboard.Z,
+										   Phaser.Gamepad.XBOX360_A,
+										   "reduceJump", "onDown", "movement");
+	this.testPlayer.controller.bindControl("swapControls", Phaser.Keyboard.ENTER,
+										   Phaser.Gamepad.XBOX360_BACK,
+										   "swapControls", "onDown", "action",
+										   this.testPlayer.controller);
+	this.testPlayer.controller.bindControl("swapMode", Phaser.Keyboard.U, -1,
+										   "swapMode", "onDown", "action");
+	this.testPlayer.controller.bindControl("castFirst", Phaser.Keyboard.Y, -1,
+										   "castFirst", "down", "action");
+	this.testPlayer.controller.bindControl("castThird", Phaser.Keyboard.I, -1,
+										   "castThird", "down", "action");
+	this.testPlayer.controller.bindControl("castFourth", Phaser.Keyboard.O, -1,
+										   "castFourth", "down", "action");
+	this.testPlayer.controller.bindControl("castFifth", Phaser.Keyboard.P, -1,
+										   "castFifth", "down", "action");
+	this.testPlayer.controller.bindControl("releaseFirst", Phaser.Keyboard.Y, -1,
+										   "releaseFirst", "onUp", "action");
+	this.testPlayer.controller.bindControl("releaseThird", Phaser.Keyboard.I, -1,
+										   "releaseThird", "onUp", "action");
+	this.testPlayer.controller.bindControl("releaseFourth", Phaser.Keyboard.O, -1,
+										   "releaseFourth", "onUp", "action");
+	this.testPlayer.controller.bindControl("releaseFifth", Phaser.Keyboard.P, -1,
+										   "releaseFifth", "onUp", "action");
+	
+	this.testPlayer2.controller.bindControl("leftControl", Phaser.Keyboard.LEFT, -1,
+											"goLeft", "down", "movement");
+	this.testPlayer2.controller.bindControl("rightControl", Phaser.Keyboard.RIGHT, -1,
+											"goRight", "down", "movement");
+	this.testPlayer2.controller.bindControl("jumpControl", Phaser.Keyboard.UP, -1,
+											"jump", "down", "movement");
+	this.testPlayer2.controller.bindControl("reduceJumpControl", Phaser.Keyboard.UP,
+											-1,
+											"reduceJump", "onDown", "movement");
+	this.testPlayer2.controller.bindControl("castFirst", Phaser.Keyboard.ONE, -1,
+											"castFirst", "down", "action");
+	this.testPlayer2.controller.bindControl("castSecond", Phaser.Keyboard.TWO, -1,
+											"castSecond", "down", "action");
+	this.testPlayer2.controller.bindControl("castThird", Phaser.Keyboard.THREE, -1,
+											"castThird", "down", "action");
+	this.testPlayer2.controller.bindControl("castFourth", Phaser.Keyboard.FOUR, -1,
+											"castFourth", "down", "action");
+	this.testPlayer2.controller.bindControl("castFifth", Phaser.Keyboard.FIVE, -1,
+											"castFifth", "down", "action");
+	this.testPlayer2.controller.bindControl("swapMode", Phaser.Keyboard.TAB, -1,
+											"swapMode", "onDown", "action");
+	this.testPlayer2.controller.bindControl("releaseFirst", Phaser.Keyboard.ONE, -1,
+											"releaseFirst", "onUp", "action");
+	this.testPlayer2.controller.bindControl("releaseSecond", Phaser.Keyboard.TWO, -1,
+											"releaseSecond", "onUp", "action");
+	this.testPlayer2.controller.bindControl("releaseThird", Phaser.Keyboard.THREE, -1,
+											"releaseThird", "onUp", "action");
+	this.testPlayer2.controller.bindControl("releaseFourth", Phaser.Keyboard.FOUR, -1,
+											"releaseFourth", "onUp", "action");
+	this.testPlayer2.controller.bindControl("releaseFifth", Phaser.Keyboard.FIVE, -1,
+											"releaseFifth", "onUp", "action");*/
+
+	//this.testPlayer.controller.type = CONTROL_GAMEPAD;
+
+	this.barton.allSkills[1].firstSkill = new Skill(this.barton, 1,	undefined,
+													this.barton.allStats.attackSpeed.get(),
+													Elements.PHYSIC, ["platform",
+																	  "hero"]);
+	this.barton.allSkills[1].firstSkill.costFunction = function(applyCost){
+		if (this.user.allStats.quiver.canSubtract(1)){
+			if (applyCost){
+				this.user.allStats.quiver.subtract(1);
+			}
+			
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
+	this.barton.allSkills[1].firstSkill.launchFunction = function(factor){
+		if (!this.user.animations.currentAnim.isFinished){
+			this.user.animations.currentAnim.onComplete.addOnce(
+				function(){
+					this.launchFunction.call(this, factor);
+				}, this);
+			return;
+		}
+		
+		var self = this;
 		var hero = this.user;
 
 		function initProjectile(){
-			this.x = hero.x + hero.width * 3 / 4 * hero.scale.x;
-			this.y = hero.y + hero.height * 0.65;
+			var speed = -600 * (1 + factor);
 
-			this.anchor.setTo(0.5);
-
-			if (hero.orientationH == -1) {
-			    this.angle = -180;
-			} else {
-			    this.angle = 0;
-			}
+			this.anchor.set(0, 0.5);
+			
+			this.x = hero.x;
+			this.y = hero.y + 2 * hero.width / 4;
 
 			this.frame = 0;
-			
-			this.lifespan = 1000;
-			
-			this.animations.add("leftAnimation", [32, 33, 34, 35, 36, 37, 38, 39]);
-			
-			this.animations.play("leftAnimation", null, true);
 
-			this.game.physics.enable([this], Phaser.Physics.ARCADE);
-			this.body.velocity.x = 500 * hero.scale.x;
-			this.body.velocity.y = -100;
-			this.body.allowGravity = false;
+			if (hero.orientationH >= 0){
+				this.x += hero.width / 2;
+				speed *= -1;
 
-			this.scale.x = hero.scale.x / Math.abs(hero.scale.x);
+				this.frame = 1;
+			}
 
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+			this.body.allowGravity = true;
+			this.body.velocity.y = -35 * (1 + factor);
 
-			//this.angle = -90 * hero.orientationV;
+			this.body.velocity.x = speed;
 
-			this.targetTags.push("enemy");
+			this.lifespan = 2000;
 
-			this.tween = this.game.add.tween(this.body.velocity)
-				.to({y : 100}, this.lifespan / 2)
-				.to({y : -100}, this.lifespan / 2);
+			this.alpha = 1;
 
-			this.tween.loop();
+			this.tint = H_WHITE;
 
-			this.tween.start();
+			this.element = self.element;
 		}
 
-		function updateProjectile(){
-			this.scale.x = this.lifespan / 1000;
+		function damageFunction(obstacle){
+			// Les dégâts sont aussi en fonction de la distance parcourue.
+			var damage = self.user.allStats.attack.get() * (1 + factor +
+															(1 - (this.lifespan - 1200) / 800));
+			var damageRange = [0.9, 1.1];
+			var criticalRate = self.user.allStats.criticalRate.get();
+			
+			obstacle.suffer(damage, damageRange, criticalRate, this.element);
 		}
 
-		function killProjectile(){
-			this.tween.stop();
-			this.tween = null;
+		function updateFunction(){
+			if (this.lifespan < 1000){
+				this.alpha = this.lifespan / 1000;
+			}
 
-			var x = this.x;
-			var y = this.y;
-			
-			createProjectile(this.game, x, y, "icekaboum", iceExplosionPool,
-							 function () { initExplosion.call(this, x, y) });
-			Phaser.Sprite.prototype.kill.call(this);
+			this.rotation = Math.atan2(this.body.velocity.y, this.body.velocity.x);
 		}
 
 		function collideFunction(obstacle){
-			if (this.targetTags.indexOf(obstacle.tag) != -1){
-				this.damageFunction.call(this, obstacle);
+			if (obstacle.tag != "platform"){
+				this.damageFunction(obstacle);
+				this.kill();
 			}
-			else if (obstacle.tag == "platform"){
+			else{
+				// Remplace la flêche par un sprite, parce que ça fait classe !
+
+				var selfSprite = this.game.add.sprite(this.x, this.y, this.key);
+
+				selfSprite.anchor.x = this.anchor.x;
+				selfSprite.anchor.y = this.anchor.y;
+				selfSprite.frame = this.frame;
+				selfSprite.rotation = this.rotation;
+				selfSprite.tint = this.tint;
+				selfSprite.scale.x = this.scale.x;
+				selfSprite.scale.y = this.scale.y;
+
+				selfSprite.tween = this.game.add.tween(selfSprite)
+					.to({alpha: 0}, 3000, Phaser.Easing.Quadratic.Out);
+
+				selfSprite.tween.start();
+
 				this.kill();
 			}
 		}
 
 		function collideProcess(obstacle){
-			return ((this.targetTags.indexOf(obstacle.tag) != -1) ||
-					(obstacle.tag == "platform"));
+			// La flêche change d'élément en fonction de ce qu'elle rencontre.
+			if (obstacle.tag == "projectile"){
+				this.tint = H_WHITE;
+
+				switch(obstacle.element){
+				case Elements.ALMIGHTY:
+					this.tint = H_GREY;
+					break;
+				case Elements.FIRE:
+					this.tint = H_RED;
+					break;
+				case Elements.ICE:
+					this.tint = H_BLUE;
+					break;
+				case Elements.WIND:
+					this.tint = H_GREEN;
+					break;
+				case Elements.ROCK:
+					this.tint = H_ORANGE;
+					break;
+				case Elements.THUNDER:
+					this.tint = H_YELLOW;
+					break;
+				default:
+					break;
+				}
+
+				this.element = obstacle.element;
+			}
+			return (this.targetTags.indexOf(obstacle.tag) != -1) &&
+				this.body.allowGravity;
 		}
 
-		function initExplosion(x, y) {
-		    this.x = x;
-		    this.y = y;
-		    this.tint = H_WHITE;
-		    this.tint = 0x99ffff;
-		    this.anchor.setTo(0.5);
-		    this.frame = 0;
-		    this.animations.add("explosionAnimation", [0, 1, 2, 3, 4, 5, 6, 7, 8]);
-		    this.animations.play("explosionAnimation", null, false, true);
+		createProjectile(this.game, 0, 0, "arrow",
+						 initProjectile, updateFunction, 
+						 undefined, collideFunction,
+						 collideProcess, damageFunction).targetTags = this.targetTags;
 
-		    BasicGame.sfx.EXPLOSION_0.play();
+		var animation = null;
+
+		if (this.user.orientationH >= 0){
+			animation = this.user.animations.play("unbendBowRight", 15);
 		}
-
-		function damageFunction(obstacle){
-			obstacle.allStats.health.subtract(hero.allStats.attack.get());
+		else{
+			animation = this.user.animations.play("unbendBowLeft", 15);
 		}
-
-		createProjectile(this.game, 0, 0, "iceball_0", icePool,
-						 initProjectile, updateProjectile, killProjectile,
-						 collideFunction, collideProcess, damageFunction);
+		
+		animation.onComplete.addOnce(
+			function(){
+				if (typeof(this.user.player)!= "undefined"){
+					this.user.player.controller.enable(["movement", "action"]);
+				}
+			}, this);
 	}
+	
+	this.barton.allSkills[1].firstSkill.setChargeTime(2 * this.barton.allStats.attackSpeed.get());
+	this.barton.allSkills[1].firstSkill.icon = "arrow_icon";
+	this.barton.allSkills[1].firstSkill.onCharge.add(function(){
+		if (this.user.orientationH >= 0){
+			this.user.animations.play("bendBowRight", 20);
+		}
+		else{
+			this.user.animations.play("bendBowLeft", 20);
+		}
 
-    this.game.physics.enable( [hero], Phaser.Physics.ARCADE);
+		if (typeof(this.user.player)!= "undefined"){
+			this.user.player.controller.disable(["movement", "action"]);
+			this.user.player.controller.get("releaseFirst").enabled = true;
+			this.user.player.controller.get("castFirst").enabled = true;
+			this.user.player.controller.get("jump").enabled = true;
+			this.user.player.controller.get("reduceJump").enabled = true;
+		}
+	}, this.barton.allSkills[1].firstSkill);
 
-    hero.body.collideWorldBounds = true;
-	hero.body.setSize(32, 48, 16, 16);
-	hero.body.maxVelocity.setTo(hero.SPEED, hero.SPEED * 3);
-	hero.body.drag.setTo(hero.DRAG, 0);
+	this.barton.quiverRegen = this.game.time.create(false);
+	this.barton.quiverRegen.loop(this.barton.allStats.attackSpeed.get() * 6, function(){
+		this.quiver.add(1);
+	}, this.barton.allStats);
 
+	this.barton.quiverRegen.start();
 
-    this.game.camera.follow(hero);
+	this.game.world.bringToTop(BasicGame.pool.textDamage);
+}
 
-    hero.goLeft = function(control, factor){
-        if (typeof(factor) === "undefined"){
-            factor = 1;
-        }
-		
-		hero.orientation = 1;
-		hero.orientationH = -1;
-		hero.scale.x = -1;
-		hero.anchor.setTo(1,0);
-		hero.body.setSize(32, 48, 16+32, 16);
+BasicGame.Level1.prototype.update = function (){
+    // Collisions
+	for(var i in BasicGame.pool) {
+		this.game.physics.arcade.overlap(BasicGame.pool[i], this.game.platforms,
+										 collideProjectile, collideProcessProjectile);
 
-        hero.animations.play("walk", 15 * Math.abs(factor));
-        hero.body.acceleration.x = -hero.ACCELERATION * Math.abs(factor);
-    }
+		if (i != "textDamage"){
+			this.game.physics.arcade.overlap(BasicGame.pool[i], BasicGame.allHeroes,
+											 collideProjectile,
+											 collideProcessProjectile);
 
-    hero.goRight = function(control, factor){
-        if (typeof(factor) === "undefined"){
-            factor = 1;
-        }
+			for(var j in BasicGame.pool){
+				if (i == j){
+					continue;
+				}
 
-		hero.orientation = 2;
-		hero.orientationH = 1;
-		hero.scale.x = 1;
-		hero.anchor.setTo(0,0);
-		hero.body.setSize(32, 48, 16, 16);
-
-        hero.animations.play("walk", 15 * Math.abs(factor));
-        hero.body.acceleration.x = hero.ACCELERATION * Math.abs(factor);
-    }
-
-    hero.goUp = function(control, factor){
-        if (typeof(factor) === "undefined"){
-            factor = 1;
-        }
-
-		hero.orientationV = 1;
-		
-		if (hero.jumpCount > 0){
-			if ((control.manager.type == CONTROL_GAMEPAD && control.input.justPressed(250)) ||
-				(control.manager.type == CONTROL_KEYBOARD && control.input.downDuration(250))){
-				hero.body.velocity.y = -hero.JUMP_POWER;
+				this.game.physics.arcade.overlap(BasicGame.pool[i], BasicGame.pool[j],
+												 collideProjectile,
+												 collideProcessProjectile);
 			}
 		}
 	}
 	
-	hero.fly = function(){
-		if (hero.body.velocity.y > 0){
-			hero.body.velocity.y /= 1.5;
-			hero.body.drag.setTo(0, 0);
-		}
+	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
+
+	this.lucy.allStats.special.add(0.01 / 60, 1);
+	this.lucy.allStats.health.add(0.01, 1);
+
+	this.barton.body.acceleration.x = 0;
+	this.lucy.body.acceleration.x = 0;
+
+	/*this.testPlayer.controller.update();
+	this.testPlayer2.controller.update();*/
+	for(var i in BasicGame.allPlayers){
+		BasicGame.allPlayers[i].controller.update();
 	}
 	
-	hero.reduceJump = function(){
-		hero.jumpCount--;
-	}
-	
-	hero.goDown = function(control, factor){
-        if (typeof(factor) === "undefined"){
-            factor = 1;
-        }
-
-		hero.orientationV = -1;
-		
-        hero.body.velocity.y = hero.JUMP_POWER * Math.abs(factor);
-    }
-
-	hero.stopMov = function(){
-		if (hero.orientation != 0){
-			hero.animations.stop("walk");
-			hero.frame = 143;
-		}
-			
-		hero.orientation = 0;
-		
-		hero.orientationV = 0;
-	}
-	
-	hero.cast = function(){
-		hero.firstSkill.useSkill();
-	}
-
-	hero.castSecond = function(){
-		hero.secondSkill.useSkill();
-	}
-	
-	hero.castThird = function(){
-		hero.thirdSkill.useSkill();
-	}
-
-	hero.castFourth = function(){
-		hero.fourthSkill.useSkill();
-	}
-
-	hero.castfifth = function(){
-		hero.fifthSkill.useSkill();
-	}
-
-    player1.controlManager = new ControlManager(this.game, CONTROL_KEYBOARD, hero);
-    player1.controlManager2 = new ControlManager(this.game, CONTROL_GAMEPAD, hero,
-												 "pad1");
-
-	player1.controlManager2.bindControl("up", Phaser.Gamepad.XBOX360_A,
-                                        "goUp",
-                                        "down", "movement");
-	player1.controlManager2.bindControl("up2", Phaser.Gamepad.XBOX360_A,
-                                        "reduceJump",
-                                        "onDown", "movement");
-
-	player1.controlManager2.bindControl("fly", Phaser.Gamepad.XBOX360_Y,
-                                        "fly",
-                                        "down", "movement");
-	
-    player1.controlManager2.bindPadControl("rightPad",
-										   Phaser.Gamepad.XBOX360_STICK_LEFT_X,
-                                           0.1, 1, "goRight", "update", "movement");
-	/*player1.controlManager2.bindPadControl("stopMovPad", Phaser.Gamepad.XBOX360_STICK_LEFT_X,
-                                           0, 0, "stopMov", "update", "movement");*/
-	
-    player1.controlManager2.bindPadControl("leftPad",
-										   Phaser.Gamepad.XBOX360_STICK_LEFT_X,
-                                           -1, -0.1, "goLeft", "update", "movement");
-
-
-
-    player1.controlManager.bindControl("leftControl", Phaser.Keyboard.Q, "goLeft",
-                                            "down", "movement");
-    player1.controlManager.bindControl("rightControl", Phaser.Keyboard.D, "goRight",
-                                            "down", "movement");
-    player1.controlManager.bindControl("upControl", Phaser.Keyboard.Z, "goUp",
-                                       "down", "movement");
-	player1.controlManager.bindControl("upControl2", Phaser.Keyboard.Z,
-                                        "reduceJump",
-                                        "onDown", "movement");
-    player1.controlManager.bindControl("downControl", Phaser.Keyboard.S, "goDown",
-                                       "down", "movement");
-
-	player1.controlManager2.bindControl("cast", Phaser.Gamepad.XBOX360_X,
-                                        "cast",
-                                        "onDown", "action");
-
-	player1.controlManager.bindControl("cast", Phaser.Keyboard.ENTER,
-                                       "cast",
-                                       "onDown", "action");
-	player1.controlManager.bindControl("cast5", Phaser.Keyboard.ONE,
-									   "castfifth",
-									   "down","action");
-	player1.controlManager.bindControl("cast2", Phaser.Keyboard.TWO,
-                                       "castSecond",
-                                       "down", "action");
-	player1.controlManager.bindControl("cast3", Phaser.Keyboard.THREE,
-                                       "castThird",
-                                       "down", "action");
-	player1.controlManager.bindControl("cast4", Phaser.Keyboard.FOUR,
-                                       "castFourth",
-                                       "down", "action");
-
-	player1.controlManager.bindControl("fly", Phaser.Keyboard.SPACEBAR,
-                                       "fly",
-                                       "down", "movement");
-}
-
-BasicGame.Level1.prototype.update = function (){
-    //Collision
-    this.game.physics.arcade.collide(hero, this.game.platforms);
-	this.game.physics.arcade.collide(BasicGame.slashPool, hero,
-									 collideProjectile, collideProcessProjectile);
-	this.game.physics.arcade.collide(BasicGame.slashPool, this.game.platforms,
-									 collideProjectile, collideProcessProjectile);
-
-	this.game.physics.arcade.collide(BasicGame.bloodPool, this.game.platforms,
-									 collideProjectile, collideProcessProjectile);
-	this.game.physics.arcade.collide(BasicGame.icePool, this.game.platforms,
-									collideProjectile, collideProcessProjectile);
-	
-	if (hero.body.onFloor()){
-		hero.jumpCount = 2;
-		hero.body.drag.setTo(hero.DRAG, 0);
-	}
-
-	hero.body.acceleration.x = 0;
-	player1.controlManager.update();
-	player1.controlManager2.update();
-
-	//this.game.debug.body(hero);
+	this.lucy.allStats.experience.add(100);
 }
 
 var collideProjectile = function(projectile, obstacle){
-	if (projectile instanceof Projectile){
+	if (projectile.tag == "projectile"){
 		if (projectile.collideFunction == null){
 			return;
 		}
 		
 		projectile.collideFunction.call(projectile,
 										obstacle);
+		if (typeof(obstacle.body) != "undefined"){
+			obstacle.body.velocity.x += projectile.body.velocity.x;
+			obstacle.body.velocity.y += projectile.body.velocity.y;
+		}
 	}
 }
 
 var collideProcessProjectile = function(projectile, obstacle){
-	if (projectile instanceof Projectile){
+	if (projectile.tag == "projectile"){
 		if (projectile.collideProcess == null){
 			return false;
 		}
 		else{
-			return projectile.collideProcess.call(projectile,
-												  obstacle);
+			return (!obstacle._dying && projectile.collideProcess.call(projectile,
+																	   obstacle));
 		}
 	}
 	else{
-		if (obstacle instanceof Projectile){
+		if (obstacle.tag == "projectile"){
 			if (obstacle.collideProcess == null){
 				return false;
 			}
 			else{
-				return obstacle.collideProcess.call(obstacle,
-													projectile);
+				return (!projectile._dying && obstacle.collideProcess.call(obstacle,
+													projectile));
 			}
 		}
 		else{

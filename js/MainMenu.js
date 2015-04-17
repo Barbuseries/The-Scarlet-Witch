@@ -1,8 +1,15 @@
 BasicGame.MainMenu = function(game){
-    this.music = null;
+	this.music = null;
 };
 
 BasicGame.MainMenu.prototype.create = function(){
+	BasicGame.sfx = {};
+
+	this.music = this.game.add.audio("mainTheme");
+	BasicGame.sfx.cursorSelect = this.game.add.audio("cursor_select");
+	
+	BasicGame.allPlayers.p1.controller.setTargetByTag(BasicGame, "system");
+
 	var centerX = this.game.camera.width / 2;
 	var centerY = this.game.camera.height / 2;
 
@@ -21,25 +28,10 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.logo.scale.setTo(0.5);
 	this.logo.anchor.setTo(0.5);
 
-	this.control = new ControlManager(this.game, CONTROL_KEYBOARD);
-
-	this.control.bindControl("menu_next", Phaser.Keyboard.DOWN,
-							 "goNext",
-							 "onDown", "menu", -1);
-	
-	this.control.bindControl("menu_previous", Phaser.Keyboard.UP,
-							 "goPrevious",
-							 "onDown", "menu", -1);
-	
-	this.control.bindControl("menu_display", Phaser.Keyboard.SPACEBAR,
-							 "toggle", "onDown", "menu", this);
-	
-	this.control.bindControl("menu_select", Phaser.Keyboard.ENTER,
-							 "select", "onDown", "menu", -1);
-
 	function bind(){
-		var allOldControls = this.manager.getByTag("menu");
-		var toRemove = allOldControls.indexOf(this.manager.allControls["menu_display"]);
+		var controller = BasicGame.allPlayers.p1.controller;
+		var allOldControls = controller.getByTag("menu");
+		var toRemove = allOldControls.indexOf(controller.allControls["menu_toggle"]);
 		var allOldCodes = [];
 		var oldTarget = allOldControls[0].target;
 		var oldFunction = null;
@@ -50,7 +42,8 @@ BasicGame.MainMenu.prototype.create = function(){
 
 		for(var i = 0; i < allOldControls.length; i++) {
 			allOldControls[i].target = this;
-			allOldCodes.push(allOldControls[i].code);
+			allOldCodes.push([allOldControls[i].keyboardCode,
+							  allOldControls[i].gamepadCode]);
 		}
 
 		this.onEndClose.add(function(){
@@ -60,25 +53,30 @@ BasicGame.MainMenu.prototype.create = function(){
 			
 			for(var i = 0; i < allOldControls.length; i++) {
 				allOldControls[i].target = oldTarget;
-				allOldControls[i].change(allOldCodes[i]);
+				allOldControls[i].change(allOldCodes[i][0], allOldCodes[i][1]);
 			}
 
-			this.manager.allControls["menu_display"].functionName = oldFunction;
-			this.manager.allControls["menu_display"].target = oldTarget;
+			controller.allControls["menu_toggle"].functionName = oldFunction;
+			controller.allControls["menu_toggle"].target = oldTarget;
 		}, this);
-
-		this.manager.bindControl("menu_display", -1, "close");
-		this.manager.allControls["menu_display"].target = this;
+		
+		controller.allControls["menu_toggle"].functionName = "close";
+		controller.allControls["menu_toggle"].target = this;
 
 		if (this.horizontal){
-			this.manager.allControls["menu_next"].change(Phaser.Keyboard.RIGHT);
-			this.manager.allControls["menu_previous"].change(Phaser.Keyboard.LEFT);
+			var leftControl = controller.allControls["goLeft"];
+			var rightControl = controller.allControls["goRight"];
+
+			controller.allControls["menu_next"].change(rightControl.keyboardCode,
+													   rightControl.gamepadCode);
+			controller.allControls["menu_previous"].change(leftControl.keyboardCode,
+														   rightControl.gamepadCode);
 		}
 		
 		this.setFocus(true);
 	}
 
-	this.menu = new Menu(this.game, this.control, "MainMenu",
+	this.menu = new Menu(this.game, BasicGame.allPlayers.p1.controller, "MainMenu",
 						 centerX - 250, 0,
 						 500,
 						 500,
@@ -111,6 +109,7 @@ BasicGame.MainMenu.prototype.create = function(){
 					this.game.camera.height / 2 - 75,
 					500, 150,
 					"ground2", "icons");
+	this.cancelMenu.background.tint = H_GREY;
 	this.cancelMenu.title.fontWeight = "bold";
 	this.cancelMenu.horizontal = true;
 	this.cancelMenu.showTitle = true;
@@ -149,7 +148,6 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.yesOption.onSelect.add(function(){
 		console.log("GoodBye !");
 		this.exit();
-		this.cancelMenu.close();
 	}, this);
 
 	this.noOption.onSelect.add(function(){
@@ -168,30 +166,46 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	this.menu.enableMouse();
 	
-	this.control.setTargetByTag(this.menu, "menu");
+	BasicGame.allPlayers.p1.controller.setTargetByTag(this.menu, "menu");
 
 	this.menu.toggle();
+	
+	this.music.play("", 0, BasicGame.volume.music, true);
 }
 
 BasicGame.MainMenu.prototype.update = function(){
 	this.background.tilePosition.x -= 1;
-	this.control.update();
+	
+	for(var i in BasicGame.allPlayers) {
+		BasicGame.allPlayers[i].controller.update();
+	}
 }
 
 BasicGame.MainMenu.prototype.startGame = function(pointer){
 	this.cleanUp();
 
-	this.state.start("Level1");
+	this.music.fadeOut(1000);
+	this.music.onFadeComplete.addOnce(function(){
+		this.state.start("Level1");
+	}, this);
 }
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
-	this.menu.kill();
-	this.cancelMenu.kill();
+	this.cancelMenu.close();
+	this.cancelMenu.destroy();
+	this.cancelMenu = null;
+
+	this.menu.close();
+	this.menu.destroy();
+	this.menu = null;
+
+	BasicGame.allPlayers.p1.controller.setTargetByTag(null, "menu");
+	BasicGame.allPlayers.p2.controller.setTargetByTag(null, "menu");
 }
 
 BasicGame.MainMenu.prototype.exit = function(){
 	this.cleanUp();
+	this.music.stop();
 
 	window.location.replace("site.html");
 }
-

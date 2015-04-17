@@ -32,13 +32,13 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
     this._basicValue = basicValue;
     this._value = basicValue;
 
+	 this.onUpdateMax = new Phaser.Signal(); // (add/subtract/setMax)
+     this.onUpdateMax.add(this._applyLink, this); // When this._maxValue changes,
+	                                              // apply the changes to this._value.
+
     if (link != STAT_NO_MAXSTAT){
         this._maxValue = basicMaxValue;
 		this._basicValue = basicMaxValue;
-
-        this.onUpdateMax = new Phaser.Signal(); // (add/subtract/setMax)
-        this.onUpdateMax.add(this._applyLink, this); // When this._maxValue changes,
-		                                             // apply the changes to this._value.
     }
 
     this._min = min;
@@ -488,15 +488,17 @@ Stat.prototype._canSetTo = function(type, value, isPercentage, percentageFrom){
 }
 
 // Return this._value multiplied by this.factor.
-// By default, if inPercentage, relativeTo is equal to this._maxValue.
+// By default, if inPercentage, relativeTo is equal to this._maxValue if link
+// is not STAT_NO_MAXSTAT.
+// relativeTo is equal to _max otherwhise.
 Stat.prototype.get = function(inPercentage, relativeTo){
     if (typeof(relativeTo) != "number"){
-        relativeTo = this._maxValue;
+        relativeTo = (this._link != STAT_NO_MAXSTAT) ? this._maxValue : this._max;
     }
 
     if (booleanable(inPercentage) &&
         inPercentage){
-        return this.factor * this._value / relativeTo;
+        return (!relativeTo) ? 1 : this.factor * this._value / relativeTo;
     }
     else{
         return this.factor * this._value;
@@ -513,10 +515,10 @@ Stat.prototype.getMax = function(inPercentage, relativeTo){
     if (booleanable(inPercentage) &&
         inPercentage){
 		if (this._link == STAT_NO_MAXSTAT){
-			return this._max / relativeTo;
+			return (!relativeTo) ? 1 : this._max / relativeTo;
 		}
 		else{
-			return this._maxValue / relativeTo;
+			return (!relativeTo) ? 1 : this._maxValue / relativeTo;
 		}
     }
     else{
@@ -530,15 +532,17 @@ Stat.prototype.getMax = function(inPercentage, relativeTo){
 }
 
 // Return this._basicValue.
-// By default, if inPercentage, relativeTo is equal to this._maxValue.
+// By default, if inPercentage, relativeTo is equal to this._maxValue if link
+// is not STAT_NO_MAXSTAT.
+// relativeTo is equal to _max otherwhise.
 Stat.prototype.getBasic = function(inPercentage, relativeTo){
     if (typeof(relativeTo) != "number"){
-        relativeTo = this._maxValue;
+        relativeTo = (this._link == STAT_NO_MAXSTAT) ? this._maxValue : this._max;
     }
 
     if (booleanable(inPercentage) &&
         inPercentage){
-        return this._basicValue / relativeTo;
+        return (!relativeTo) ? 1 : this._basicValue / relativeTo;
     }
     else{
         return this._basicValue;
