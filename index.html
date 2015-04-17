@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+          "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <script type="text/javascript" src="js/phaser.js"></script>
+		<script type="text/javascript" src="js/common.js"></script>
+        <script type="text/javascript" src="js/TextBox.js"></script>
+        <script type="text/javascript" src="js/DialogueBox.js"></script>
+		<script type="text/javascript" src="js/TextDamage.js"></script>
+        <script type="text/javascript" src="js/Gauge.js"></script>
+		<script type="text/javascript" src="js/Entity.js"></script>
+        <script type="text/javascript" src="js/Npc.js"></script>
+        <script type="text/javascript" src="js/Mob.js"></script>
+        <script type="text/javascript" src="js/Hero.js"></script>
+        <script type="text/javascript" src="js/Stat.js"></script>
+		<script type="text/javascript" src="js/Gauge.js"></script>
+		<script type="text/javascript" src="js/Status_UI.js"></script>
+		<script type="text/javascript" src="js/ControlManager.js"></script>
+		<script type="text/javascript" src="js/Skill.js"></script>
+		<script type="text/javascript" src="js/Interface.js"></script>
+		<script type="text/javascript" src="js/Menu.js"></script>
+		
+		<script type="text/javascript" src="js/Boot.js"></script>
+		<script type="text/javascript" src="js/Preloader.js"></script>
+		<script type="text/javascript" src="js/MainMenu.js"></script>
+		<script type="text/javascript" src="js/Game.js"></script>
+        <script type="text/javascript" src="js/level1.js"></script>
+		<link rel="stylesheet" href="TheScarletWitch.css" type="text/css" media="screen" />
+        <title>The Scarlet Witch</title>
+    </head>
+    <body>
+        <div id="gameContainer"></div>
+        <script type="text/javascript">
+            window.onload = function() {
+				
+				var game = new Phaser.Game(1364, 647, Phaser.AUTO, 'gameContainer');
+			
+				game.state.add('Boot', BasicGame.Boot);
+				game.state.add('Preloader', BasicGame.Preloader);
+				game.state.add('MainMenu', BasicGame.MainMenu);
+				game.state.add('Game', BasicGame.Game);
+                game.state.add('Level1', BasicGame.Level1);
+			    game.state.add('TestMenu', BasicGame.TestMenu);
+				
+				game.state.start('Boot');
+            };
+        </script>
+    </body>
+</html>
