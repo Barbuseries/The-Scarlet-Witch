@@ -39,11 +39,11 @@ BasicGame.Level1.prototype.create = function (){
     this.game.platforms = map.createLayer('blockedLayer');
     this.game.platforms.resizeWorld();
 
-<<<<<<< HEAD
+	//<<<<<<< HEAD
    	this.createBaddies();
 
-=======
->>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
+//=======
+//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 	sky = this.game.add.tileSprite(0, 0,
 								   map.widthInPixels,
 								   map.heightInPixels,
@@ -708,13 +708,13 @@ BasicGame.Level1.prototype.update = function (){
 		}
 	}
 	
-<<<<<<< HEAD
+//<<<<<<< HEAD
 	this.game.physics.arcade.collide(BasicGame.allHeroes, this.game.platforms);
 	this.game.physics.arcade.collide(BasicGame.textDamagePool, this.game.platforms);
 	this.game.physics.arcade.collide(this.game.baddies, this.game.platforms);
-=======
+//=======
 	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
->>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
+//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 
 	this.lucy.allStats.special.add(0.01 / 60, 1);
 	this.lucy.allStats.health.add(0.01, 1);
@@ -725,15 +725,15 @@ BasicGame.Level1.prototype.update = function (){
 	this.testPlayer.controller.update();
 	this.testPlayer2.controller.update();
 	
-<<<<<<< HEAD
+//<<<<<<< HEAD
 	this.lucy.allStats.experience.add(10);
 
 	//this.game.debug.body(hero);
 
 	console.log(this.game.baddies);
-=======
+//=======
 	this.lucy.allStats.experience.add(100);
->>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
+//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 }
 
 var collideProjectile = function(projectile, obstacle){
@@ -776,7 +776,7 @@ var collideProcessProjectile = function(projectile, obstacle){
 		}
 	}
 }
-<<<<<<< HEAD
+//<<<<<<< HEAD
 
 BasicGame.Level1.prototype.createBaddies = function () {
 	// create baddies
@@ -811,5 +811,5 @@ BasicGame.Level1.prototype.createFromTiledObject = function(element, group) {
 		sprite[key] = element.properties[key];
 	});
 }
-=======
->>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
+//=======
+//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
