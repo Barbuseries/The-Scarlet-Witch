@@ -49,6 +49,7 @@ BasicGame.Level1.prototype.create = function (){
 	}
 	
 	BasicGame.allHeroes = this.game.add.group();
+	BasicGame.allEnnemies = this.game.add.group();
 
 	this.testPlayer = {};
 	this.testPlayer.controller = new ControlManager(this.game, CONTROL_KEYBOARD,
@@ -63,6 +64,8 @@ BasicGame.Level1.prototype.create = function (){
 	this.barton.allResistances[Elements.FIRE] = 2;
 	this.barton.allStats.endurance.add(100);
 	this.barton.allStats.health.set(1, 1);
+
+	BasicGame.allEnnemies = this.createBaddies();
 
 	this.lucy = new Lucy(this.game, 600, 500, 1, this.testPlayer2);
 	this.lucy.allStats.mainStat.add(100);
@@ -690,6 +693,7 @@ BasicGame.Level1.prototype.update = function (){
 	}
 	
 	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
+	this.game.physics.arcade.overlap(BasicGame.allEnnemies, this.game.platforms);
 
 	this.lucy.allStats.special.add(0.01 / 60, 1);
 	this.lucy.allStats.health.add(0.01, 1);
@@ -711,10 +715,11 @@ BasicGame.Level1.prototype.createBaddies = function() {
 	this.game.baddies = this.game.add.group();
 	this.game.baddies.enableBody = true;
 	var baddie;
-	result = findObjectsByType('enemy', this.game.platforms.map, 'baddies');
+	result = this.findObjectsByType('enemy', this.game.platforms.map, 'baddies');
 	result.forEach(function(element){
-		createFromTiledObject(element, this.game.baddies);
-	});
+		this.createFromTiledObject(element, this.game.baddies);
+	}, this);
+	return this.game.baddies;
 }
 
 BasicGame.Level1.prototype.findObjectsByType = function(type, map, layer){
@@ -731,7 +736,7 @@ BasicGame.Level1.prototype.findObjectsByType = function(type, map, layer){
 	return result;
 }
 
-BasicGame.Level1.protoype.createFromTiledObject = function(element, group) {
+BasicGame.Level1.prototype.createFromTiledObject = function(element, group) {
 	var sprite = group.create(element.x, element.y, element.properties.sprite);
 
 

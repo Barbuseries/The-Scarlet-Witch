@@ -17,36 +17,38 @@
          "name":"baddies",
          "objects":[
                 {
-                 "height":98,
-                 "id":1,
+                 "gid":78,
+                 "height":0,
+                 "id":27,
                  "name":"",
                  "properties":
                     {
-                     "sprite":"boss1",
-                     "type":"baddie"
+                     "sprite":"archer1",
+                     "type":"enemy"
                     },
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":82,
-                 "x":3032,
-                 "y":820
+                 "width":0,
+                 "x":3803,
+                 "y":928
                 }, 
                 {
-                 "height":98,
-                 "id":26,
+                 "gid":351,
+                 "height":0,
+                 "id":28,
                  "name":"",
                  "properties":
                     {
-                     "sprite":"boss1",
-                     "type":"baddie"
+                     "sprite":"enemi1",
+                     "type":"enemy"
                     },
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":82,
-                 "x":3734,
-                 "y":820
+                 "width":0,
+                 "x":3070,
+                 "y":930
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -55,7 +57,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":27,
+ "nextobjectid":29,
  "orientation":"orthogonal",
  "properties":
     {
@@ -83,6 +85,36 @@
                 }],
          "tileheight":32,
          "tilewidth":32
+        }, 
+        {
+         "firstgid":65,
+         "image":"..\/Characters\/Ennemies\/archer1.png",
+         "imageheight":1344,
+         "imagewidth":832,
+         "margin":0,
+         "name":"archer1",
+         "properties":
+            {
+
+            },
+         "spacing":0,
+         "tileheight":64,
+         "tilewidth":64
+        }, 
+        {
+         "firstgid":338,
+         "image":"..\/Characters\/Ennemies\/ennemi1.png",
+         "imageheight":1344,
+         "imagewidth":832,
+         "margin":0,
+         "name":"ennemi1",
+         "properties":
+            {
+
+            },
+         "spacing":0,
+         "tileheight":64,
+         "tilewidth":64
         }],
  "tilewidth":32,
  "version":1,

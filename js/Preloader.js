@@ -54,13 +54,15 @@ BasicGame.Preloader.prototype.preload =  function(){
 					  Phaser.Tilemap.TILED_JSON);
 	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
 
-	// Heroes
+	// Characters
 	var charactersDir = assetsDir + "Characters/";
 	var heroesDir = charactersDir + "Heroes/";
+	var ennemiesDir = charactersDir + "Ennemies/";
 
     this.load.spritesheet("lucy", heroesDir + "lucy_full.png", 64, 64);
 	this.load.spritesheet("barton", heroesDir + "barton_full.png", 64, 64);
-
+	this.load.spritesheet("archer1", ennemiesDir + "archer1.png", 64, 64);
+	this.load.spritesheet("enemi1", ennemiesDir + "ennemi1.png", 64, 64);
 
 	// Audio
 	var audioDir = "audio/";
