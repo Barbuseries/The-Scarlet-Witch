@@ -31,32 +31,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("barrier_icon", skillDir + "barrier_icon.png");
 	this.load.image("teleport_icon", skillDir + "teleport_icon.png");
 	this.load.spritesheet("icons", "assets/icons.png", 16, 16);
-	//<<<<<<< HEAD
-	this.load.spritesheet("slash", "assets/Skills/swoosh_0.png", 32, 32);
-	this.load.spritesheet("fireball_0", "assets/Skills/fireball_1.png", 64, 16);
-	this.load.image("fireball_icon", "assets/Skills/fireball_icon.png");
-	this.load.spritesheet("iceball_0", "assets/Skills/iceball_0.png", 64, 64);
-	this.load.image("iceball_icon", "assets/Skills/iceball_icon.png");
-	this.load.spritesheet("explosion_0", "assets/Skills/explosion_0.png", 64, 64);
-	this.load.spritesheet("explosion_1", "assets/Skills/explosion_1.png", 64, 64);
-	this.load.tilemap('level1', 'assets/tilemaps/Level1_v3.json', null,
-					  Phaser.Tilemap.TILED_JSON);
-	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
-    this.load.spritesheet("lucy", "assets/Lucy/LucyFullSheet.png", 64, 64);
-	this.load.spritesheet("barton", "assets/BartonFullSheet.png", 64, 64);
-	this.load.spritesheet("ennemi1", "assets/ennemi1.png", 64, 64);
-	this.load.spritesheet("archer1", "assets/archer1.png", 64, 64);
-	this.load.spritesheet("lucy1", "assets/Lucy/SaraHairBottomLayer.png", 64, 64);
-	this.load.spritesheet("lucy2", "assets/Lucy/SaraHairShadowOnFace.png", 64, 64);
-	this.load.spritesheet("lucy3", "assets/Lucy/SaraHairTopLayer.png", 64, 64);
-	this.load.spritesheet("lucy4", "assets/Lucy/SaraLeggings.png", 64, 64);
-	this.load.spritesheet("lucy2", "assets/Lucy/SaraShirt.png", 64, 64);
-	this.load.spritesheet("lucy2", "assets/Lucy/SaraShoes.png", 64, 64);
-
-	this.load.audio("mainTheme", "audio/Music/Adventure_Meme.wav");
-	this.load.audio("cursor_select", "audio/SFX/cursor_select.wav");
-	this.load.audio("explosion_0", "audio/SFX/explosion_0.wav");
-//=======
 	this.load.spritesheet("slash", skillDir + "swoosh_0.png", 32, 32);
 	this.load.spritesheet("fireball_0", skillDir + "fireball_1.png", 64, 16);
 	this.load.image("fireball_icon", skillDir + "fireball_icon.png");
@@ -96,7 +70,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.audio("mainTheme", musicDir + "Adventure_Meme.wav");
 	this.load.audio("cursor_select", sfxDir + "cursor_select.wav");
 	this.load.audio("explosion_0", sfxDir + "explosion_0.wav");
-//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 }
 
 BasicGame.Preloader.prototype.create = function(){

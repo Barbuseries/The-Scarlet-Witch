@@ -14,19 +14,17 @@ var toto;
 BasicGame.Level1.prototype.create = function (){
     this.game.physics.startSystem(Phaser.Physics.ARCADE);
     this.game.physics.arcade.gravity.y = 600;
-    this.game.baddies = this.game.add.group();
-    this.game.physics.enable(this.game.baddies, Phaser.Physics.ARCADE);
 
     //Chargement des propriétés du tilemap
     map = this.game.add.tilemap('level1');
+
     this.game.world.setBounds(0, 0,
                               map.widthInPixels, map.heightInPixels);
 
     // Chargement du Tileset
     map.addTilesetImage('platforms', 'Level1_Tiles');
-
     map.setCollisionBetween(0, 63);
-    
+
 	for(var i = 0; i < map.layer.data.length; i++) {
 		for(var j = 0; j < map.layer.data[i].length; j++) {
 			if (map.layer.data[i][j].canCollide){
@@ -39,11 +37,6 @@ BasicGame.Level1.prototype.create = function (){
     this.game.platforms = map.createLayer('blockedLayer');
     this.game.platforms.resizeWorld();
 
-	//<<<<<<< HEAD
-   	this.createBaddies();
-
-//=======
-//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 	sky = this.game.add.tileSprite(0, 0,
 								   map.widthInPixels,
 								   map.heightInPixels,
@@ -80,6 +73,9 @@ BasicGame.Level1.prototype.create = function (){
 
 	BasicGame.allHeroes.add(this.barton);
 	BasicGame.allHeroes.add(this.lucy);
+
+	BasicGame.allPlayers.p1.setHero(this.barton);
+	BasicGame.allPlayers.p2.setHero(this.lucy);
 
 	BasicGame.sfx = {};
 
@@ -402,8 +398,6 @@ BasicGame.Level1.prototype.create = function (){
 			hero.animations.play("spellCastLeft");
 		}
 	}
-
-    this.game.camera.follow(this.lucy);
 	
 	this.lucy.fly = function(){
 		if (this.lucy.body.velocity.y > 0){
@@ -412,7 +406,7 @@ BasicGame.Level1.prototype.create = function (){
 		}
 	}
 
-	this.testPlayer.controller.bindControl("leftControl", Phaser.Keyboard.Q,
+	/*this.testPlayer.controller.bindControl("leftControl", Phaser.Keyboard.Q,
 										   Phaser.Gamepad.XBOX360_DPAD_LEFT,
 										   "goLeft", "down", "movement");
 	this.testPlayer.controller.bindControl("rightControl", Phaser.Keyboard.D,
@@ -477,7 +471,7 @@ BasicGame.Level1.prototype.create = function (){
 	this.testPlayer2.controller.bindControl("releaseFourth", Phaser.Keyboard.FOUR, -1,
 											"releaseFourth", "onUp", "action");
 	this.testPlayer2.controller.bindControl("releaseFifth", Phaser.Keyboard.FIVE, -1,
-											"releaseFifth", "onUp", "action");
+											"releaseFifth", "onUp", "action");*/
 
 	//this.testPlayer.controller.type = CONTROL_GAMEPAD;
 
@@ -657,23 +651,10 @@ BasicGame.Level1.prototype.create = function (){
 			this.user.player.controller.disable(["movement", "action"]);
 			this.user.player.controller.get("releaseFirst").enabled = true;
 			this.user.player.controller.get("castFirst").enabled = true;
-			this.user.player.controller.get("jumpControl").enabled = true;
-			this.user.player.controller.get("reduceJumpControl").enabled = true;
+			this.user.player.controller.get("jump").enabled = true;
+			this.user.player.controller.get("reduceJump").enabled = true;
 		}
 	}, this.barton.allSkills[1].firstSkill);
-
-
-	this.lucy.statusUi.cameraOffset.x = 50;
-	this.lucy.statusUi.cameraOffset.y = 565;
-	this.lucy.statusUi.profilSprite.frame = 26;
-	this.lucy.statusUi.updateStatusSkills();
-	this.lucy.statusUi.showStatusSkills();
-
-	this.barton.statusUi.updateStatusSkills();
-	this.barton.statusUi.showStatusSkills();
-	this.barton.statusUi.cameraOffset.x = 25;
-	this.barton.statusUi.cameraOffset.y = 10;
-	this.barton.statusUi.scale.setTo(1);
 
 	this.barton.quiverRegen = this.game.time.create(false);
 	this.barton.quiverRegen.loop(this.barton.allStats.attackSpeed.get() * 6, function(){
@@ -708,13 +689,7 @@ BasicGame.Level1.prototype.update = function (){
 		}
 	}
 	
-//<<<<<<< HEAD
-	this.game.physics.arcade.collide(BasicGame.allHeroes, this.game.platforms);
-	this.game.physics.arcade.collide(BasicGame.textDamagePool, this.game.platforms);
-	this.game.physics.arcade.collide(this.game.baddies, this.game.platforms);
-//=======
 	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
-//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 
 	this.lucy.allStats.special.add(0.01 / 60, 1);
 	this.lucy.allStats.health.add(0.01, 1);
@@ -722,18 +697,13 @@ BasicGame.Level1.prototype.update = function (){
 	this.barton.body.acceleration.x = 0;
 	this.lucy.body.acceleration.x = 0;
 
-	this.testPlayer.controller.update();
-	this.testPlayer2.controller.update();
+	/*this.testPlayer.controller.update();
+	this.testPlayer2.controller.update();*/
+	for(var i in BasicGame.allPlayers){
+		BasicGame.allPlayers[i].controller.update();
+	}
 	
-//<<<<<<< HEAD
-	this.lucy.allStats.experience.add(10);
-
-	//this.game.debug.body(hero);
-
-	console.log(this.game.baddies);
-//=======
 	this.lucy.allStats.experience.add(100);
-//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
 }
 
 var collideProjectile = function(projectile, obstacle){
@@ -776,40 +746,3 @@ var collideProcessProjectile = function(projectile, obstacle){
 		}
 	}
 }
-//<<<<<<< HEAD
-
-BasicGame.Level1.prototype.createBaddies = function () {
-	// create baddies
-	this.game.baddies.enableBody = true;
-	result = this.findObjectsByType('enemy', this.game.platforms.map, 'baddies');
-	result.forEach(function(element){
-		this.createFromTiledObject(element, this.game.baddies);
-	}, this);
-}
-
-BasicGame.Level1.prototype.findObjectsByType = function(type, map, layer){
-	var result = new Array();
-	console.log(map.objects[layer]);
-	map.objects[layer].forEach(function(element) {
-
-		if (element.properties.type === type) {
-			console.log("1 trouvé!");
-			// Phaser uses top left, Tiled bottom left so we have to adjust the y position
-			// also keep in mind that the cup images are a bit smaller than the tile which is 16x16
-			// so they might not be placed in the exact pixel position as in Tiled
-			element.y -= map.tileHeight;
-			result.push(element); 
-		}
-	});
-	return result;
-}
-
-BasicGame.Level1.prototype.createFromTiledObject = function(element, group) {
-	var sprite = group.create(element.x, element.y, element.properties.sprite);
-	// copy all properties to the sprite
-	Object.keys(element.properties).forEach(function(key){
-		sprite[key] = element.properties[key];
-	});
-}
-//=======
-//>>>>>>> 6d8f96fad242f1ff0d3325402b42e6514b72f39e
