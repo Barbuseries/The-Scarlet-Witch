@@ -65,7 +65,7 @@ BasicGame.Level1.prototype.create = function (){
 	this.barton.allStats.endurance.add(100);
 	this.barton.allStats.health.set(1, 1);
 
-	BasicGame.allEnnemies = this.createBaddies();
+	this.createBaddies();
 
 	this.lucy = new Lucy(this.game, 600, 500, 1, this.testPlayer2);
 	this.lucy.allStats.mainStat.add(100);
@@ -679,6 +679,9 @@ BasicGame.Level1.prototype.update = function (){
 			this.game.physics.arcade.overlap(BasicGame.pool[i], BasicGame.allHeroes,
 											 collideProjectile,
 											 collideProcessProjectile);
+			this.game.physics.arcade.overlap(BasicGame.pool[i], this.game.baddies,
+											 collideProjectile,
+											 collideProcessProjectile);
 
 			for(var j in BasicGame.pool){
 				if (i == j){
@@ -693,7 +696,7 @@ BasicGame.Level1.prototype.update = function (){
 	}
 	
 	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
-	this.game.physics.arcade.overlap(BasicGame.allEnnemies, this.game.platforms);
+	this.game.physics.arcade.overlap(this.game.baddies, this.game.platforms);
 
 	this.lucy.allStats.special.add(0.01 / 60, 1);
 	this.lucy.allStats.health.add(0.01, 1);
@@ -714,11 +717,19 @@ BasicGame.Level1.prototype.createBaddies = function() {
 	// create baddies
 	this.game.baddies = this.game.add.group();
 	this.game.baddies.enableBody = true;
+	this.game.physics.enable(this.game.baddies, Phaser.Physics.ARCADE);
+
 	var baddie;
+
 	result = this.findObjectsByType('enemy', this.game.platforms.map, 'baddies');
 	result.forEach(function(element){
 		this.createFromTiledObject(element, this.game.baddies);
 	}, this);
+
+	this.game.baddies.forEach(function(element){
+		element.tag = "enemy";
+	});
+	
 	return this.game.baddies;
 }
 
@@ -737,13 +748,16 @@ BasicGame.Level1.prototype.findObjectsByType = function(type, map, layer){
 }
 
 BasicGame.Level1.prototype.createFromTiledObject = function(element, group) {
-	var sprite = group.create(element.x, element.y, element.properties.sprite);
+	var sprite = new Mob(group.game, element.x, element.y, element.properties.sprite);
 
-
+	group.add(sprite);
 	// copy all properties to the sprite
 	Object.keys(element.properties).forEach(function(key){
 		sprite[key] = element.properties[key];
 	});
+
+	sprite.x = 0;
+	sprite.y = 0;
 }
 
 var collideProjectile = function(projectile, obstacle){
