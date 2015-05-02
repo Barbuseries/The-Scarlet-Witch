@@ -457,6 +457,7 @@ BasicGame.Level1.prototype.update = function (){
 	
 	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
 	this.game.physics.arcade.overlap(this.game.baddies, this.game.platforms);
+	this.game.physics.arcade.collide(this.game.baddies, BasicGame.allHeroes);
 
 	this.lucy.allStats.special.add(0.01 / 60, 1);
 	this.lucy.allStats.health.add(0.01, 1);
@@ -521,8 +522,8 @@ BasicGame.Level1.prototype.createFromTiledObject = function(element, group) {
 		sprite[key] = element.properties[key];
 	});
 
-	sprite.x = 0;
-	sprite.y = 0;
+	//sprite.x = 0;
+	sprite.y -= sprite.height;
 }
 
 var collideProjectile = function(projectile, obstacle){
