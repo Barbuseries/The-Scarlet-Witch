@@ -10,6 +10,12 @@ BasicGame.MainMenu.prototype.create = function(){
 	
 	BasicGame.allPlayers.p1.controller.setTargetByTag(BasicGame, "system");
 
+	BasicGame.allPlayers.p1.controller.setTarget(null);
+	BasicGame.allPlayers.p2.controller.setTarget(null);
+	
+	BasicGame.allPlayers.p1.controller.disable("action");
+	BasicGame.allPlayers.p2.controller.disable("action");
+
 	var centerX = this.game.camera.width / 2;
 	var centerY = this.game.camera.height / 2;
 
@@ -27,54 +33,6 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	this.logo.scale.setTo(0.5);
 	this.logo.anchor.setTo(0.5);
-
-	function bind(){
-		var controller = BasicGame.allPlayers.p1.controller;
-		var allOldControls = controller.getByTag("menu");
-		var toRemove = allOldControls.indexOf(controller.allControls["menu_toggle"]);
-		var allOldCodes = [];
-		var oldTarget = allOldControls[0].target;
-		var oldFunction = null;
-
-		if (typeof(oldTarget) != "undefined"){
-			oldTarget.setFocus(false);
-		}
-
-		for(var i = 0; i < allOldControls.length; i++) {
-			allOldControls[i].target = this;
-			allOldCodes.push([allOldControls[i].keyboardCode,
-							  allOldControls[i].gamepadCode]);
-		}
-
-		this.onEndClose.add(function(){
-			if (typeof(oldTarget) != "undefined"){
-				oldTarget.setFocus();
-			}
-			
-			for(var i = 0; i < allOldControls.length; i++) {
-				allOldControls[i].target = oldTarget;
-				allOldControls[i].change(allOldCodes[i][0], allOldCodes[i][1]);
-			}
-
-			controller.allControls["menu_toggle"].functionName = oldFunction;
-			controller.allControls["menu_toggle"].target = oldTarget;
-		}, this);
-		
-		controller.allControls["menu_toggle"].functionName = "close";
-		controller.allControls["menu_toggle"].target = this;
-
-		if (this.horizontal){
-			var leftControl = controller.allControls["goLeft"];
-			var rightControl = controller.allControls["goRight"];
-
-			controller.allControls["menu_next"].change(rightControl.keyboardCode,
-													   rightControl.gamepadCode);
-			controller.allControls["menu_previous"].change(leftControl.keyboardCode,
-														   rightControl.gamepadCode);
-		}
-		
-		this.setFocus(true);
-	}
 
 	this.menu = new Menu(this.game, BasicGame.allPlayers.p1.controller, "MainMenu",
 						 centerX - 250, 0,
@@ -102,66 +60,12 @@ BasicGame.MainMenu.prototype.create = function(){
 											   }, null);
 
 	this.menu.cursor.frame = 5;
-	
 
-	this.cancelMenu = new Menu(this.game, this.control, "Etes-vous sûr ?",
-					this.game.camera.width / 2 - 250,
-					this.game.camera.height / 2 - 75,
-					500, 150,
-					"ground2", "icons");
-	this.cancelMenu.background.tint = H_GREY;
-	this.cancelMenu.title.fontWeight = "bold";
-	this.cancelMenu.horizontal = true;
-	this.cancelMenu.showTitle = true;
-	this.cancelMenu.cursor.frame = 5;
-
-
-	this.cancelMenu.onStartToggle.add(bind, this.cancelMenu);
-
-	this.yesOption = createBasicMenuOption(this.cancelMenu, 100, "Oui !",
-										   undefined, null);
-	
-	this.noOption = createBasicMenuOption(this.cancelMenu, 100, "Non !",
-										  undefined, null);
-
-	this.yesOption.display.x = 100;
-	this.noOption.display.x = this.cancelMenu.width - 100;
-
-
-	this.yesOption.onOver.add(function(){
-		this.display.tint = H_YELLOW;
-	}, this.yesOption);
-
-	this.yesOption.onOut.add(function(){
-		this.display.tint = H_WHITE;
-	}, this.yesOption);
-	
-	this.noOption.onOver.add(function(){
-		this.display.tint = H_YELLOW;
-	}, this.noOption);
-
-	this.noOption.onOut.add(function(){
-		this.display.tint = H_WHITE;
-	}, this.noOption);
-
-
-	this.yesOption.onSelect.add(function(){
-		console.log("GoodBye !");
-		this.exit();
-	}, this);
-
-	this.noOption.onSelect.add(function(){
-		this.cancelMenu.close();
-	}, this);
-
-
-	this.cancelMenu.addOption(this.yesOption);
-	this.cancelMenu.addOption(this.noOption);
-
-	this.cancelMenu.enableMouse();
+	BasicGame.confirmMenu = new ConfirmationMenu(BasicGame.allPlayers.p1.controller,
+												 this.exit, this);
 
 	this.exitGameOption.onSelect.add(function(){
-		this.cancelMenu.toggle();
+		BasicGame.confirmMenu.toggle();
 	}, this);
 
 	this.menu.enableMouse();
@@ -191,9 +95,9 @@ BasicGame.MainMenu.prototype.startGame = function(pointer){
 }
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
-	this.cancelMenu.close();
-	this.cancelMenu.destroy();
-	this.cancelMenu = null;
+	BasicGame.confirmMenu.close();
+	BasicGame.confirmMenu.destroy();
+	BasicGame.confirmMenu = null;
 
 	this.menu.close();
 	this.menu.destroy();

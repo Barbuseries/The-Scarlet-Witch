@@ -83,6 +83,7 @@ var Status_UI = function(game, hero, x, y, isBarton){
 	this.level.fill = "#ffffff";
 	this.level.stroke = "#000000";
 	this.level.strokeThickness = 6;
+	this.level.setShadow(0, 2, BLACK, 5);
 
 	this.level.anchor.setTo(0.5, 0);
 

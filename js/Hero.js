@@ -1,16 +1,14 @@
 /********/
 /* Hero */
 /******************************************************************************/
-var Hero = function(game, x, y, name, level, player){
+var Hero = function(game, x, y, name, level){
 	Mob.apply(this, [game, x, y, name.toLowerCase(), name, level, "hero"]);
 
 	this.body.setSize(32, 48, 16, 16);
 
 	this.currentMode = 0;
 	
-	this.player = player;
-
-	this.player.controller.target = this;
+	this.player = null;
 
 	this.allStats.experience = new Stat(this, "Experience", STAT_NO_LINK, 0, 10);
 	this.allStats.experience.onUpdate.add(function(stat, oldValue, newValue){
@@ -36,52 +34,8 @@ var Hero = function(game, x, y, name, level, player){
 Hero.prototype = Object.create(Mob.prototype);
 Hero.prototype.constructor = Hero;
 
-Hero.prototype.goLeft = function(control, factor){
-	if (this._dying != false){
-		return;
-	}
-
-	if (typeof(factor) === "undefined"){
-        factor = 1;
-    }
-
-	this.orientationH = -1;
-
-	var currentAnim = this.animations.currentAnim;
-
-	if (!currentAnim.isRunning ||
-		!booleanable(currentAnim.allowBreak) ||
-		currentAnim.allowBreak){
-		this.animations.play("walkLeft", 15 * Math.abs(factor));
-	}
-
-    this.body.acceleration.x -= this.ACCELERATION * Math.abs(factor);
-}
-
-Hero.prototype.goRight = function(control, factor){
-	if (this._dying != false){
-		return;
-	}
-
-    if (typeof(factor) === "undefined"){
-        factor = 1;
-    }
-
-	this.orientationH = 1;
-
-	var currentAnim = this.animations.currentAnim;
-
-	if (!currentAnim.isRunning ||
-		!booleanable(currentAnim.allowBreak) ||
-		currentAnim.allowBreak){
-		this.animations.play("walkRight", 15 * Math.abs(factor));
-	}
-
-    this.body.acceleration.x += this.ACCELERATION * Math.abs(factor);
-}
-
 Hero.prototype.jump = function(control, factor){
-	if (this._dying != false){
+	if (this._dying){
 		return;
 	}
 	
@@ -104,7 +58,7 @@ Hero.prototype.reduceJump = function(control, factor){
 }
 
 Hero.prototype.stopMovement = function(){
-	if (this._dying != false){
+	if (this._dying){
 		return;
 	}
 
@@ -121,7 +75,8 @@ Hero.prototype.stopMovement = function(){
 }
 
 Hero.prototype.swapMode = function(){
-	if (this._dying != false){
+	if (this._dying ||
+	   !this.can.action){
 		return;
 	}
 
@@ -130,8 +85,8 @@ Hero.prototype.swapMode = function(){
 	this.onSwapMode.dispatch(this);
 }
 
-var Lucy = function(game, x, y, level, player){
-	Hero.apply(this, [game, x, y, "Lucy", level, player]);
+var Lucy = function(game, x, y, level){
+	Hero.apply(this, [game, x, y, "Lucy", level]);
 
 	this.MAXJUMP = 2;
 	
@@ -208,7 +163,7 @@ var Lucy = function(game, x, y, level, player){
 													 ["enemy"]);
 	this.allSkills[0].secondSkill.setChargeTime(3000);
 
-	this.allSkills[0].thirdSkill = new ThunderSkill(this, 1,
+	this.allSkills[0].thirdSkill = new ThunderSkill(this, 5,
 													["enemy"]);
 	this.allSkills[0].thirdSkill.setChargeTime(5000);
 	
@@ -217,8 +172,8 @@ var Lucy = function(game, x, y, level, player){
 Lucy.prototype = Object.create(Hero.prototype);
 Lucy.prototype.constructor = Lucy;
 
-var Barton = function(game, x, y, level, player){
-	Hero.apply(this, [game, x, y, "Barton", level, player]);
+var Barton = function(game, x, y, level){
+	Hero.apply(this, [game, x, y, "Barton", level]);
 
 	this.JUMP_POWER = 250;
 

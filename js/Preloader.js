@@ -39,6 +39,13 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("thunder_0", skillDir + "thunder_0.png", 256, 64);
 	this.load.image("thunder_icon", skillDir + "thunder_icon.png");
 	this.load.image("arrow_icon", skillDir + "arrow_icon.png");
+	this.load.image("multArrow_icon", skillDir + "multArrow_icon.png");
+	this.load.image("speedUpArrow_icon", skillDir + "speedUpArrow_icon.png");
+	this.load.image("poweredArrow_icon", skillDir + "poweredArrow_icon.png");
+	this.load.image("spikes_0", skillDir + "spikes_0.png");
+	this.load.spritesheet("quake_0", skillDir + "quake_0.png", 256, 128);
+	this.load.image("trap_icon", skillDir + 'trap_icon.png');
+	this.load.image("slash_icon", skillDir + "slash_icon.png");
 	this.load.spritesheet("explosion_0", skillDir + "explosion_0.png", 64, 64);
 	this.load.spritesheet("explosion_1", skillDir + "explosion_1.png", 64, 64);
 
@@ -54,7 +61,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 					  Phaser.Tilemap.TILED_JSON);
 	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
 
-	// Characters
+	// Heroes
 	var charactersDir = assetsDir + "Characters/";
 	var heroesDir = charactersDir + "Heroes/";
 	var ennemiesDir = charactersDir + "Ennemies/";
@@ -63,6 +70,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("barton", heroesDir + "barton_full.png", 64, 64);
 	this.load.spritesheet("archer1", ennemiesDir + "archer1.png", 64, 64);
 	this.load.spritesheet("enemi1", ennemiesDir + "ennemi1.png", 64, 64);
+
 
 	// Audio
 	var audioDir = "audio/";

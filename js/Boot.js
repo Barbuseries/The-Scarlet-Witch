@@ -16,8 +16,27 @@ var BasicGame = {
 		music: 0.1
 	},
 
+	toKill: [],
+
 	mute: function(control){
 		control.manager.game.sound.mute = !control.manager.game.sound.mute;
+	},
+
+	returnToTitle: function(control){
+		if ((control.manager.game.state.current != "MainMenu") &&
+			(this.confirmMenu == null)){
+			this.confirmMenu = new ConfirmationMenu(control.manager,
+							function(){
+								control.manager.game.state.start("MainMenu");
+							}, null);
+			
+			this.confirmMenu.toggle();
+
+			this.confirmMenu.onEndClose.add(function(){
+				this.confirmMenu.destroy();
+				this.confirmMenu = null;
+			}, this);
+		}
 	},
 
 	swapHeroes: function(){
@@ -133,7 +152,7 @@ BasicGame.Boot.prototype.startPreload = function(){
 	BasicGame.allPlayers.p2 = new Player(this.game, "2");
 
 	BasicGame.allPlayers.p1.controller
-		.bindControl("menu_toggle", Phaser.Keyboard.ESC, -1,
+		.bindControl("menu_toggle", Phaser.Keyboard.ENTER, -1,
 					 "toggle", "onDown", "menu")
 		.bindControl("menu_next", Phaser.Keyboard.S, -1,
 					 "goNext", "onDown", "menu")
@@ -153,10 +172,10 @@ BasicGame.Boot.prototype.startPreload = function(){
 					 "jump", "down", "movement")
 		.bindControl(-1, Phaser.Keyboard.Z, -1,
 					 "reduceJump", "onDown", "movement")
-		.bindControl(-1, Phaser.Keyboard.LEFT, -1,
-					 "orientateLeft", "down", "movement")
-		.bindControl(-1, Phaser.Keyboard.RIGHT, -1,
-					 "orientateRight", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.J, -1,
+					 "orientLeft", "down", "movement")
+		.bindControl(-1, Phaser.Keyboard.L, -1,
+					 "orientRight", "down", "movement")
 		.bindControl(-1, Phaser.Keyboard.Y, -1,
 					 "castFirst", "down", "action")
 		.bindControl(-1, Phaser.Keyboard.U, -1,
@@ -182,7 +201,9 @@ BasicGame.Boot.prototype.startPreload = function(){
 		.bindControl(-1, Phaser.Keyboard.TAB, -1,
 					 "swapHeroes", "onDown", ["system" ,"action"])
 		.bindControl(-1, Phaser.Keyboard.M, -1,
-					 "mute", "onDown", "system");
+					 "mute", "onDown", "system")
+		.bindControl(-1, Phaser.Keyboard.ESC, -1,
+					"returnToTitle", "onDown", "system");
 
 	this.game.input.onDown.removeAll();
 	this.state.start("Preloader");

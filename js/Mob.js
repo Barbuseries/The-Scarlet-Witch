@@ -20,7 +20,7 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 
 	this.allResistances = [];
 
-	for(var i = 0; i <= Elements.PHYSIC; i++) {
+	for(var i = 0; i <= Elements.ALMIGHTY; i++) {
 		this.allResistances[i] = 0;
 	}
 
@@ -112,6 +112,23 @@ Mob.prototype.update = function(){
 	Npc.prototype.update.call(this);
 }
 
+Mob.prototype.jump = function(factor){
+	if (this._dying ||
+		!this.can.jump){
+		return;
+	}
+
+	if (typeof(factor) === "undefined"){
+        factor = 1;
+    }
+	
+	if (this.jumpCount > 0){
+		this.body.velocity.y = -this.JUMP_POWER;
+
+		this.jumpCount--;
+	}
+}
+
 Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, element){
 	var actualDamage = (Math.random() * (damageRange[1] - damageRange[0]) +
 						damageRange[0]) * brutDamages;
@@ -138,9 +155,6 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	}
 
 	switch(element){
-	case Elements.ALMIGHTY:
-		stroke = GREY;
-		break;
 	case Elements.FIRE:
 		stroke = RED;
 		break;
@@ -150,11 +164,14 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	case Elements.WIND:
 		stroke = GREEN;
 		break;
-	case Elements.ROCK:
+	case Elements.EARTH:
 		stroke = ORANGE;
 		break;
 	case Elements.THUNDER:
 		stroke = YELLOW;
+		break;
+	case Elements.ALMIGHTY:
+		stroke = GREY;
 		break;
 	default:
 		break;
@@ -167,6 +184,34 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 
 	this.allStats.health.subtract(actualDamage);
 	this._textDamageDir *= -1;
+}
+
+// You can't stun what's already stunned !
+Mob.prototype.stun = function(duration, chanceToStun){
+	if (typeof(this.stunTimer) != "undefined"){
+		return;
+	}
+
+	if (Math.random() < chanceToStun){
+		var canMove = this.can.move;
+		var canAction = this.can.action;
+
+		this.stunTimer = this.game.time.create(true);
+		
+		this.stunTimer.add(duration, function(){
+			this.can.move = canMove;
+			this.can.action = canAction;
+		}, this);
+
+		this.stunTimer.onComplete.add(function(){
+			this.stunTimer = undefined;
+		}, this);
+
+		this.can.move = false;
+		this.can.action = false;
+
+		this.stunTimer.start();
+	}
 }
 
 Mob.prototype.castFirst = function(){

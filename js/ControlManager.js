@@ -30,6 +30,12 @@ var ControlManager = function(game, type, target, pad){
 	
 	this.enabled = true;
 
+	this._cached = {
+		target: [],
+		enabled: [],
+		type: []
+	};
+
 	this.onUpdate = new Phaser.Signal();
 }
 
@@ -58,7 +64,7 @@ ControlManager.prototype.update = function(){
                  => -1 : if controlName is already a control of the ControlManager,
 				 will copy the key code.
 
-   gamepaCode : (number) button code. (Phaser.Gamepad.XBOX_A, for example)
+   gamepadCode : (number) button code. (Phaser.Gamepad.XBOX_A, for example)
                 => -1 : if controlName is already a control of the ControlManager,
 				will copy the button code.
 
@@ -334,39 +340,42 @@ ControlManager.prototype.getByTag = function(allTags, allNeeded){
 		}
 	}
 	else if (typeof(allTags) === "object"){
-		for (control in this.allControls){	
+		for (controlName in this.allControls){	
 			var i = 0;
+			var control = this.allControls[controlName];
 
 			if (allNeeded){
-				if (this.allControls[control].allTags.length < allTags.length){
+				if (control.allTags.length < allTags.length){
 					continue;
 				}
 				
 				while (validIndex(i, allTags) &&
-					   (this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					   (control.allTags.indexOf(allTags[i]) != -1)){
 					i++;
 				}
 
 				if (i == allTags.length){
-					returnControls.push(this.allControls[control]);
+					returnControls.push(control);
 				}
 			}
 			else{
 				while (validIndex(i, allTags) &&
-					   !(this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					   !(control.allTags.indexOf(allTags[i]) != -1)){
 					i++;
 				}
 
 				if (i < allTags.length){
-					returnControls.push(this.allControls[control]);
+					returnControls.push(control);
 				}
 			}		
 		}
 	}
 	else if (typeof(allTags) === "string"){
-		for (control in this.allControls){
-			if (this.allControls[control].allTags.indexOf(allTags) != -1){
-				returnControls.push(this.allControls[control]);
+		for (controlName in this.allControls){
+			var control = this.allControls[controlName];
+
+			if (control.allTags.indexOf(allTags) != -1){
+				returnControls.push(control);
 			}	
 		}
 	}
@@ -376,65 +385,84 @@ ControlManager.prototype.getByTag = function(allTags, allNeeded){
 
 // Set the controls target to target.
 // If controls is undefined, set the ControlManager's target to target.
-ControlManager.prototype.setTarget = function(target, controls){
+// If cache is set to true, store the current target of the control.
+ControlManager.prototype.setTarget = function(target, controls, cache){
 	if (typeof(target) === "undefined") return;
+	if (!booleanable(cache)) cache = false;
 
 	if (typeof(controls) === "undefined"){
+		if (cache){
+			this._cached.target.push(this.target);
+		}
+
 		this.target = target;
 	}
 	else if (typeof(controls) === "string"){
-		this.allControls[controls].target = target;
+		var control = this.allControls[controls];
+
+		control.setTarget(target, cache);
 	}
 	else if (typeof(controls) === "object"){
-		for(var i = 0; i < controls.length; i++) {
-			this.allControls[controls].target = target;
+		for(var i = 0; i < controls.length; i++){
+			var control = this.allControls[controls[i]];
+
+			control.setTargetByTag(target, cache);
 		}
 	}
 }
 
 // Set the target of every control with at least one of the tags in allTags to target.
 // If allTags is undefined, set the ControlManager's target to target.
-ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded){
+// If cache is set to true, store the current target of the control.
+ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded, cache){
 	if (typeof(target) === "undefined") return;
 	if (!booleanable(allNeeded)) allNeeded = false;
+	if (!booleanable(cache)) cache = false;
 
 	if (typeof(allTags) === "undefined"){
+		if (cache){
+			this._cached.enabled.push(this.target);
+		}
+
 		this.target = target;
 	}
 	else if (typeof(allTags) === "object"){
-		for (control in this.allControls){	
+		for (controlName in this.allControls){	
 			var i = 0;
+			var control = this.allControls[controlName];
 
 			if (allNeeded){
-				if (this.allControls[control].allTags.length < allTags.length){
+				if (control.allTags.length < allTags.length){
 					continue;
 				}
 				
 				while (validIndex(i, allTags) &&
-					   (this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					   (control.allTags.indexOf(allTags[i]) != -1)){
 					i++;
 				}
 
 				if (i == allTags.length){
-					this.allControls[control].target = target;
+					control.setTarget(target, cache);
 				}
 			}
 			else{
 				while (validIndex(i, allTags) &&
-					   !(this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					   !(control.allTags.indexOf(allTags[i]) != -1)){
 					i++;
 				}
 
 				if (i < allTags.length){
-					this.allControls[control].target = target;
+					control.setTarget(target, cache);
 				}
 			}		
 		}
 	}
 	else if (typeof(allTags) === "string"){
-		for (control in this.allControls){
-			if (this.allControls[control].allTags.indexOf(allTags) != -1){
-				this.allControls[control].target = target;
+		for (controlName in this.allControls){
+			var control = this.allControls[controlName];
+
+			if (control.allTags.indexOf(allTags) != -1){
+				control.setTarget(target, cache);
 			}	
 		}
 	}
@@ -444,64 +472,147 @@ ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded){
 // in allTags.
 // If allTags is undefined, disable the ControlManager.
 // (allTags can also be a string)
-ControlManager.prototype.disable = function(allTags, allNeeded){
-	this._able(allTags, allNeeded, false);
+// If cache is set to true, store the current state of the control.
+ControlManager.prototype.disable = function(allTags, allNeeded, cache){
+	this._able(allTags, allNeeded, cache, false);
 }
+
 
 // Enable all controls with one (or all if allNeeded is true) of the tags
 // in allTags.
 // If allTags is undefined, enable the ControlManager.
 // (allTags can also be a string)
-ControlManager.prototype.enable = function(allTags, allNeeded){
-	this._able(allTags, allNeeded, true);
+// If cache is set to true, store the current state of the control.
+ControlManager.prototype.enable = function(allTags, allNeeded, cache){
+	this._able(allTags, allNeeded, cache, true);
 }
 
-ControlManager.prototype._able = function(allTags, allNeeded, enabled){
+ControlManager.prototype._able = function(allTags, allNeeded, cache, enabled){
 	if (!booleanable(allNeeded)) allNeeded = false;
+	if (!booleanable(cache)) cache = false;
 
 	if (typeof(allTags) === "undefined"){
+		if (cache){
+			this._cached.enabled.push(this.enabled);
+		}
+
 		this.enabled = enabled;
 	}
 	else if (typeof(allTags) === "object"){
-		for (control in this.allControls){	
+		for (controlName in this.allControls){	
 			var i = 0;
+			var control = this.allControls[controlName];
 
 			if (allNeeded){
-				if (this.allControls[control].allTags.length < allTags.length){
+				if (control.allTags.length < allTags.length){
 					continue;
 				}
 				
 				while (validIndex(i, allTags) &&
-					   (this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					   (control.allTags.indexOf(allTags[i]) != -1)){
 					i++;
 				}
 
 				if (i == allTags.length){
-					this.allControls[control].enabled = enabled;
+					control._able(enabled, cache);
 				}
 			}
 			else{
 				while (validIndex(i, allTags) &&
-					   !(this.allControls[control].allTags.indexOf(allTags[i]) != -1)){
+					   !(control.allTags.indexOf(allTags[i]) != -1)){
 					i++;
 				}
 
 				if (i < allTags.length){
-					this.allControls[control].enabled = enabled;
+					control._able(enabled, cache);
 				}
 			}		
 		}
 	}
 	else if (typeof(allTags) === "string"){
-		for (control in this.allControls){
-			if (this.allControls[control].allTags.indexOf(allTags) != -1){
-				this.allControls[control].enabled = enabled;
+		for (controlName in this.allControls){
+			var control = this.allControls[controlName];
+
+			if (control.allTags.indexOf(allTags) != -1){
+				control._able(enabled, cache);
 			}	
 		}
 	}
 }
 
-ControlManager.prototype.swap = function(){
+
+ControlManager.prototype.rollback = function(type, allTags, allNeeded){
+	if (!booleanable(allNeeded)) allNeeded = false;
+	if (type != "string") type = "all";
+
+	if (typeof(allTags) === "undefined"){
+		if ((type == "target") || (type == "all")){
+			if (this._cached.target.length > 0){
+				this.target = this._cached.target.pop();
+			}
+		}
+		
+		if ((type == "enabled") || (type == "all")){
+			if (this._cached.enabled.length > 0){
+				this.enabled = this._cached.enabled.pop();
+			}
+		}
+
+		if ((type == "type") || (type == "all")){
+			if (this._cached.type.length > 0){
+				this.type = this._cached.type.pop();
+			}
+		}
+	}
+	else if (typeof(allTags) === "object"){
+		for (controlName in this.allControls){	
+			var i = 0;
+			var control = this.allControls[controlName];
+
+			if (allNeeded){
+				if (control.allTags.length < allTags.length){
+					continue;
+				}
+				
+				while (validIndex(i, allTags) &&
+					   (control.allTags.indexOf(allTags[i]) != -1)){
+					i++;
+				}
+
+				if (i == allTags.length){
+					control.rollback(type);
+				}
+			}
+			else{
+				while (validIndex(i, allTags) &&
+					   !(control.allTags.indexOf(allTags[i]) != -1)){
+					i++;
+				}
+
+				if (i < allTags.length){
+					control.rollback(type);
+				}
+			}		
+		}
+	}
+	else if (typeof(allTags) === "string"){
+		for (controlName in this.allControls){
+			var control = this.allControls[controlName];
+
+			if (control.allTags.indexOf(allTags) != -1){
+				control.rollback(type);
+			}	
+		}
+	}
+}
+
+ControlManager.prototype.swap = function(cache){
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.type.push(this.type);
+	}
+
 	this.type = 1 * ! this.type;
 }
 /******************************************************************************/
@@ -542,6 +653,13 @@ var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
 	this.allTags = [];
 
 	this.enabled = true;
+	this._cached = {
+		target: [],
+		enabled: [],
+		functionName: [],
+		keyboardCode: [],
+		gamepadCode: []
+	};
 
 	var signalKeyboard = null;
 	var signalGamepad = null;
@@ -598,7 +716,88 @@ var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
 	}
 }
 
-Control.prototype.change = function(keyboardCode, gamepadCode, signal){
+Control.prototype.setTarget = function(target, cache){
+	if (typeof(target) === "undefined"){
+		return;
+	}
+
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.target.push(this.target);
+	}
+
+	this.target = target;
+}
+
+Control.prototype.setFunction = function(functionName, cache){
+	if (typeof(functionName) != "string"){
+		return;
+	}
+
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.functionName.push(this.functionName);
+	}
+
+	this.functionName = functionName;
+}
+
+Control.prototype.enable = function(cache){
+	this._able(true, cache);
+}
+
+Control.prototype.disable = function(cache){
+	this._able(false, cache);
+}
+
+Control.prototype._able = function(enabled, cache){
+	if (!booleanable(enabled)) enabled = true;
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.enabled.push(this.enabled);
+	}
+
+	this.enabled = enabled;
+}
+
+Control.prototype.rollback = function(type){
+	if (type != "string") type = "all";
+
+	if ((type == "target") || (type == "all")){
+		if (this._cached.target.length > 0){
+			this.target = this._cached.target.pop();
+		}
+	}
+	
+	if ((type == "enabled") || (type == "all")){
+		if (this._cached.enabled.length > 0){
+			this.enabled = this._cached.enabled.pop();
+		}
+	}
+
+	if ((type == "function") || (type == "all")){
+		if (this._cached.functionName.length > 0){
+			this.functionName = this._cached.functionName.pop();
+		}
+	}
+	
+	if ((type == "code") || (type == "all")){
+		if (this._cached.keyboardCode.length > 0){
+			this.change(this._cached.keyboardCode.pop());
+		}
+	}
+	
+	if ((type == "code") || (type == "all")){
+		if (this._cached.gamepadCode.length > 0){
+			this.change(-1, this._cached.gamepadCode.pop());
+		}
+	}
+}
+
+Control.prototype.change = function(keyboardCode, gamepadCode, signal, cache){
 	if ((typeof(keyboardCode) != "number") ||
 		(keyboardCode == -1)){
 		keyboardCode = this.keyboardCode;
@@ -613,16 +812,25 @@ Control.prototype.change = function(keyboardCode, gamepadCode, signal){
 		signal = this.signal;
 	}
 
+	if (!booleanable(cache)) cache = false;
+
 	var manager = this.manager;
 	var target = this.target;
 	var functionName = this.functionName;
-	var signal = signal;
 	var allTags = this.allTags;
+	var cached = this._cached;
+
+	if (cache){
+		cached.keyboardCode.push(this.keyboardCode);
+		cached.gamepadCode.push(this.gamepadCode);
+	}
 
 	this.destroy();
 
 	Control.call(this, manager, keyboardCode, gamepadCode, functionName, signal,
 				 allTags, target);
+
+	this._cached = cached;
 }
 
 Control.prototype.executeKeyboard = function(){
@@ -780,6 +988,12 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 	this.target = target;
 	
 	this.enabled = true;
+	
+	this._cached = {
+		target: [],
+		enabled: [],
+		axis: []
+	};
 
 	if (signal == "update"){
 		signal = manager.onUpdate;
@@ -801,6 +1015,101 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 	else{
 		this.allTags.push(allTags);
 	}
+}
+
+PadControl.prototype.setTarget = function(target, cache){
+	if (typeof(target) === "undefined"){
+		return;
+	}
+
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.target.push(this.target);
+	}
+
+	this.target = target;
+}
+
+PadControl.prototype.enable = function(cache){
+	this._able(true, cache);
+}
+
+PadControl.prototype.disable = function(cache){
+	this._able(false, cache);
+}
+
+PadControl.prototype._able = function(enabled, cache){
+	if (!booleanable(enabled)) enabled = true;
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.enabled.push(this.enabled);
+	}
+
+	this.enabled = enabled;
+}
+
+PadControl.prototype.rollback = function(type){
+	if (type != "string") type = "all";
+
+	if ((type == "target") || (type == "all")){
+		if (this._cached.target.length > 0){
+			this.target = this._cached.target.pop();
+		}
+	}
+	
+	if ((type == "enabled") || (type == "all")){
+		if (this._cached.enabled.length > 0){
+			this.enabled = this._cached.enabled.pop();
+		}
+	}
+
+	if ((type == "axis") || (type == "all")){
+		if (this._cached.axis.length > 0){
+			var axis = this._cached.axis.pop();
+
+			this.axis = axis.axis;
+			this.min = axis.min;
+			this.max = axis.max;
+		}
+	}
+}
+
+PadControl.prototype.change = function(axis, min, max, signal, cache){
+	if ((typeof(axis) != "object") ||
+		(axis == -1)){
+		axis = this.axis;
+	}
+
+	if ((typeof(min) != "number") ||
+		(min == -1)){
+		min = this.min;
+	}
+
+	if ((typeof(max) != "number") ||
+		(max == -1)){
+		max = this.max;
+	}
+
+	if (typeof(signal) != "string"){
+		signal = this.signal;
+	}
+
+	var manager = this.manager;
+	var target = this.target;
+	var functionName = this.functionName;
+	var allTags = this.allTags;
+	var cached = this._cached;
+
+	cached.axis.push([this.axis, this.min, this.max]);
+
+	this.destroy();
+
+	PadControl.call(this, manager, axis, min, max, functionName, signal,
+					allTags, target);
+
+	this._cached = cached;
 }
 
 PadControl.prototype.execute = function(){

@@ -56,13 +56,29 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 
 	this.game.physics.enable(this, Phaser.Physics.ARCADE);
 
-	this._cached = {};
-	this._cached.velocity = {};
-	this._cached.acceleration = {};
-	this._cached.velocity.x = 0;
-	this._cached.velocity.y = 0;
-	this._cached.acceleration.x = 0;
-	this._cached.acceleration.y = 0;
+	this._cached = {
+		velocity: {
+			x: 0,
+			y: 0
+		},
+		
+		acceleration: {
+			x: 0,
+			y: 0
+		}
+	};
+
+	this.can = {
+		move: true,
+		orient: true,
+		jump: true,
+		action: true
+	};
+
+	this.current = {
+		move: null,
+		action: null
+	};
 
 	this._dying = false;
 
@@ -71,6 +87,114 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 
 Npc.prototype = Object.create(Entity.prototype);
 Npc.prototype.constructor = Entity;
+
+Npc.prototype.goLeft = function(control, factor){
+	if (this._dying){
+		return;
+	}
+
+	if (!this.can.move){
+		this.orientLeft();
+		
+		return;
+	}
+
+	if (typeof(factor) === "undefined"){
+        factor = 1;
+    }
+
+	this.orientationH = -1;
+
+	var currentAnim = this.animations.currentAnim;
+
+	if (!currentAnim.isRunning ||
+		!booleanable(currentAnim.allowBreak) ||
+		currentAnim.allowBreak){
+		this.animations.play("walkLeft", 15 * Math.abs(factor));
+	}
+
+    this.body.acceleration.x -= this.ACCELERATION * Math.abs(factor);
+}
+
+Npc.prototype.goRight = function(control, factor){
+	if (this._dying){
+		return;
+	}
+
+	if (!this.can.move){
+		this.orientRight();
+		
+		return;
+	}
+
+    if (typeof(factor) === "undefined"){
+        factor = 1;
+    }
+
+	this.orientationH = 1;
+
+	var currentAnim = this.animations.currentAnim;
+
+	if (!currentAnim.isRunning ||
+		!booleanable(currentAnim.allowBreak) ||
+		currentAnim.allowBreak){
+		this.animations.play("walkRight", 15 * Math.abs(factor));
+	}
+
+    this.body.acceleration.x += this.ACCELERATION * Math.abs(factor);
+}
+
+Npc.prototype.orientLeft = function(){
+	if (this._dying){
+		return;
+	}
+
+	if (!this.can.orient){
+		return;
+	}
+
+	if (this.orientationH >= 0){
+		this.orientationH = -1;
+
+		this.frame = 117;
+	}
+	/*var index = -1;
+	var currentAnim = this.animations.currentAnim;
+	
+	if ((index = currentAnim.name.indexOf("Right")) > -1){
+		var name = currentAnim.name.slice(0, index) + "Left";
+
+		currentAnim.complete();
+
+		this.animations.play(name, currentAnim.speed, currentAnim.loop,
+							 currentAnim.killOnComplete);
+	}*/
+}
+
+Npc.prototype.orientRight = function(){
+	if (this._dying){
+		return;
+	}
+
+	if (!this.can.orient){
+		return;
+	}
+
+	if (this.orientationH < 0){
+		this.orientationH = 1;
+
+		this.frame = 143;
+	}
+	/*var index = -1;
+	var currentAnim = this.animations.currentAnim;
+
+	if ((index = currentAnim.name.indexOf("Left")) > -1){
+		var name = currentAnim.name.slice(0, index) + "Right";
+
+		this.animations.play(name, currentAnim.speed, currentAnim.loop,
+							 currentAnim.killOnComplete);
+	}*/
+}
 
 Npc.prototype.kill = function(){
 	this._dying = false;

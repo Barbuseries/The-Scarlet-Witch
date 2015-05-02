@@ -5,7 +5,7 @@ var Menu = function(game, manager, title, x, y, width, height, sprite, cursor){
 	Interface.call(this, game, x, y, width, height, sprite);
 
 	if (typeof(BasicGame.sfx.cursorSelect) === "undefined"){
-		BasicGame.sfx.cursorSelect = this.game.audio.load("cursor_select");
+		BasicGame.sfx.cursorSelect = this.game.add.audio("cursor_select");
 	}
 
 	
@@ -387,3 +387,99 @@ Option.prototype._del = function(){
 /* Option */
 /**********/
 
+
+/*********************/
+/* Confirmation Menu */
+/******************************************************************************/
+var ConfirmationMenu = function(control, confFunction, context){
+	var game = control.game;
+
+	Menu.call(this, game, control, "Êtes-vous sûr ?",
+			  0, 0, game.camera.width, game.camera.height,
+			  "ground2", "icons");
+
+	this.background.tint = H_BLACK;
+	this.background.alpha = 0.8;
+
+	this.title.fontWeight = "bold";
+	this.title.stroke = BLACK;
+	this.title.strokeThickness = 3;
+	this.title.fontSize = 64;
+	this.title.anchor.set(0.5);
+	this.title.x = game.camera.width / 2;
+	this.title.y = game.camera.height / 3;
+	this.title.setShadow(5, 5, BLACK, 5);
+
+	this.horizontal = true;
+	this.showTitle = true;
+	this.cursor.frame = 5;
+
+	this.onStartToggle.add(bindMenu, this);
+
+	this.yesOption = createBasicMenuOption(this, 100, "Oui !",
+										   undefined, null);
+	
+	this.noOption = createBasicMenuOption(this, 100, "Non !",
+										  undefined, null);
+
+	
+	this.yesOption.display.x = this.title.x - this.title.width;
+	this.yesOption.display.y = this.title.y + game.camera.height / 3;
+	this.yesOption.display.setShadow(5, 5, BLACK, 5);
+
+
+	this.noOption.display.x = this.title.x + this.title.width;
+	this.noOption.display.y = this.title.y + game.camera.height / 3;
+	this.noOption.display.setShadow(5, 5, BLACK, 5);
+
+
+	this.yesOption.onOver.add(function(){
+		this.display.tint = H_YELLOW;
+	}, this.yesOption);
+
+	this.yesOption.onOut.add(function(){
+		this.display.tint = H_WHITE;
+	}, this.yesOption);
+	
+	this.yesOption.onSelect.add(function(){
+		this.close();
+	}, this);
+
+	this.yesOption.onSelect.add(confFunction, context);
+
+	this.noOption.onOver.add(function(){
+		this.display.tint = H_YELLOW;
+	}, this.noOption);
+
+	this.noOption.onOut.add(function(){
+		this.display.tint = H_WHITE;
+	}, this.noOption);
+
+	this.noOption.onSelect.add(function(){
+		this.close();
+	}, this);
+
+
+	this.addOption(this.yesOption);
+	this.addOption(this.noOption);
+
+	this.fixedToCamera = true;
+	this.enableMouse();
+}
+
+ConfirmationMenu.prototype = Object.create(Menu.prototype);
+ConfirmationMenu.prototype.constructor = ConfirmationMenu;
+
+ConfirmationMenu.prototype.setFunction = function(confFunction, context){
+	this.yesOption.onSelect.removeAll();
+
+	this.yesOption.onSelect.add(function(){
+		this.close();
+	}, this);
+
+	this.yesOption.onSelect.add(confFunction, context);
+}
+
+/******************************************************************************/
+/* Confirmation Menu */
+/********************/
