@@ -16,8 +16,6 @@ var BasicGame = {
 		music: 0.1
 	},
 
-	toKill: [],
-
 	mute: function(control){
 		control.manager.game.sound.mute = !control.manager.game.sound.mute;
 	},

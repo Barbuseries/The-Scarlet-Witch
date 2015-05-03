@@ -28,6 +28,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	// Skills
 	var skillDir = assetsDir + "Skills/";
 
+	this.load.image("template_icon", skillDir + "template_icon.png", 64, 64);
 	this.load.image("barrier_icon", skillDir + "barrier_icon.png");
 	this.load.image("teleport_icon", skillDir + "teleport_icon.png");
 	this.load.spritesheet("icons", "assets/icons.png", 16, 16);

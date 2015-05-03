@@ -146,3 +146,84 @@ function bindMenu(){
 		}
 	}, this);
 }
+
+var collideProjectile = function(projectile, obstacle){
+	if (projectile.tag == "projectile"){
+		if (projectile.collideFunction == null){
+			return;
+		}
+		
+		projectile.collideFunction.call(projectile,
+										obstacle);
+		if (typeof(obstacle.body) != "undefined"){
+			obstacle.body.velocity.x += projectile.body.velocity.x;
+			obstacle.body.velocity.y += projectile.body.velocity.y;
+		}
+	}
+}
+
+var collideProcessProjectile = function(projectile, obstacle){
+	if (projectile.tag == "projectile"){
+		if (projectile.collideProcess == null){
+			return false;
+		}
+		else{
+			return (!obstacle._dying && projectile.collideProcess.call(projectile,
+																	   obstacle));
+		}
+	}
+	else{
+		if (obstacle.tag == "projectile"){
+			if (obstacle.collideProcess == null){
+				return false;
+			}
+			else{
+				return (!projectile._dying && obstacle.collideProcess.call(obstacle,
+													projectile));
+			}
+		}
+		else{
+			return true;
+		}
+	}
+}
+
+var findObjectsByType = function(type, map, layer){
+	var result = [];
+
+	map.objects[layer].forEach(function(element) {
+		if (element.properties.type === type) {
+			// Phaser uses top left, Tiled bottom left so we have to adjust the y position
+			// also keep in mind that the cup images are a bit smaller than the tile which is 16x16
+			// so they might not be placed in the exact pixel position as in Tiled
+			element.y -= map.tileHeight;
+			result.push(element); 
+		}
+	});
+
+	return result;
+}
+
+var createFromTiledObject = function(element, group, constructor) {
+	var allConstructors = {
+		Mob: function(group, element){
+			return new Mob(group.game, element.x, element.y,
+						   element.properties.sprite);
+		},
+		
+		Item: function(group, element){
+			return null;
+		}
+	}
+
+	var object = allConstructors[constructor](group, element);
+
+	group.add(object);
+
+	// copy all properties to the sprite
+	Object.keys(element.properties).forEach(function(key){
+		object[key] = element.properties[key];
+	});
+
+	object.y -= object.height;
+}

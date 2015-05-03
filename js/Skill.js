@@ -64,6 +64,11 @@ var Skill = function(user, level, costFunction, cooldown, element,
 
 	this.launchFunction = null;
 
+	this.onUncheckedCharge = new Phaser.Signal(); // Dispatched even if this.onCharge
+	                                              // can't.
+	this.onUncheckedRelease = new Phaser.Signal(); // Dispatched even if
+	                                               // this.onRelease can't.
+
 	this.onCharge = new Phaser.Signal();
 	this.onChargeComplete = new Phaser.Signal();
 	this.onRelease = new Phaser.Signal();
@@ -137,6 +142,8 @@ Skill.prototype.useSkill = function(factor){
 }
 
 Skill.prototype.charge = function(){
+	this.onUncheckedCharge.dispatch(this);
+
 	if (this.canBeUsed &&
 		(this.user.can.action || (this.user.current.action == this)) &&
 		this.costFunction.call(this, 0)){
@@ -176,6 +183,8 @@ Skill.prototype.charge = function(){
 }
 
 Skill.prototype.release = function(){
+	this.onUncheckedRelease.dispatch(this);
+
 	if (this.canBeUsed &&
 		(this.user.can.action || (this.user.current.action == this)) &&
 		this.costFunction.call(this, 0)){
@@ -447,7 +456,7 @@ var FireBallSkill = function(user, level, targetTags){
 			
 			this.animations.play("animation", null, true);
 
-			this.game.physics.enable([this], Phaser.Physics.ARCADE);
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
 			this.body.velocity.x = 500;
 
 			if (user.orientationH < 0){
@@ -613,8 +622,8 @@ var IceBallSkill = function(user, level, targetTags){
 			}
 			
 			this.animations.play("animation", null, true);
-
-			this.game.physics.enable([this], Phaser.Physics.ARCADE);
+			
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
 			this.body.velocity.x = 500 ;
 			
 			if (user.orientationH < 0){
@@ -1205,7 +1214,7 @@ var ArrowSkill = function(user, level, targetTags){
 			this.orientationH = user.orientationH;
 
 			this.game.physics.enable(this, Phaser.Physics.ARCADE);
-			this.body.allowGravity = true;
+			//this.body.allowGravity = true;
 			this.body.velocity.y = -35 * (1 + factor);
 
 			this.body.velocity.x = speed;
@@ -1692,9 +1701,9 @@ var TrapSkill = function(user, level, targetTags){
 		var user = this.user;
 
 		function initProjectile(){
-			this.anchor.set(0, 1);
+			this.anchor.set(0.5, 1);
 
-			this.x = user.x;
+			this.x = user.x + user.width / 2;
 			this.y = user.y + user.height - this.height;
 
 			this.width *= (1 + factor);
@@ -1720,20 +1729,36 @@ var TrapSkill = function(user, level, targetTags){
 				return;
 			}
 
-			var selfProj = this;
+			explode.call(this);
+		}
+		
+		function collideProcess(obstacle){
+			if (obstacle.tag == "platform"){
+				return true;
+			}
 
+			return (this.targetTags.indexOf(obstacle.tag) != -1);
+		}
+
+		function killProjectile(){
+			self.onUncheckedCharge.removeAll();
+			
+			return true;
+		}
+
+		function explode(){
 			function initProjectile2(){
 				this.anchor.set(0.5);
 
-				this.x = selfProj.x;
-				this.y = selfProj.y;
+				this.x = trap.x;
+				this.y = trap.y;
 
 				this.alpha = 1;
 
 				this.game.physics.enable(this, Phaser.Physics.ARCADE);
 				
-				this.targetTags = selfProj.targetTags;
-				this.element = selfProj.element;
+				this.targetTags = trap.targetTags;
+				this.element = trap.element;
 
 				this.alreadyHit = [];
 
@@ -1772,9 +1797,7 @@ var TrapSkill = function(user, level, targetTags){
 					default:
 						break;
 					}
-
-					console.log(this.element);
-			
+					
 					obstacle.suffer(damage, damageRange, criticalRate, this.element);
 					obstacle.stun(stunDuration, 0.5 + 0.4 * factor);
 
@@ -1788,19 +1811,13 @@ var TrapSkill = function(user, level, targetTags){
 
 			this.kill();
 		}
-		
-		function collideProcess(obstacle){
-			if (obstacle.tag == "platform"){
-				return true;
-			}
 
-			return (this.targetTags.indexOf(obstacle.tag) != -1);
-		}
+		var trap = createProjectile(this.game, 0, 0, "spikes_0",
+									initProjectile, updateProjectile,
+									killProjectile, collideFunction,
+									collideProcess);
 
-		createProjectile(this.game, 0, 0, "spikes_0",
-						 initProjectile, updateProjectile,
-						 undefined, collideFunction,
-						 collideProcess);
+		this.onUncheckedCharge.add(explode, trap);
 
 		this.user.can.move = true;
 		this.user.can.action = true;
@@ -2027,15 +2044,17 @@ var PoweredArrowSkill = function(user, level, targetTags){
 						 collideProcess, damageFunction);
 
 		this.timerEvade = this.game.time.create(true);
-		this.timerEvade.repeat(17, 10, function(){
-			var evadeThrust = (7000 + (7000 * factor));
 
-			if (user.orientationH >= 0){
-				user.body.velocity.x = -evadeThrust;
-			}
-			else{
-				user.body.velocity.x = evadeThrust;
-			}
+		var direction = -1;
+
+		if (user.orientationH < 0){
+			direction = 1;
+		}
+
+		this.timerEvade.repeat(17, 10, function(){
+			var evadeThrust = direction * (7000 + (7000 * factor));
+
+			user.body.velocity.x += evadeThrust;
 		});
 
 		this.timerEvade.repeat(17, 5, function(){

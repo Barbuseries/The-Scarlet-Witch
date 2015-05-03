@@ -172,6 +172,9 @@ var StatusSkill = function(skill, x, y){
 	this.y = y;
 	this.alpha = 0.9;
 
+	this.backgroundSprite = this.game.add.sprite(32, 32, "template_icon");
+	this.backgroundSprite.anchor.setTo(0.5);
+
 	this.iconSprite = this.game.add.sprite(32, 32, skill.icon);
 	this.iconSprite.anchor.setTo(0.5);
 
@@ -188,6 +191,7 @@ var StatusSkill = function(skill, x, y){
 		this.iconSprite.scale.x = this.iconSprite.scale.y;
 	}, this);
 
+	this.add(this.backgroundSprite);
 	this.add(this.iconSprite);
 	this.add(skill.chargeBar);
 }

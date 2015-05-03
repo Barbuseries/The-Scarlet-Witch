@@ -239,6 +239,38 @@ var Barton = function(game, x, y, level){
 
 		this.specialBar.visible = true;
 	}, this.statusUi);
+
+	this.allSkills[1] = {
+		firstSkill: new ArrowSkill(this, 1,
+								   ["platform", "enemy"]),
+
+		secondSkill: new MultArrowSkill(this, 1,
+										["platform", "enemy"]),
+
+		thirdSkill: new SpeedUpArrowSkill(this, 5),
+
+		fourthSkill: new TrapSkill(this, 1, ["enemy"]),
+
+		fifthSkill: new PoweredArrowSkill(this, 1,
+										  ["enemy"])
+	};
+	
+	this.allSkills[0].firstSkill = new SlashSkill(this, 1, ["enemy"]);
+
+	this.quiverRegen = this.game.time.create(false);
+	this.quiverRegen.loop(this.allStats.attackSpeed.get() * 6, function(){
+		this.quiver.add(1);
+	}, this.allStats);
+	
+	this.allStats.attackSpeed.onUpdate.add(function(stat, oldValue, newValue){
+		if (oldValue != newValue){
+			this.quiverRegen.removeAll();
+			
+			this.quiverRegen.loop(this.allStats.attackSpeed.get() * 6, function(){
+				this.quiver.add(1);
+			}, this.allStats);
+		}
+	}, this);
 }
 
 Barton.prototype =  Object.create(Hero.prototype);

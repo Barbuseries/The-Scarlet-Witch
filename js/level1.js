@@ -1,55 +1,17 @@
 BasicGame.Level1 = function(game){
+	this._stage = new Level(game, "level1", "Level1_Tiles", "sky");
 }
 
 BasicGame.Level1.prototype.preload = function(){
 }
 
-var map;
-var sky;
-var player1;
-var hero;
-var secondSkillBar;
-var toto;
+BasicGame.Level1.prototype.create = function(){
+	this._stage.init();
 
-BasicGame.Level1.prototype.create = function (){
-    this.game.physics.startSystem(Phaser.Physics.ARCADE);
-    this.game.physics.arcade.gravity.y = 600;
+	this._stage.load();
 
-    //Chargement des propriétés du tilemap
-    map = this.game.add.tilemap('level1');
-
-    this.game.world.setBounds(0, 0,
-                              map.widthInPixels, map.heightInPixels);
-
-    // Chargement du Tileset
-    map.addTilesetImage('platforms', 'Level1_Tiles');
-    map.setCollisionBetween(0, 63);
-
-	for(var i = 0; i < map.layer.data.length; i++) {
-		for(var j = 0; j < map.layer.data[i].length; j++) {
-			if (map.layer.data[i][j].canCollide){
-				map.layer.data[i][j].tag = "platform";
-				map.layer.data[i][j]._dying = false;
-			}
-		}
-	}
-
-    this.game.platforms = map.createLayer('blockedLayer');
-    this.game.platforms.resizeWorld();
-
-	sky = this.game.add.tileSprite(0, 0,
-								   map.widthInPixels,
-								   map.heightInPixels,
-								   'sky');
-
-	this.game.world.bringToTop(this.game.platforms);
-
-	for(var i in BasicGame.pool) {
-		BasicGame.pool[i] = this.game.add.group();
-	}
-	
-	BasicGame.allHeroes = this.game.add.group();
-	BasicGame.allEnnemies = this.game.add.group();
+	this._stage.map.setCollisionBetween(0, 63);
+	this._stage.tagPlatforms();
 
 	this.barton = new Barton(this.game, 1000, 200, 99);
 	this.barton.scale.setTo(1.3);
@@ -67,10 +29,8 @@ BasicGame.Level1.prototype.create = function (){
 	this.lucy.allResistances[Elements.WIND] = 0.5;
 	this.lucy.allResistances[Elements.PHYSIC] = -0.5;
 
-	this.createBaddies();
-
-	BasicGame.allHeroes.add(this.barton);
-	BasicGame.allHeroes.add(this.lucy);
+	this._stage.allHeroes.add(this.barton);
+	this._stage.allHeroes.add(this.lucy);
 
 	BasicGame.sfx = {};
 
@@ -399,27 +359,7 @@ BasicGame.Level1.prototype.create = function (){
 		}
 	}
 
-	this.barton.allSkills[1].firstSkill = new ArrowSkill(this.barton, 1,
-														 ["platform", "enemy"]);
-	this.barton.allSkills[1].secondSkill = new MultArrowSkill(this.barton, 1,
-															  ["platform", "enemy"]);
-
-	this.barton.allSkills[1].thirdSkill = new SpeedUpArrowSkill(this.barton, 5);
-	this.barton.allSkills[1].fourthSkill = new TrapSkill(this.barton, 1, ["enemy"]);
-
-	this.barton.allSkills[1].fifthSkill = new PoweredArrowSkill(this.barton, 1,
-																 ["enemy"]);
-
-	this.barton.allSkills[0].firstSkill = new SlashSkill(this.barton, 1, ["enemy"]);
-
-	this.barton.quiverRegen = this.game.time.create(false);
-	this.barton.quiverRegen.loop(this.barton.allStats.attackSpeed.get() * 6, function(){
-		this.quiver.add(1);
-	}, this.barton.allStats);
-
 	this.barton.quiverRegen.start();
-
-	this.game.world.bringToTop(BasicGame.pool.textDamage);
 
 	BasicGame.allPlayers.p1.setHero(this.barton);
 	BasicGame.allPlayers.p2.setHero(this.lucy);
@@ -429,139 +369,12 @@ BasicGame.Level1.prototype.create = function (){
 }
 
 BasicGame.Level1.prototype.update = function (){
-    // Collisions
-	for(var i in BasicGame.pool) {
-		this.game.physics.arcade.overlap(BasicGame.pool[i], this.game.platforms,
-										 collideProjectile, collideProcessProjectile);
-
-		if (i != "textDamage"){
-			this.game.physics.arcade.overlap(BasicGame.pool[i], BasicGame.allHeroes,
-											 collideProjectile,
-											 collideProcessProjectile);
-
-			this.game.physics.arcade.overlap(BasicGame.pool[i], this.game.baddies,
-											 collideProjectile,
-											 collideProcessProjectile);
-
-			for(var j in BasicGame.pool){
-				if (i == j){
-					continue;
-				}
-
-				this.game.physics.arcade.overlap(BasicGame.pool[i], BasicGame.pool[j],
-												 collideProjectile,
-												 collideProcessProjectile);
-			}
-		}
-	}
-	
-	this.game.physics.arcade.overlap(BasicGame.allHeroes, this.game.platforms);
-	this.game.physics.arcade.overlap(this.game.baddies, this.game.platforms);
+    this._stage.update();
 
 	this.lucy.allStats.special.add(0.01 / 60, 1);
 	this.lucy.allStats.health.add(0.01, 1);
 	this.barton.allStats.fury.subtract(0.02 / 60, 1);
 
-	this.barton.body.acceleration.x = 0;
-	this.lucy.body.acceleration.x = 0;
-
-	for(var i in BasicGame.allPlayers){
-		BasicGame.allPlayers[i].controller.update();
-	}
-	
 	this.lucy.allStats.experience.add(100);
-
-	for(var i in BasicGame.toKill){
-		BasicGame.toKill[i].kill();
-	}
-
-	BasicGame.toKill = [];
 }
 
-BasicGame.Level1.prototype.createBaddies = function() {
-	// create baddies
-	this.game.baddies = this.game.add.group();
-	this.game.baddies.enableBody = true;
-	this.game.physics.enable(this.game.baddies, Phaser.Physics.ARCADE);
-
-	var baddie;
-
-	result = this.findObjectsByType('enemy', this.game.platforms.map, 'baddies');
-	result.forEach(function(element){
-		this.createFromTiledObject(element, this.game.baddies);
-	}, this);
-
-	this.game.baddies.forEach(function(element){
-		element.tag = "enemy";
-	});
-	
-	return this.game.baddies;
-}
-
-BasicGame.Level1.prototype.findObjectsByType = function(type, map, layer){
-	var result = new Array();
-	map.objects[layer].forEach(function(element) {
-		if (element.properties.type === type) {
-			// Phaser uses top left, Tiled bottom left so we have to adjust the y position
-			// also keep in mind that the cup images are a bit smaller than the tile which is 16x16
-			// so they might not be placed in the exact pixel position as in Tiled
-			element.y -= map.tileHeight;
-			result.push(element); 
-		}
-	});
-	return result;
-}
-
-BasicGame.Level1.prototype.createFromTiledObject = function(element, group) {
-	var sprite = new Mob(group.game, element.x, element.y, element.properties.sprite);
-
-	group.add(sprite);
-	// copy all properties to the sprite
-	Object.keys(element.properties).forEach(function(key){
-		sprite[key] = element.properties[key];
-	});
-	
-	//sprite.x = 0;
-	sprite.y -= sprite.height;
-}
-
-var collideProjectile = function(projectile, obstacle){
-	if (projectile.tag == "projectile"){
-		if (projectile.collideFunction == null){
-			return;
-		}
-		
-		projectile.collideFunction.call(projectile,
-										obstacle);
-		if (typeof(obstacle.body) != "undefined"){
-			obstacle.body.velocity.x += projectile.body.velocity.x;
-			obstacle.body.velocity.y += projectile.body.velocity.y;
-		}
-	}
-}
-
-var collideProcessProjectile = function(projectile, obstacle){
-	if (projectile.tag == "projectile"){
-		if (projectile.collideProcess == null){
-			return false;
-		}
-		else{
-			return (!obstacle._dying && projectile.collideProcess.call(projectile,
-																	   obstacle));
-		}
-	}
-	else{
-		if (obstacle.tag == "projectile"){
-			if (obstacle.collideProcess == null){
-				return false;
-			}
-			else{
-				return (!projectile._dying && obstacle.collideProcess.call(obstacle,
-													projectile));
-			}
-		}
-		else{
-			return true;
-		}
-	}
-}
