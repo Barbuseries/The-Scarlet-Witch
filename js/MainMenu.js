@@ -15,7 +15,7 @@ BasicGame.MainMenu.prototype.create = function(){
 	
 	BasicGame.allPlayers.p1.controller.disable("action");
 	BasicGame.allPlayers.p2.controller.disable("action");
-
+	
 	var centerX = this.game.camera.width / 2;
 	var centerY = this.game.camera.height / 2;
 

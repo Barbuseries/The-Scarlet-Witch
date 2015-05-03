@@ -1,4 +1,5 @@
-var Level = function(game, mapName, platformTileset, backgroundName, tilesetCollisions){
+var Level = function(game, mapName, platformTileset, backgroundName,
+					 tilesetCollisions){
 	if (typeof(tilesetCollisions) === "undefined"){
 		tilesetCollisions = [];
 	}
@@ -17,7 +18,6 @@ var Level = function(game, mapName, platformTileset, backgroundName, tilesetColl
 	
 	this.onComplete = new Phaser.Signal();
 	this.checkCompleteFunction = null;
-	this.completeFunction = null;
 	this.completed = false;
 
 	this.allHeroes = null;
@@ -72,7 +72,7 @@ Level.prototype.update = function(){
 	this.game.physics.arcade.overlap(this.allHeroes, this.game.platforms);
 	this.game.physics.arcade.overlap(this.allEnnemies, this.game.platforms);
 
-	this.game.physics.arcade.collide(this.allHeroes, BasicGame.allEnnemies);
+	this.game.physics.arcade.collide(this.allHeroes, this.allEnnemies);
 
 	
 	this.game.physics.arcade.overlap(this.allHeroes, this.allCheckpoints);
@@ -99,10 +99,6 @@ Level.prototype.update = function(){
 	this.toKill = [];
 
 	this.completed = this.complete();
-
-	if (this.completed){
-		this.completeFunction();
-	}
 }
 
 Level.prototype.tagPlatforms = function(){
@@ -123,7 +119,6 @@ Level.prototype.loadMap = function(){
 	this.map = this.game.add.tilemap(this.mapName);
 
 	this.game.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
-
 
 	// Chargement du Tileset
 	this.map.addTilesetImage("platforms", this.platformTileset);
@@ -184,7 +179,10 @@ Level.prototype.load = function(){
 
 	this.game.world.bringToTop(this.allHeroes);
 	this.game.world.bringToTop(this.allEnnemies);
-	this.game.world.bringToTop(BasicGame.pool.textDamage);
+	
+	for(var i in BasicGame.pool){
+		this.game.world.bringToTop(BasicGame.pool[i]);
+	}
 }
 
 Level.prototype.complete = function(){

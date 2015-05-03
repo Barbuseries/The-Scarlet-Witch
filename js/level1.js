@@ -1,8 +1,39 @@
 BasicGame.Level1 = function(game){
 	this._stage = new Level(game, "level1", "Level1_Tiles", "sky");
+
+	BasicGame.level = this;
 }
 
 BasicGame.Level1.prototype.preload = function(){
+	this._stage.checkCompleteFunction = function(){
+		return this.allEnnemies.getFirstAlive() == null;
+	}
+
+	this._stage.onComplete.addOnce(function(){
+		this.timerToTitle = this.game.time.create(true);
+		this.lastWords = this.game.add.text(this.game.camera.width / 2,
+											this.game.camera.height / 2,
+											"Return to title in 3.0",
+											{font: "30px Arial", fill: BLACK});
+		this.lastWords.anchor.setTo(0.5, 0);
+		this.lastWords.fixedToCamera = true;
+		this.game.add.existing(this.lastWords);
+
+		this.timerToTitle.add(3000, function(){
+			this.game.state.start("MainMenu");
+		}, this);
+
+		this.timerToTitle.onComplete.add(function(){
+			this.lastWords.destroy();
+		}, this);
+		
+		this.timerToTitle.start();
+	}, this);
+
+	this._stage.onComplete.add(function(){
+		this.lastWords.text = "Return to title in " +
+			(this.timerToTitle.duration / 1000).toFixed(1).toString() + "!";
+	}, this);
 }
 
 BasicGame.Level1.prototype.create = function(){
