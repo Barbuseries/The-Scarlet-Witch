@@ -20,9 +20,20 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 
 	this.allResistances = [];
 
-	for(var i = 0; i <= Elements.ALMIGHTY; i++) {
+	for(var i = Elements.PHYSIC; i <= Elements.ALMIGHTY; i++) {
 		this.allResistances[i] = 0;
 	}
+
+	for(var i = Disabilities.STUN; i <= Disabilities.SLOW; i++){
+		this.allResistances[i] = 0;
+	}
+
+	this.allTimers = {
+		stun: null,
+		slow: null,
+		dot: null,
+		regen: null
+	};
 
 	this.allStats.level = new Stat(this, "Level", STAT_NO_MAXSTAT, level, level,
 								   0, 99);
@@ -129,7 +140,12 @@ Mob.prototype.jump = function(factor){
 	}
 }
 
-Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, element){
+Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, element,
+								stat){
+	if (typeof(stat) === "undefined"){
+		stat = this.allStats.health;
+	}
+
 	var actualDamage = (Math.random() * (damageRange[1] - damageRange[0]) +
 						damageRange[0]) * brutDamages;
 	var color = (this.tag == "hero") ? RED : WHITE;
@@ -182,35 +198,118 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	createTextDamage(this.game, this.x + this.width / 2, this.y + this.height / 2,
 					 actualDamage, color).text.stroke = stroke;
 
-	this.allStats.health.subtract(actualDamage);
+	stat.subtract(actualDamage);
 	this._textDamageDir *= -1;
+
+	return actualDamage;
+}
+
+Mob.prototype.heal = function(brutHeal, healRange, criticalChance, stat){
+	this.suffer(-brutHeal, healRange, criticalChance, Elements.ALMIGHTY, stat);
 }
 
 // You can't stun what's already stunned !
 Mob.prototype.stun = function(duration, chanceToStun){
-	if (typeof(this.stunTimer) != "undefined"){
+	if (this.allTimers.stun != null){
 		return;
 	}
 
-	if (Math.random() < chanceToStun){
+	if (Math.random() < chanceToStun - this.allResistances[Disabilities.STUN]){
 		var canMove = this.can.move;
 		var canAction = this.can.action;
 
-		this.stunTimer = this.game.time.create(true);
+		this.allTimers.stun = this.game.time.create(true);
 		
-		this.stunTimer.add(duration, function(){
+		this.allTimers.stun.add(duration, function(){
 			this.can.move = canMove;
 			this.can.action = canAction;
 		}, this);
 
-		this.stunTimer.onComplete.add(function(){
-			this.stunTimer = undefined;
+		this.allTimers.stun.onComplete.add(function(){
+			this.allTimers.stun.destroy();
+			this.allTimers.stun = null;
 		}, this);
 
 		this.can.move = false;
 		this.can.action = false;
 
-		this.stunTimer.start();
+		this.allTimers.stun.start();
+	}
+}
+
+// You can't slow what's already slowed !
+Mob.prototype.slow = function(duration, slowFactor, chanceToSlow){
+	if (this.allTimers.slow != null){
+		return;
+	}
+
+	if (Math.random() < chanceToSlow - this.allResistances[Disabilities.SLOW]){
+		this.allTimers.slow = this.game.time.create(true);
+		
+		this.allTimers.slow.add(duration, function(){
+			this.allStats.attackSpeed.factor /= slowFactor;
+			this.SPEED /= slowFactor;
+
+			this.body.maxVelocity.x = this.SPEED;
+		}, this);
+
+		this.allTimers.slow.onComplete.add(function(){
+			this.allTimers.slow.destroy();
+			this.allTimers.slow = undefined;
+		}, this);
+
+		this.allStats.attackSpeed.factor *= slowFactor;
+		this.SPEED *= slowFactor;
+
+		this.body.maxVelocity.x = this.SPEED;
+
+		this.allTimers.slow.start();
+	}
+}
+
+// You can't dot what's already dotted !
+Mob.prototype.dot = function(duration, tick, chanceToDot, brutDot, dotRange,
+							 criticalChance, element, stat){
+	if (this.allTimers.dot != null){
+		return;
+	}
+
+	if (Math.random() < chanceToDot){
+		this.allTimers.dot = this.game.time.create(true);
+
+		this.allTimers.dot.repeat(tick, duration / tick, function(){
+			this.suffer(brutDot, dotRange, criticalChance, element, stat);
+		}, this);
+
+		this.allTimers.dot.onComplete.add(function(){
+			this.allTimers.dot.destroy();
+			this.allTimers.dot = null;
+		}, this);
+
+		this.allTimers.dot.start();
+	}
+}
+
+// You can't regen what's already regened !
+Mob.prototype.regen = function(duration, tick, chanceToRegen, brutRegen, regenRange,
+							   criticalChance, stat){
+	if (this.allTimers.regen != null){
+		return;
+	}
+
+	if (Math.random() < chanceToRegen){
+		this.allTimers.regen = this.game.time.create(true);
+
+		this.allTimers.regen.repeat(tick, duration / tick, function(){
+			this.heal(brutRegen, regenRange, criticalChance, stat);
+		}, this);
+
+		this.allTimers.regen.onComplete.add(function(){
+			this.allTimers.regen.destroy();
+			this.allTimers.regen = null;
+		}, this);
+
+		this.allTimers.regen.start();
 	}
 }
 
@@ -282,6 +381,27 @@ Mob.prototype.releaseFifth = function(){
 		this.allSkills[this.currentMode].fifthSkill.release();
 	}
 	catch(err){}
+}
+
+Mob.prototype._deleteTimers = function(){
+	for(var i in this.allTimers){
+		if (this.allTimers[i] != null){
+			this.allTimers[i].destroy();
+			this.allTimers[i] = null;
+		}
+	}
+}
+
+Mob.prototype.die = function(){
+	this._deleteTimers();
+
+	Npc.prototype.die.call(this);
+}
+
+Mob.prototype.kill = function(){
+	this._deleteTimers();
+	
+	Npc.prototype.kill.call(this);
 }
 /******************************************************************************/
 /* Mob */

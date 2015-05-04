@@ -1,15 +1,20 @@
 /*********/
 /* Skill */
 /******************************************************************************/
-var Elements = {};
+var Elements = {
+	PHYSIC: 0,
+	FIRE: 1,
+	ICE: 2,
+	WIND: 3,
+	EARTH: 4,
+	THUNDER: 5,
+	ALMIGHTY: 6
+};
 
-Elements.PHYSIC = 0;
-Elements.FIRE = 1;
-Elements.ICE = 2;
-Elements.WIND = 3;
-Elements.EARTH = 4;
-Elements.THUNDER = 5;
-Elements.ALMIGHTY = 6;
+var Disabilities = {
+	STUN: 7,
+	SLOW: 8
+};
 
 var Skill = function(user, level, costFunction, cooldown, element,
 					 targetTags){
@@ -514,7 +519,12 @@ var FireBallSkill = function(user, level, targetTags){
 
 		function collideFunction(obstacle){
 			if (obstacle.tag != "platform"){
-				this.damageFunction(obstacle);
+				var damages = this.damageFunction(obstacle);
+
+				if (damages > 0){
+					obstacle.dot(5000, 500, 0.25, user.allStats.attack.get() / 5,
+								 [0.9, 1.1], 0.1, Elements.FIRE);
+				}
 			}
 
 			this.kill();
@@ -530,7 +540,7 @@ var FireBallSkill = function(user, level, targetTags){
 			var damageRange = [0.9, 1.1];
 			var criticalRate = self.user.allStats.criticalRate.get();
 			
-			obstacle.suffer(damage, damageRange, criticalRate, this.element);
+			return obstacle.suffer(damage, damageRange, criticalRate, this.element);
 		}
 
 		function initExplosion(x, y){
@@ -687,7 +697,11 @@ var IceBallSkill = function(user, level, targetTags){
 
 		function collideFunction(obstacle){
 			try{
-				this.damageFunction(obstacle);
+				var damages = this.damageFunction(obstacle);
+
+				if (damages > 0){
+					obstacle.slow(self.level * 1000, self.level / 10 * 1.5, 0.33);
+				}
 			}
 			catch(err){}
 
@@ -740,8 +754,8 @@ var IceBallSkill = function(user, level, targetTags){
 			var damageRange = [0.9, 1.1];
 			var criticalRate = self.user.allStats.criticalRate.get();
 			
-			obstacle.suffer(damage * (1 + factor), damageRange, criticalRate,
-							this.element);
+			return obstacle.suffer(damage * (1 + factor), damageRange, criticalRate,
+								   this.element);
 		}
 
 		createProjectile(this.game, 0, 0, "iceball_0",
