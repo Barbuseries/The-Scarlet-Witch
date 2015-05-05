@@ -810,13 +810,103 @@ var DeathSkill = function (user, level, targetTags) {
 		}
     }
 
-    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY, targetTags);
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+			   targetTags);
 
-    this.launchFunction = function () {
-        var user = this.user;
-        var self = this;
+	var self = this;
+	var user = this.user;
 
-        function initProjectile() {
+	this.deathZone = null;
+	this.range = 3 * user.width * Math.sqrt(this.level);
+
+	this.onCharge.add(function(){
+		if (this.deathZone != null){
+			return;
+		}
+
+		user.can.move = false;
+		user.can.jump = false;
+		user.can.orient = false;
+
+		function initProjectile(){
+			this.anchor.setTo(0.5);
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+			this.body.allowGravity = false;
+
+			this.x = user.x + user.width / 2;
+			this.y = user.y + user.height / 2;
+
+			this.width = user.width;
+			this.height = this.width;
+
+			this.tint = H_BLACK;
+			this.alpha = 0.5;
+
+			this.element = self.element;
+			this.targetTags = self.targetTags;
+
+			this._frame = 0;
+			this.activated = false;
+		}
+
+		function updateProjectile(){
+			switch(this._frame){
+			case 0:
+				this.width = user.width + self.chargeTime.get(1) *
+					(self.range - user.width);
+				break;
+			case 2:
+				this.width -= 5;
+				break;
+			default:
+				break;
+			}
+
+			this.height = this.width;
+
+			this._frame++;
+
+			this._frame %= 5;
+
+			this.x = user.x + user.width / 2;
+			this.y = user.y + user.height / 2;
+		}
+
+		function collideProcess(obstacle){
+			return (this.activated &&
+					(this.targetTags.indexOf(obstacle.tag) != -1));
+		}
+
+		function damageFunction(obstacle){
+			var damage = obstacle.allStats.health.get();
+
+            obstacle.suffer(damage, [1, 1], 0, this.element);
+		}	
+
+		user.animations.play("spellChargeBoth")
+			.onComplete.addOnce(function(){
+				this.deathZone = createProjectile(this.game, 0, 0, "circle",
+												  initProjectile, updateProjectile,
+												  null, null, collideProcess,
+												  damageFunction);
+			}, this);
+	}, this);
+
+    this.launchFunction = function (factor) {
+		if (!user.animations.currentAnim.isFinished){
+			user.animations.currentAnim.onComplete.addOnce(
+				function(){
+					this.launchFunction.call(this, factor);
+				}, this);
+			return;
+		}
+
+		this.deathZone.activated = true;
+		BasicGame.level._stage.toKill.push(this.deathZone);
+
+		this.deathZone = null;
+        /*function initProjectile() {
             this.x = user.x;
             this.y = user.y;
 
@@ -826,10 +916,11 @@ var DeathSkill = function (user, level, targetTags) {
 
             this.lifespan = 800;
 
-            this.animations.add("animation", [0,1,2,3,4,5,6,7,8,9,10,12,13]);
+            this.animations.add("animation", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+											  12, 13]);
             this.animations.play("animation");
 
-            this.game.physics.enable([this], Phaser.Physics.ARCADE);
+            this.game.physics.enable(this, Phaser.Physics.ARCADE);
 
             this.body.allowGravity = false;
 
@@ -846,16 +937,9 @@ var DeathSkill = function (user, level, targetTags) {
         }
 
         function collideFunction(obstacle) {
-            if (obstacle.tag != "platform") {
-                this.damageFunction(obstacle);
-            }
+            this.damageFunction(obstacle);
 
             this.kill();
-        }
-
-        function collideProcess(obstacle) {
-            return ((this.targetTags.indexOf(obstacle.tag) != -1) ||
-					(obstacle.tag == "platform"));
         }
 
         function damageFunction(obstacle) {
@@ -871,15 +955,23 @@ var DeathSkill = function (user, level, targetTags) {
         user.animations.stop("spellCastLeft");
 
         createProjectile(this.game, 0, 0, "death",
-								 initProjectile2, updateProjectile, killProjectile,
-								 collideFunction, collideProcess, damageFunction);
+						 initProjectile, updateProjectile, killProjectile,
+						 collideFunction, null, damageFunction);
 
         if (user.orientationH >= 0) {
             user.animations.play("spellCastRight");
         }
         else {
             user.animations.play("spellCastLeft");
-        }
+        }*/
+
+		user.animations.play("spellReleaseBoth")
+			.onComplete.add(function(){
+				user.can.action = true;
+				user.can.move = true;
+				user.can.jump = true;
+				user.can.orient = true;
+			}, this);
     };
 
     this.icon = "death_icon";

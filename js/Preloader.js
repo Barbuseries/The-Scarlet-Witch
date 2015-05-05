@@ -24,6 +24,7 @@ BasicGame.Preloader.prototype.preload =  function(){
     
 	this.load.image("ground2", assetsDir + "platform2.png");
 	this.load.image("blood", assetsDir + "bloodParticle.png");
+	this.load.image("circle", assetsDir + "circle.png");
 
 	// Skills
 	var skillDir = assetsDir + "Skills/";
@@ -47,6 +48,8 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("quake_0", skillDir + "quake_0.png", 256, 128);
 	this.load.image("trap_icon", skillDir + 'trap_icon.png');
 	this.load.image("slash_icon", skillDir + "slash_icon.png");
+	this.load.spritesheet("death", skillDir + "death.png", 32, 32);
+	this.load.image("death_icon", skillDir + "death_icon.png");
 	this.load.spritesheet("explosion_0", skillDir + "explosion_0.png", 64, 64);
 	this.load.spritesheet("explosion_1", skillDir + "explosion_1.png", 64, 64);
 

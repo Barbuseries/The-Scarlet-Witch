@@ -340,7 +340,9 @@ Mob.prototype.castFourth = function(){
 	try{
 		this.allSkills[this.currentMode].fourthSkill.charge();
 	}
-	catch(err){}
+	catch(err){
+		console.log(err);
+	}
 }
 
 Mob.prototype.castFifth = function(){
@@ -388,6 +390,7 @@ Mob.prototype.releaseFifth = function(){
 Mob.prototype._deleteTimers = function(){
 	for(var i in this.allTimers){
 		if (this.allTimers[i] != null){
+			this.allTimers[i].stop();
 			this.allTimers[i].destroy();
 			this.allTimers[i] = null;
 		}

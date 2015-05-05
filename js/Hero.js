@@ -35,7 +35,8 @@ Hero.prototype = Object.create(Mob.prototype);
 Hero.prototype.constructor = Hero;
 
 Hero.prototype.jump = function(control, factor){
-	if (this._dying){
+	if (this._dying ||
+	   !this.can.jump){
 		return;
 	}
 	
@@ -166,8 +167,8 @@ var Lucy = function(game, x, y, level){
 	this.allSkills[0].thirdSkill = new ThunderSkill(this, 5,
 													["enemy"]);
 	this.allSkills[0].thirdSkill.setChargeTime(5000);
-	this.allSkills[0].fourthSkill = new DeathSkill(this, 5,
-													["enemy"]);
+	this.allSkills[0].fourthSkill = new DeathSkill(this, 1,
+												   ["enemy"]);
 	this.allSkills[0].fourthSkill.setChargeTime(5000);
 
 }

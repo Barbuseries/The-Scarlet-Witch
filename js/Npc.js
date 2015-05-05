@@ -19,16 +19,26 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 		.allowBreak = false;
 	this.animations.add("spellCastBoth", [27, 28, 29, 30, 31, 32, 26], 15)
 		.allowBreak = false;
-
 	/**************/
 	/* A tester ! */
+	/******************************************************************************/
+	this.animations.add("spellChargeLeft", [14, 15, 16], 8)
+		.allowBreak = false;
+	this.animations.add("spellChargeRight", [40, 41, 42], 8)
+		.allowBreak = false;
+	this.animations.add("spellChargeBoth", [26, 27, 28], 8)
+		.allowBreak = false;
+	this.animations.add("spellReleaseLeft", [17, 18, 19, 13], 15)
+		.allowBreak = false;
+	this.animations.add("spellReleaseRight", [43, 44, 45, 39], 15)
+		.allowBreak = false;
+	this.animations.add("spellReleaseBoth", [29, 30, 32, 26], 15)
+		.allowBreak = false;
 	/******************************************************************************/
 	this.animations.add("swordRight", [195, 196, 197, 198, 199, 200, 200, 195], 15)
 		.allowBreak = false;
 	this.animations.add("swordLeft", [169, 170, 171, 172, 173, 174, 174, 169], 15)
 		.allowBreak = false;
-	/******************************************************************************/
-
 	this.animations.add("bendBowLeft", [221, 222, 223, 224, 225, 226, 227, 228, 229],
 						15)
 		.allowBreak = false;
