@@ -6,7 +6,7 @@ BasicGame.Level1 = function(game){
 
 BasicGame.Level1.prototype.preload = function(){
 	this._stage.checkCompleteFunction = function(){
-		return this.allEnnemies.getFirstAlive() == null;
+		return this.allEnemies.getFirstAlive() == null;
 	}
 
 	this._stage.onComplete.addOnce(function(){
@@ -36,6 +36,12 @@ BasicGame.Level1.prototype.preload = function(){
 	}, this);
 }
 
+var mob1;
+var mob2;
+
+var tile1;
+var tile1;
+
 BasicGame.Level1.prototype.create = function(){
 	this._stage.init();
 
@@ -43,6 +49,12 @@ BasicGame.Level1.prototype.create = function(){
 
 	this._stage.map.setCollisionBetween(0, 63);
 	this._stage.tagPlatforms();
+
+	this._stage.initPathFinders();
+
+	/*for(var i = 0; i < this._stage._grid.length; i++) {
+		console.log(this._stage._grid[i]);
+	}*/
 
 	this.barton = new Barton(this.game, 1000, 200, 99);
 	this.barton.scale.setTo(1.3);
@@ -52,7 +64,7 @@ BasicGame.Level1.prototype.create = function(){
 	this.barton.allStats.health.set(1, 1);
 	this.barton.allStats.agility.add(99);
 
-	this.lucy = new Lucy(this.game, 600, 500, 1);
+	this.lucy = new Lucy(this.game, 600, 800, 1);
 	this.lucy.allStats.endurance.add(100);
 	this.lucy.allStats.mainStat.add(100);
 	this.lucy.allStats.agility.add(100);
@@ -392,11 +404,25 @@ BasicGame.Level1.prototype.create = function(){
 
 	this.barton.quiverRegen.start();
 
-	BasicGame.allPlayers.p1.setHero(this.barton);
-	BasicGame.allPlayers.p2.setHero(this.lucy);
+	BasicGame.allPlayers.p2.setHero(this.barton);
+	BasicGame.allPlayers.p1.setHero(this.lucy);
 
 	BasicGame.allPlayers.p1.controller.enable("action");
 	BasicGame.allPlayers.p2.controller.enable("action");
+
+	mob1 = this._stage.allEnemies.getChildAt(0);
+	mob2 = this._stage.allEnemies.getChildAt(1);
+
+	tile1 = getTileWorldWY(0, mob1.x + 32, mob1.y + 32);
+	tile2 = getTileWorldWY(0, this.lucy.x + 32, this.lucy.y + 32);
+
+	mob1.pathFinder.findPath(tile1.x, tile1.y, tile2.x, tile2.y, function(path){
+		mob1.pathFinder.path = path;
+
+		console.log(path);
+	});
+
+	mob1.pathFinder.calculate();
 }
 
 BasicGame.Level1.prototype.update = function (){
@@ -407,5 +433,29 @@ BasicGame.Level1.prototype.update = function (){
 	this.barton.allStats.fury.subtract(0.02 / 60, 1);
 
 	this.lucy.allStats.experience.add(100);
+
+	if (Math.abs(this.lucy.x - mob1.x) < 1000){
+		if (mob1.pathFinder.path != null && mob1.pathFinder.path.length){
+			var tile = mob1.pathFinder.path[0];
+			
+			if (mob1.x < tile.x * 32 + 16){
+				mob1.goRight();
+			}
+			else if (mob1.x > tile.x * 32 + 16){
+				mob1.goLeft();
+			}
+
+			if (mob1.y > tile.y * 32 + 16){
+				mob1.jump(1.5);
+			}
+			
+			if (Math.abs(mob1.x - (tile.x * 32 + 16)) <= 16){
+				mob1.pathFinder.path.shift();
+			}
+		}
+	}
 }
 
+var getTileWorldWY =  function(layer, x, y){
+	return BasicGame.level._stage.map.layers[layer].data[Math.floor(y / 32)][Math.floor(x / 32)];
+}

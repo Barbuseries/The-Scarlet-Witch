@@ -108,6 +108,8 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.body.maxVelocity.setTo(this.SPEED, this.SPEED * 1.5);
 	this.body.drag.setTo(this.DRAG, 0);
 
+	this.pathFinder = null;
+
 	this._textDamageDir = 1;
 }
 
@@ -134,7 +136,7 @@ Mob.prototype.jump = function(factor){
     }
 	
 	if (this.jumpCount > 0){
-		this.body.velocity.y = -this.JUMP_POWER;
+		this.body.velocity.y = -this.JUMP_POWER * factor;
 
 		this.jumpCount--;
 	}
@@ -406,3 +408,64 @@ Mob.prototype.kill = function(){
 /******************************************************************************/
 /* Mob */
 /*******/
+
+/***************/
+/* Common Mobs */
+/******************************************************************************/
+var createMob = function(game, x, y, spriteSheet, name, level, tag, initFunction,
+						 updateFunction, killFunction, pathFinder){
+	if (typeof(pathFinder) === "undefined") pathFinder = "Mob";
+	var newMob;
+	var mobPool = (tag == "hero" ) ? BasicGame.level._stage.allHeroes :
+		BasicGame.level._stage.allEnemies;
+
+
+	if (mobPool != null){
+		var reusableMob = mobPool.getFirstDead();
+
+		if (reusableMob == null){
+			newMob = new Mob(game, x, y, spriteSheet, name, level, tag, initFunction,
+							 updateFunction, killFunction);
+
+			mobPool.add(newMob);
+		}
+		else{
+			newMob = reusableMob;
+			newMob.reset(0, 0, 1);
+			newMob.scale.x = 1;
+			newMob.scale.y = 1;
+
+			newMob.setInitFunction(initFunction);
+			newMob.setUpdateFunction(updateFunction);
+			newMob.setKillFunction(killFunction);
+		}
+	}
+	else{
+		Error("Can' t create a Mob without a pool !");
+		
+		return null;
+	}
+
+	if (typeof(BasicGame.easyStar[pathFinder]) != "undefined"){
+		newMob.pathFinder = BasicGame.easyStar[pathFinder];
+	}
+	else{
+		BasicGame.easyStar[pathFinder] = new EasyStar.js();
+		newMob.pathFinder = BasicGame.easyStar[pathFinder];
+	}
+
+	newMob.init();
+
+	return newMob;
+}
+
+var createArcher = function(game, x, y, spriteSheet, level){
+	var newArcher;
+
+	return createMob(game, x, y, spriteSheet, "Archer", level, "enemy",
+					 null, null, null, "archer");
+}
+
+/******************************************************************************/
+/* Common Mobs */
+/***************/

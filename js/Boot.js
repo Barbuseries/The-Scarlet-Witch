@@ -16,6 +16,8 @@ var BasicGame = {
 		music: 0.1
 	},
 
+	easyStar: {},
+
 	mute: function(control){
 		control.manager.game.sound.mute = !control.manager.game.sound.mute;
 	},

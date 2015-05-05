@@ -207,8 +207,13 @@ var findObjectsByType = function(type, map, layer){
 var createFromTiledObject = function(element, group, constructor) {
 	var allConstructors = {
 		Mob: function(group, element){
-			return new Mob(group.game, element.x, element.y,
-						   element.properties.sprite);
+			return createMob(group.game, element.x, element.y,
+							 element.properties.sprite);
+		},
+
+		Archer: function(group, element){
+			return createArcher(group.game, element.x, element.y,
+								element.properties.sprite, 1);
 		},
 		
 		Item: function(group, element){
@@ -218,6 +223,10 @@ var createFromTiledObject = function(element, group, constructor) {
 
 	var object = allConstructors[constructor](group, element);
 
+	if (object == null){
+		return;
+	}
+	
 	group.add(object);
 
 	// copy all properties to the sprite
@@ -225,5 +234,5 @@ var createFromTiledObject = function(element, group, constructor) {
 		object[key] = element.properties[key];
 	});
 
-	object.y -= object.height;
+	object.y -= object.height / 2;
 }
