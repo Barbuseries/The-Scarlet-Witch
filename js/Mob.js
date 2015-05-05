@@ -29,6 +29,8 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	}
 
 	this.allTimers = {
+		follow: null,
+		skillCharge: null,
 		stun: null,
 		slow: null,
 		dot: null,
@@ -315,76 +317,82 @@ Mob.prototype.regen = function(duration, tick, chanceToRegen, brutRegen, regenRa
 	}
 }
 
-Mob.prototype.castFirst = function(){
-	try{
-		this.allSkills[this.currentMode].firstSkill.charge();
+Mob.prototype.cast = function(skill, control, factor){
+	if (typeof(skill) != "string"){
+		return;
 	}
-	catch(err){}
+
+	if (this._dying){
+		return;
+	}
+
+	var skill = this.allSkills[this.currentMode][skill + "Skill"];
+
+	
+	if (skill instanceof Skill){
+		if (skill.chargeTime.getMax() > 0){
+			if (typeof(factor) != "undefined"){
+				if (skill.chargeTime.get(1) >= factor){
+					skill.release();
+
+					return;
+				}
+				
+			}
+		}
+		
+		skill.charge();
+	}
 }
 
-Mob.prototype.castSecond = function(){
-	try{
-		this.allSkills[this.currentMode].secondSkill.charge();
-	}
-	catch(err){}
+Mob.prototype.castFirst = function(control, factor){
+	this.cast("first", control, factor);
 }
 
-Mob.prototype.castThird = function(){
-	try{
-		this.allSkills[this.currentMode].thirdSkill.charge();
-	}
-	catch(err){}
+Mob.prototype.castSecond = function(control, factor){
+	this.cast("second", control, factor);
 }
 
-Mob.prototype.castFourth = function(){
-	try{
-		this.allSkills[this.currentMode].fourthSkill.charge();
-	}
-	catch(err){
-		console.log(err);
-	}
+Mob.prototype.castThird = function(control, factor){
+	this.cast("third", control, factor);
 }
 
-Mob.prototype.castFifth = function(){
-	try{
-		this.allSkills[this.currentMode].fifthSkill.charge();
+Mob.prototype.castFourth = function(control, factor){
+	this.cast("fourth", control, factor);
+}
+
+Mob.prototype.castFifth = function(control, factor){
+	this.cast("fifth", control, factor);
+}
+
+Mob.prototype.release = function(skill){
+	if (typeof(skill) != "string"){
+		return;
 	}
-	catch(err){}
+
+	if (this.allSkills[this.currentMode][skill + "Skill"] instanceof Skill){
+		this.allSkills[this.currentMode][skill + "Skill"].release();
+	}
 }
 
 Mob.prototype.releaseFirst = function(){
-	try{
-		this.allSkills[this.currentMode].firstSkill.release();
-	}
-	catch(err){}
+	this.release("first");
 }
 
 Mob.prototype.releaseSecond = function(){
-	try{
-		this.allSkills[this.currentMode].secondSkill.release();
-	}
-	catch(err){}
+	this.release("second");
 }
 
 Mob.prototype.releaseThird = function(){
-	try{
-		this.allSkills[this.currentMode].thirdSkill.release();
-	}
-	catch(err){}
+	this.release("third");
 }
 
 Mob.prototype.releaseFourth = function(){
-	try{
-		this.allSkills[this.currentMode].fourthSkill.release();
-	}
-	catch(err){}
+	this.release("fourth");
 }
 
 Mob.prototype.releaseFifth = function(){
-	try{
-		this.allSkills[this.currentMode].fifthSkill.release();
-	}
-	catch(err){}
+	this.release("fifth");
 }
 
 Mob.prototype._deleteTimers = function(){
@@ -455,6 +463,11 @@ var createMob = function(game, x, y, spriteSheet, name, level, tag, initFunction
 	else{
 		BasicGame.easyStar[pathFinder] = new EasyStar.js();
 		newMob.pathFinder = BasicGame.easyStar[pathFinder];
+
+		console.log(newMob.pathFinder);
+
+		newMob.pathFinder.disableDiagonals();
+		newMob.pathFinder.setIterationsPerCalculation(1000);
 	}
 
 	newMob.init();

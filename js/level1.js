@@ -57,7 +57,7 @@ BasicGame.Level1.prototype.create = function(){
 	}*/
 
 	this.barton = new Barton(this.game, 1000, 200, 99);
-	this.barton.scale.setTo(1.3);
+	//this.barton.scale.setTo(1.3);
 	this.barton.allResistances[Elements.FIRE] = 2;
 	this.barton.allStats.endurance.add(100);
 	this.barton.allStats.mainStat.add(100);
@@ -413,16 +413,21 @@ BasicGame.Level1.prototype.create = function(){
 	mob1 = this._stage.allEnemies.getChildAt(0);
 	mob2 = this._stage.allEnemies.getChildAt(1);
 
-	tile1 = getTileWorldWY(0, mob1.x + 32, mob1.y + 32);
+	/*tile1 = getTileWorldWY(0, mob1.x + 32, mob1.y + 32);
 	tile2 = getTileWorldWY(0, this.lucy.x + 32, this.lucy.y + 32);
 
-	mob1.pathFinder.findPath(tile1.x, tile1.y, tile2.x, tile2.y, function(path){
-		mob1.pathFinder.path = path;
-
+	mob1.findPath(tile1.x, tile1.y, tile2.x, tile2.y, function(path){
 		console.log(path);
 	});
 
-	mob1.pathFinder.calculate();
+	mob1.pathFinder.calculate();*/
+
+	mob1.follow(this.lucy);
+	mob2.follow(this.barton);
+
+	mob1.allStats.quiver = new Stat(this, "Quiver", STAT_NO_LINK, 1000);
+
+	mob1.allSkills[0].firstSkill = new ArrowSkill(mob1, 1, ["platform", "hero"]);
 }
 
 BasicGame.Level1.prototype.update = function (){
@@ -434,26 +439,25 @@ BasicGame.Level1.prototype.update = function (){
 
 	this.lucy.allStats.experience.add(100);
 
-	if (Math.abs(this.lucy.x - mob1.x) < 1000){
-		if (mob1.pathFinder.path != null && mob1.pathFinder.path.length){
-			var tile = mob1.pathFinder.path[0];
-			
-			if (mob1.x < tile.x * 32 + 16){
-				mob1.goRight();
-			}
-			else if (mob1.x > tile.x * 32 + 16){
-				mob1.goLeft();
-			}
+	if (Math.abs(this.lucy.x - mob1.x) < 500){
 
-			if (mob1.y > tile.y * 32 + 16){
-				mob1.jump(1.5);
-			}
-			
-			if (Math.abs(mob1.x - (tile.x * 32 + 16)) <= 16){
-				mob1.pathFinder.path.shift();
-			}
+		if (this.lucy.x < mob1.x){
+			mob1.orientLeft();
 		}
+
+		else{
+			mob1.orientRight();
+		}
+
+		mob1.castFirst(null, 0.75);
 	}
+	else if (mob1.allSkills[mob1.currentMode].firstSkill.chargeTime.get()){
+		mob1.releaseFirst();
+	}
+
+	//mob1.allSkills[0].firstSkill.useSkill();
+
+	//mob1.followPath();
 }
 
 var getTileWorldWY =  function(layer, x, y){

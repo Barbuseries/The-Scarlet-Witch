@@ -30,6 +30,10 @@ var Entity = function(game, x, y, spriteName, initFunction, updateFunction,
 	this.setUpdateFunction(updateFunction);
 	this.setKillFunction(killFunction);
 
+	this.onInit = new Phaser.Signal();
+	this.onUpdate = new Phaser.Signal();
+	this.onKill = new Phaser.Signal();
+
 	this.tag = tag;
 };
 
@@ -38,12 +42,16 @@ Entity.prototype.constructor = Entity;
 
 
 Entity.prototype.init = function(){
+	this.onInit.dispatch(this);
+
 	if (this.initFunction != null){
 		this.initFunction();
 	}
 }
 
 Entity.prototype.update = function(){
+	this.onUpdate.dispatch(this);
+
 	if (this.updateFunction != null){
 		this.updateFunction();
 	}
@@ -53,6 +61,8 @@ Entity.prototype.update = function(){
 
 // If killFunction returns true, kill the Entity.
 Entity.prototype.kill = function(code){
+	this.onKill.dispatch(this);
+
 	if (this.killFunction != null){
 		if (this.killFunction()){
 			Phaser.Sprite.prototype.kill.call(this);

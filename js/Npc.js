@@ -90,6 +90,15 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 		action: null
 	};
 
+	this.allTimers = {
+		follow: null
+	};
+
+	this.path = null;
+	
+	this.onMovement = new Phaser.Signal();
+	this.onDeath = new Phaser.Signal();
+
 	this._dying = false;
 
 	this.animations.play("idle");
@@ -124,6 +133,8 @@ Npc.prototype.goLeft = function(control, factor){
 	}
 
     this.body.acceleration.x -= this.ACCELERATION * Math.abs(factor);
+
+	this.onMovement.dispatch();
 }
 
 Npc.prototype.goRight = function(control, factor){
@@ -152,6 +163,8 @@ Npc.prototype.goRight = function(control, factor){
 	}
 
     this.body.acceleration.x += this.ACCELERATION * Math.abs(factor);
+
+	this.onMovement.dispatch();
 }
 
 Npc.prototype.orientLeft = function(){
@@ -206,13 +219,112 @@ Npc.prototype.orientRight = function(){
 	}*/
 }
 
+Npc.prototype.findPath = function(startX, startY, endX, endY, callback){
+	var self = this;
+
+	this.pathFinder.path = null;
+
+	this.pathFinder.findPath(startX, startY, endX, endY, function(path){
+		self.path = path;
+		
+		if (typeof(callback) == "function"){
+			callback.call(this, path);
+		}
+	});
+} 
+
+Npc.prototype.followPath = function(){
+	if (this.path == null){
+		return;
+	}
+
+	var nextTile = this.path[0];
+
+
+	if (this.y > nextTile.y * 32 + 16){
+		this.jump(1.5);
+	}
+
+	if (Math.abs(this.x - (nextTile.x  * 32)) < 32){
+		this.path.shift();
+	}
+	else{
+		if (this.x < nextTile.x * 32){
+			this.goRight();
+		}
+		else{
+			this.goLeft();
+		}
+	}
+
+	if (this.path.length == 0){
+		this.path = null;
+	}
+}
+
+Npc.prototype.follow = function(target, tickRecompute){
+	if (!(target instanceof Npc)){
+		return;
+	}
+
+	if (typeof(tickRecompute) === "undefined"){
+		tickRecompute = 1000;
+	}
+
+	this.target = target;
+	
+	function followTarget(){
+		var myTile = getTileWorldWY(0, this.x, this.y);
+		var targetTile = getTileWorldWY(0, this.target.x, this.target.y);
+
+		if ((myTile == null) ||
+		   (targetTile == null)){
+			return;
+		}
+
+		this.findPath(myTile.x, myTile.y, targetTile.x, targetTile.y, function(path){
+			//console.log(path);
+		});
+
+		this.pathFinder.calculate();
+	}
+
+	this.allTimers.follow = this.game.time.create(false);
+	this.allTimers.follow.loop(tickRecompute, followTarget, this);
+
+	followTarget.call(this);
+
+	this.onUpdate.add(this.followPath, this);
+
+	this.allTimers.follow.start();
+}
+
+Npc.prototype.unFollow = function(){
+	if (this.allTimers.follow == null){
+		return;
+	}
+
+	this.allTimers.follow.stop();
+	this.allTimers.follow.destroy();
+	this.allTimers.follow = null;
+	
+	this.onUpdate.remove(this.followPath);
+	//this.target.onMovement.remove(followTarget);
+}
+
 Npc.prototype.kill = function(){
 	this._dying = false;
-
+	
+	this.unFollow();
+	
 	Entity.prototype.kill.call(this);
 }
 
 Npc.prototype.die = function(){
+	this.onDeath.dispatch(this);
+
+	this.unFollow();
+
 	this.animations.play("death", null, false, true);
 	this._dying = true;
 }

@@ -55,24 +55,35 @@ Level.prototype.initPathFinders = function(){
 
 			var tile = layer.data[i][j];
 
+			if (tile.tag == "platform"){
+				grid[i][j] = 0;
+
+				continue;
+			}
+
 			// If the tile is not a platform (you can walk ON a
 			// platform, not THROUGH it).
 			if (tile.tag != "platform"){
 				var tileBelow = this.map.getTileBelow(0, j, i);
-				var tileLeftBelow = (tileBelow != null) ? this.map.getTileLeft(0, tileBelow.x, tileBelow.y) :
+				var tileLeftBelow = (tileBelow != null) ?
+					this.map.getTileLeft(0, tileBelow.x, tileBelow.y) :
 					null;
-				var tileRightBelow = (tileBelow != null) ? this.map.getTileRight(0, tileBelow.x, tileBelow.y) :
+				var tileRightBelow = (tileBelow != null) ?
+					this.map.getTileRight(0, tileBelow.x, tileBelow.y) :
 					null;
 				
 				var tileAbove = this.map.getTileAbove(0, j, i);
-				var tileLeftAbove = (tileAbove != null) ? this.map.getTileLeft(0, tileAbove.x, tileAbove.y) :
+				var tileLeftAbove = (tileAbove != null) ?
+					this.map.getTileLeft(0, tileAbove.x, tileAbove.y) :
 					null;
-				var tileRightAbove = (tileAbove != null) ? this.map.getTileRight(0, tileAbove.x, tileAbove.y) :
+				var tileRightAbove = (tileAbove != null) ?
+					this.map.getTileRight(0, tileAbove.x, tileAbove.y) :
 					null;
 
 				var tileLeft = this.map.getTileLeft(0, j, i);
 				var tileRight = this.map.getTileRight(0, j, i);
-				var tileBelowBelow = (tileBelow != null) ? this.map.getTileBelow(0, tileBelow.x, tileBelow.y) :
+				var tileBelowBelow = (tileBelow != null) ?
+					this.map.getTileBelow(0, tileBelow.x, tileBelow.y) :
 					null;
 
 				// If the tile below is a platform, you can move
