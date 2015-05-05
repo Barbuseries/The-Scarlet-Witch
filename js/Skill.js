@@ -792,6 +792,103 @@ var IceBallSkill = function(user, level, targetTags){
 IceBallSkill.prototype = Object.create(Skill.prototype);
 IceBallSkill.prototype.constructor = IceBallSkill;
 
+var DeathSkill = function (user, level, targetTags) {
+    var cooldown = 1500;
+
+    function costFunction(applyCost) {
+        var cost = (0.4 - this.level / 50) * this.user.allStats.special.getMax();
+		
+		if (this.user.allStats.special.canSubtract(cost)) {
+			if (applyCost){
+				this.user.allStats.special.subtract(cost);
+			}
+				
+			return true;
+		}
+		else {
+			return false;
+		}
+    }
+
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY, targetTags);
+
+    this.launchFunction = function () {
+        var user = this.user;
+        var self = this;
+
+        function initProjectile() {
+            this.x = user.x;
+            this.y = user.y;
+
+            this.anchor.setTo(0);
+
+            this.frame = 0;
+
+            this.lifespan = 800;
+
+            this.animations.add("animation", [0,1,2,3,4,5,6,7,8,9,10,12,13]);
+            this.animations.play("animation");
+
+            this.game.physics.enable([this], Phaser.Physics.ARCADE);
+
+            this.body.allowGravity = false;
+
+            this.targetTags = self.targetTags;
+
+            this.element = self.element;
+        }
+
+        function updateProjectile() {
+        }
+
+        function killProjectile() {
+            return true;
+        }
+
+        function collideFunction(obstacle) {
+            if (obstacle.tag != "platform") {
+                this.damageFunction(obstacle);
+            }
+
+            this.kill();
+        }
+
+        function collideProcess(obstacle) {
+            return ((this.targetTags.indexOf(obstacle.tag) != -1) ||
+					(obstacle.tag == "platform"));
+        }
+
+        function damageFunction(obstacle) {
+            var damage = self.user.allStats.attack.get();
+            var damageRange = [0.9, 1.1];
+            var criticalRate = self.user.allStats.criticalRate.get();
+
+            obstacle.suffer(damage, damageRange, criticalRate, this.element);
+        }
+
+
+        user.animations.stop("spellCastRight");
+        user.animations.stop("spellCastLeft");
+
+        createProjectile(this.game, 0, 0, "death",
+								 initProjectile2, updateProjectile, killProjectile,
+								 collideFunction, collideProcess, damageFunction);
+
+        if (user.orientationH >= 0) {
+            user.animations.play("spellCastRight");
+        }
+        else {
+            user.animations.play("spellCastLeft");
+        }
+    };
+
+    this.icon = "death_icon";
+}
+
+DeathSkill.prototype = Object.create(Skill.prototype);
+DeathSkill.prototype.constructor = ThunderSkill;
+
+
 var ThunderSkill = function (user, level, targetTags) {
     var cooldown = [30000 / 3, 28000 / 3, 26000 / 3, 24000 / 3, 20000 / 3];
 	

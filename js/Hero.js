@@ -166,7 +166,10 @@ var Lucy = function(game, x, y, level){
 	this.allSkills[0].thirdSkill = new ThunderSkill(this, 5,
 													["enemy"]);
 	this.allSkills[0].thirdSkill.setChargeTime(5000);
-	
+	this.allSkills[0].fourthSkill = new DeathSkill(this, 5,
+													["enemy"]);
+	this.allSkills[0].fourthSkill.setChargeTime(5000);
+
 }
 
 Lucy.prototype = Object.create(Hero.prototype);
