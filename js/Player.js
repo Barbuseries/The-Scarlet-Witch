@@ -14,8 +14,13 @@ Player.prototype.getHero = function(){
 
 Player.prototype.setHero = function(hero){
 	this.hero = hero;
-	this.hero.player = this;
 	this.controller.target = this.hero;
+
+	if (hero == null){
+		return;
+	}
+
+	this.hero.player = this;
 
 	var statusUi = this.hero.statusUi;
 

@@ -408,6 +408,8 @@ var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 	this.backgroundFill = null;
 
 	this.onUpdate = new Phaser.Signal();
+
+	stat.onDestroy.add(this.destroy, this);
 }
 
 Gauge.prototype = Object.create(Phaser.Group.prototype);
@@ -482,13 +484,28 @@ Gauge.prototype.kill = function(){
 	this.visible = false;
 }
 
+Gauge.prototype.destroy = function(){
+	this._del();
+
+	Phaser.Group.prototype.destroy.call(this);
+}
+
 Gauge.prototype._del = function(){
+	if (this.stat == null){
+		return;
+	}
+
 	this.stopAnimation(-1);
 
 	this.stat.onUpdate.remove(this.updateGauge);
 	this.stat.onUpdateMax.remove(this.resizeGauge);
 	this.stat.onUpdate.remove(this.updateValueText);
 	this.stat.onUpdateMax.remove(this.updateValueText);
+
+	this.onUpdate.dispose();
+	this.onUpdate = null;
+
+	this.stat = null;
 }
 
 

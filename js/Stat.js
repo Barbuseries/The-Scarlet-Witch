@@ -32,8 +32,8 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
     this._basicValue = basicValue;
     this._value = basicValue;
 
-	 this.onUpdateMax = new Phaser.Signal(); // (add/subtract/setMax)
-     this.onUpdateMax.add(this._applyLink, this); // When this._maxValue changes,
+	this.onUpdateMax = new Phaser.Signal(); // (add/subtract/setMax)
+    this.onUpdateMax.add(this._applyLink, this); // When this._maxValue changes,
 	                                              // apply the changes to this._value.
 
     if (link != STAT_NO_MAXSTAT){
@@ -68,6 +68,8 @@ var Stat = function(entity, name, link, basicValue, basicMaxValue, min, max,
 	this.onGrowth = new Phaser.Signal();
 	
 	this.onGrowth.add(this._applyGrowth, this);
+
+	this.onDestroy = new Phaser.Signal();
 }
 
 // Add value to this._value.
@@ -566,6 +568,10 @@ Stat.prototype.grow = function(self, oldValue, newValue){
 		return;
 	}
 
+	if (this.growth == null){
+		return;
+	}
+
 	var growthFunction = this.growth[0];
 	var growthContext = this.growth[1];
 	var growthArgs = this.growth[2];
@@ -602,6 +608,12 @@ Stat.prototype.destroy = function(){
 }
 
 Stat.prototype._del = function(){
+	if (this.onUpdate == null){
+		return;
+	}
+
+	this.onDestroy.dispatch(this);
+
 	this.entity = null;
 
 	this.onUpdate.dispose();
@@ -609,14 +621,18 @@ Stat.prototype._del = function(){
 
 	this.onUpdateBasic.dispose();
 	this.onUpdateBasic = null;
+	
+	this.onUpdateMax.dispose();
+	this.onUpdateMax = null;
 
-	if (this._link != STAT_NO_MAXSTAT){
-		this.onUpdateMax.dispose();
-		this.onUpdateMax = null;
-	}
+	this.onUpdateLink.dispose();
+	this.onUpdateLink = null;
 
 	this.onGrowth.dispose();
 	this.onGrowth = null;
+
+	this.onDestroy.dispose();
+	this.onDestroy = null;
 }
 /******************************************************************************/
 /* Stat */

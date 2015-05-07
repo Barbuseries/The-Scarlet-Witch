@@ -416,6 +416,24 @@ Mob.prototype.kill = function(){
 	
 	Npc.prototype.kill.call(this);
 }
+
+Mob.prototype.destroy = function(){
+	this._deleteTimers();
+	
+	for(var i in this.allStats){
+		this.allStats[i].destroy();
+	}
+	
+	for(var j in this.allSkills){
+		for(var i in this.allSkills[j]){
+			this.allSkills[j][i].destroy();
+		}
+	}
+
+	this.pathFinder = null;
+
+	Npc.prototype.destroy.call(this);
+}
 /******************************************************************************/
 /* Mob */
 /*******/
@@ -427,8 +445,8 @@ var createMob = function(game, x, y, spriteSheet, name, level, tag, initFunction
 						 updateFunction, killFunction, pathFinder){
 	if (typeof(pathFinder) === "undefined") pathFinder = "Mob";
 	var newMob;
-	var mobPool = (tag == "hero" ) ? BasicGame.level._stage.allHeroes :
-		BasicGame.level._stage.allEnemies;
+	var mobPool = (tag == "hero" ) ? BasicGame.level.allHeroes :
+		BasicGame.level.allEnemies;
 
 
 	if (mobPool != null){
@@ -464,9 +482,9 @@ var createMob = function(game, x, y, spriteSheet, name, level, tag, initFunction
 		BasicGame.easyStar[pathFinder] = new EasyStar.js();
 		newMob.pathFinder = BasicGame.easyStar[pathFinder];
 
-		console.log(newMob.pathFinder);
+		//console.log(newMob.pathFinder);
 
-		newMob.pathFinder.disableDiagonals();
+		newMob.pathFinder.enableDiagonals();
 		newMob.pathFinder.setIterationsPerCalculation(1000);
 	}
 

@@ -10,8 +10,8 @@ BasicGame.MainMenu.prototype.create = function(){
 	
 	BasicGame.allPlayers.p1.controller.setTargetByTag(BasicGame, "system");
 
-	BasicGame.allPlayers.p1.controller.setTarget(null);
-	BasicGame.allPlayers.p2.controller.setTarget(null);
+	BasicGame.allPlayers.p1.setHero(null);
+	BasicGame.allPlayers.p2.setHero(null);
 	
 	BasicGame.allPlayers.p1.controller.disable("action");
 	BasicGame.allPlayers.p2.controller.disable("action");
@@ -90,7 +90,7 @@ BasicGame.MainMenu.prototype.startGame = function(pointer){
 
 	this.music.fadeOut(1000);
 	this.music.onFadeComplete.addOnce(function(){
-		this.state.start("Level1");
+		this.state.start("Level_1");
 	}, this);
 }
 

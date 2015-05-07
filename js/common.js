@@ -204,22 +204,25 @@ var findObjectsByType = function(type, map, layer){
 	return result;
 }
 
-var createFromTiledObject = function(element, group, constructor) {
+var createFromTiledObject = function(element, group) {
 	var allConstructors = {
-		Mob: function(group, element){
+		mob: function(group, element){
 			return createMob(group.game, element.x, element.y,
 							 element.properties.sprite);
 		},
 
-		Archer: function(group, element){
+		archer: function(group, element){
 			return createArcher(group.game, element.x, element.y,
 								element.properties.sprite, 1);
 		},
 		
-		Item: function(group, element){
+		item: function(group, element){
 			return null;
 		}
 	}
+	
+	var spriteName = element.properties.sprite;
+	var constructor = spriteName.substring(0, spriteName.indexOf("_"));
 
 	var object = allConstructors[constructor](group, element);
 
@@ -235,4 +238,15 @@ var createFromTiledObject = function(element, group, constructor) {
 	});
 
 	object.y -= object.height / 2;
+}
+
+var getTileWorldXY =  function(layer, x, y){
+	try{
+		var grid = BasicGame.level.map.layers[layer].data;
+
+		return grid[Math.floor(y / 32)][Math.floor(x / 32)];
+	}
+	catch(err){
+		return null;
+	}
 }

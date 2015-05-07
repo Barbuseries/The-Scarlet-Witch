@@ -434,7 +434,7 @@ var ConfirmationMenu = function(control, confFunction, context){
 
 
 	this.yesOption.onOver.add(function(){
-		this.display.tint = H_YELLOW;
+		this.display.tint = H_WHITE;
 	}, this.yesOption);
 
 	this.yesOption.onOut.add(function(){
@@ -448,7 +448,7 @@ var ConfirmationMenu = function(control, confFunction, context){
 	this.yesOption.onSelect.add(confFunction, context);
 
 	this.noOption.onOver.add(function(){
-		this.display.tint = H_YELLOW;
+		this.display.tint = H_WHITE;
 	}, this.noOption);
 
 	this.noOption.onOut.add(function(){

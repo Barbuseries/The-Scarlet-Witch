@@ -110,6 +110,11 @@ var Status_UI = function(game, hero, x, y, isBarton){
 	this.fixedToCamera = true;
 
 	hero.onSwapMode.add(this.showStatusSkills, this);
+
+	this.healthBar.updateValueText();
+	this.specialBar.updateValueText();
+
+	hero.onDestroy.add(this.destroy, this);
 }
 
 Status_UI.prototype = Object.create(Phaser.Group.prototype);
@@ -194,6 +199,8 @@ var StatusSkill = function(skill, x, y){
 	this.add(this.backgroundSprite);
 	this.add(this.iconSprite);
 	this.add(skill.chargeBar);
+
+	skill.onDestroy.add(this.destroy, this);
 }
 
 StatusSkill.prototype = Object.create(Phaser.Group.prototype);

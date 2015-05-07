@@ -59,11 +59,20 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("arrow", ammoDir + "arrow.png", 25, 4);
 
 	// Levels
-	var levelsDir = "";
+	var levelsDir = "levels/";
 
-	this.load.tilemap('level1', 'assets/tilemaps/Level1_v3.json', null,
-					  Phaser.Tilemap.TILED_JSON);
-	this.load.image('Level1_Tiles', 'assets/Tiles 32x32/Tiles_32x32.png');
+	for(var i in BasicGame.allLevels){
+		var levelDirectory = levelsDir + i + "/";
+		var levelTilemap = levelDirectory + i + ".json";
+
+		this.load.tilemap(i, levelTilemap, null,
+						  Phaser.Tilemap.TILED_JSON);
+	}
+
+	// Tiles assets.
+	var tilesDir = assetsDir + "Tiles 32x32/";
+
+	this.load.image('Level_1_Tiles', tilesDir + 'Tiles_32x32.png');
 
 	// Heroes
 	var charactersDir = assetsDir + "Characters/";
@@ -72,8 +81,8 @@ BasicGame.Preloader.prototype.preload =  function(){
 
     this.load.spritesheet("lucy", heroesDir + "lucy_full.png", 64, 64);
 	this.load.spritesheet("barton", heroesDir + "barton_full.png", 64, 64);
-	this.load.spritesheet("archer1", ennemiesDir + "archer1.png", 64, 64);
-	this.load.spritesheet("enemi1", ennemiesDir + "ennemi1.png", 64, 64);
+	this.load.spritesheet("archer_1", ennemiesDir + "archer_1.png", 64, 64);
+	this.load.spritesheet("mob_1", ennemiesDir + "mob_1.png", 64, 64);
 
 
 	// Audio

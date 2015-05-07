@@ -86,6 +86,23 @@ Hero.prototype.swapMode = function(){
 	this.onSwapMode.dispatch(this);
 }
 
+Hero.prototype.gainExperience = function(experience){
+	while (experience > 0){
+		var maxToAdd = this.allStats.experience.getMax() - this.allStats.experience.get();
+
+		if (maxToAdd > experience){
+			this.allStats.experience.add(experience);
+
+			experience = 0;
+		}
+		else{
+			this.allStats.experience.set(1, 1);
+			
+			experience -= maxToAdd;
+		}
+	}
+}
+
 var Lucy = function(game, x, y, level){
 	Hero.apply(this, [game, x, y, "Lucy", level]);
 
@@ -183,6 +200,7 @@ var Barton = function(game, x, y, level){
 
 	this.allStats.mainStat.name = "Intelligence";
 	this.allStats.special.destroy();
+	this.allStats.special = null;
 
 	this.allStats.health.setMax(40);
 	this.allStats.health.setBasic(40);
@@ -275,10 +293,27 @@ var Barton = function(game, x, y, level){
 			}, this.allStats);
 		}
 	}, this);
+
+	this.allStats.special = this.allStats.fury;
 }
 
 Barton.prototype =  Object.create(Hero.prototype);
 Barton.prototype.constructor = Barton;
+
+Barton.prototype.update = function(){
+	Hero.prototype.update.call(this);
+
+	if (this.alive){
+		this.allStats.fury.subtract(0.02 / 60, 1);
+	}
+}
+
+Barton.prototype.swapMode = function(){
+	Hero.prototype.swapMode.call(this);
+
+	this.allStats.special = (this.currentMode) ? this.allStats.quiver :
+		this.allStats.fury;
+}
 /******************************************************************************/
 /* Hero */
 /********/

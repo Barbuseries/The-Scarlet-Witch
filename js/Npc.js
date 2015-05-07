@@ -222,10 +222,8 @@ Npc.prototype.orientRight = function(){
 Npc.prototype.findPath = function(startX, startY, endX, endY, callback){
 	var self = this;
 
-	this.pathFinder.path = null;
-
 	this.pathFinder.findPath(startX, startY, endX, endY, function(path){
-		self.path = path;
+		self.path = (path != null) ? path : self.path;
 		
 		if (typeof(callback) == "function"){
 			callback.call(this, path);
@@ -234,14 +232,15 @@ Npc.prototype.findPath = function(startX, startY, endX, endY, callback){
 } 
 
 Npc.prototype.followPath = function(){
-	if (this.path == null){
+	if (this.path == null ||
+		this.path.length == 0){
 		return;
 	}
 
 	var nextTile = this.path[0];
 
 
-	if (this.y > nextTile.y * 32 + 16){
+	if (this.y > nextTile.y * 32){
 		this.jump(1.5);
 	}
 
@@ -273,17 +272,40 @@ Npc.prototype.follow = function(target, tickRecompute){
 
 	this.target = target;
 	
-	function followTarget(){
-		var myTile = getTileWorldWY(0, this.x, this.y);
-		var targetTile = getTileWorldWY(0, this.target.x, this.target.y);
+	function followTarget(iter, myTile, targetTile){
+		if (typeof(iter) === "undefined"){
+			iter = 0;
+		}
 
-		if ((myTile == null) ||
-		   (targetTile == null)){
+		//console.log(iter);
+
+		if (iter > 5){
+			return;
+		}
+
+		if ((typeof(myTile) === "undefined") ||
+			(myTile == null) ||
+			(BasicGame.level._grid[myTile.y][myTile.x] == 0)){
+			myTile = getTileWorldXY(0, this.x, this.y + iter * 32);
+		}
+
+		if ((typeof(targetTile) === "undefined") ||
+			(targetTile == null) ||
+			(BasicGame.level._grid[targetTile.y][targetTile.x] == 0)){
+			targetTile = getTileWorldXY(0, this.target.x, this.target.y + iter * 32);
+		}
+
+		if (((myTile == null) || (targetTile == null)) ||
+			((BasicGame.level._grid[myTile.y][myTile.x] == 0) ||
+			 (BasicGame.level._grid[targetTile.y][targetTile.x] == 0))){
+			iter++;
+
+			followTarget.call(this, iter, myTile, targetTile);
 			return;
 		}
 
 		this.findPath(myTile.x, myTile.y, targetTile.x, targetTile.y, function(path){
-			//console.log(path);
+			//console.log(iter, path);
 		});
 
 		this.pathFinder.calculate();

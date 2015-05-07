@@ -1,8 +1,14 @@
 var BasicGame = {
+	level: null,
+
 	allPlayers: {
 		p1: null,
 		
 		p2: null
+	},
+	
+	allLevels: {
+		
 	},
 
 	pool: {
@@ -23,11 +29,11 @@ var BasicGame = {
 	},
 
 	returnToTitle: function(control){
-		if ((control.manager.game.state.current != "MainMenu") &&
+		if ((BasicGame.level != null) &&
 			(this.confirmMenu == null)){
 			this.confirmMenu = new ConfirmationMenu(control.manager,
 							function(){
-								control.manager.game.state.start("MainMenu");
+								BasicGame.level.returnToTitle();;
 							}, null);
 			
 			this.confirmMenu.toggle();

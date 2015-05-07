@@ -1,10 +1,12 @@
-var Level = function(game, mapName, platformTileset, backgroundName,
-					 tilesetCollisions, walkableTiles){
+var Level = function(mapName, platformTileset, backgroundName,
+					 tilesetCollisions, walkableTiles, nextLevel){
 	if (typeof(tilesetCollisions) === "undefined"){
 		tilesetCollisions = [];
 	}
 
-	this.game = game;
+	//Phaser.State.call(this);
+
+	//this.game = game;
 
 	this.mapName = mapName;
 	this.map = null;
@@ -16,8 +18,14 @@ var Level = function(game, mapName, platformTileset, backgroundName,
 
 	this.tilesetCollisions = tilesetCollisions;
 	this.walkableTiles = walkableTiles;
-	
-	this.onComplete = new Phaser.Signal();
+
+	this.nextLevel = nextLevel;
+
+	this.onGameOver = null;
+	this.checkGameOverFuncion = null;
+	this.gameOvered = false;
+
+	this.onComplete = null;
 	this.checkCompleteFunction = null;
 	this.completed = false;
 
@@ -29,7 +37,20 @@ var Level = function(game, mapName, platformTileset, backgroundName,
 	this.toKill = [];
 }
 
-Level.prototype.init = function(){
+/*Level.prototype = Object.create(Phaser.State.prototype);
+Level.prototype.constructor = Level;*/
+
+Level.prototype.preload = function(){
+	BasicGame.level = this;
+	
+	BasicGame.sfx = {};
+
+	BasicGame.sfx.EXPLOSION_0 = this.game.add.audio("explosion_0");
+	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;
+
+	this.onGameOver = new Phaser.Signal();
+	this.onComplete = new Phaser.Signal();
+
 	this.allHeroes = this.game.add.group();
 	this.allEnemies = this.game.add.group();
 	this.allItems = this.game.add.group();
@@ -208,7 +229,8 @@ Level.prototype.update = function(){
 	
 	this.toKill = [];
 
-	this.completed = this.complete();
+	this.gameOvered = !this.completed && this.checkGameOver();
+	this.completed = !this.gameOvered && this.checkComplete();
 }
 
 Level.prototype.tagPlatforms = function(){
@@ -235,9 +257,9 @@ Level.prototype.loadMap = function(){
 
 	this.game.platforms = this.map.createLayer('blockedLayer');
 
-	var background = this.game.add.tileSprite(0, 0, this.map.widthInPixels,
-											  this.map.heightInPixels,
-											  this.backgroundName);
+	this.background = this.game.add.tileSprite(0, 0, this.map.widthInPixels,
+											   this.map.heightInPixels,
+											   this.backgroundName);
 
 	this.game.world.bringToTop(this.game.platforms);
 }
@@ -246,7 +268,7 @@ Level.prototype.createMobs = function(){
 	var allMobs = findObjectsByType("enemy", this.map, "baddies");
 
 	allMobs.forEach(function(item){
-		createFromTiledObject(item, this.allEnemies, "Mob");
+		createFromTiledObject(item, this.allEnemies);
 	}, this);
 
 	this.allEnemies.forEach(function(item){
@@ -258,7 +280,7 @@ Level.prototype.createItems = function(){
 	var allItems = findObjectsByType("item", this.map, "items");
 
 	allItems.forEach(function(item){
-		createFromTiledObject(item, this.allItems, "Item");
+		createFromTiledObject(item, this.allItems);
 	}, this);
 
 	this.allItems.forEach(function(item){
@@ -270,7 +292,7 @@ Level.prototype.createCheckpoints = function(){
 	var allCheckpoints = findObjectsByType("checkpoint", this.map, "checkpoints");
 
 	allCheckpoints.forEach(function(item){
-		createFromTiledObject(item, this.allCheckpoints, "Checkpoint");
+		createFromTiledObject(item, this.allCheckpoints);
 	}, this);
 
 	this.allCheckpoints.forEach(function(item){
@@ -278,7 +300,7 @@ Level.prototype.createCheckpoints = function(){
 	});
 }
 
-Level.prototype.load = function(){
+Level.prototype.create = function(){
 	var map = this.loadMap();
 
 	this.tagPlatforms();
@@ -295,7 +317,29 @@ Level.prototype.load = function(){
 	}
 }
 
-Level.prototype.complete = function(){
+Level.prototype.initPlayers = function(){
+	BasicGame.allPlayers.p1.setHero(this.allHeroes.getChildAt(0));
+	BasicGame.allPlayers.p2.setHero(this.allHeroes.getChildAt(1));
+
+	BasicGame.allPlayers.p1.controller.enable("action");
+	BasicGame.allPlayers.p2.controller.enable("action");
+}
+
+Level.prototype.checkGameOver = function(){
+	if(typeof(this.checkGameOverFunction) != "function"){
+		return false;
+	}
+
+	if (this.checkGameOverFunction()){
+		this.onGameOver.dispatch();
+
+		return true;
+	}
+
+	return false;
+}
+
+Level.prototype.checkComplete = function(){
 	if(typeof(this.checkCompleteFunction) != "function"){
 		return false;
 	}
@@ -307,4 +351,123 @@ Level.prototype.complete = function(){
 	}
 
 	return false;
+}
+
+
+Level.prototype.quit = function(){
+	BasicGame.level = null;
+
+	this.onGameOver.dispose();
+	this.onGameOver = null;
+
+	this.onComplete.dispose();
+	this.onComplete = null;
+
+	this.background.destroy();
+	this.background = null;
+
+	this.allHeroes.destroy();
+	this.allHeroes = null;
+
+	this.allEnemies.destroy();
+	this.allEnemies = null;
+}
+
+Level.prototype.goToState = function(state){
+	this.quit();
+
+	this.game.state.start(state);
+}
+
+Level.prototype.returnToTitle = function(){
+	this.goToState("MainMenu");
+}
+
+Level.prototype.reload = function(){
+	this.goToState(this.state.current);
+}
+
+Level.prototype.save = function(){
+	var choice = 1;
+
+	function save(){
+		if (choice){
+			console.log("Sauvegardé !");
+			console.log("Prochain niveau : ", this.nextLevel);
+		}
+		else{
+			console.log("Pas Sauvegardé !");
+		}
+	}
+	
+	function confirm(){
+		if (choice){
+			this.saveMenu.title.text = "Êtes-vous sûr ?";
+			
+			choice = !choice;
+		}
+		else{
+			this.saveMenu.title.text = "Sauvegarder ?";
+			
+			choice = !choice;
+		}
+	}
+
+	this.saveMenu = new ConfirmationMenu(BasicGame.allPlayers.p1.controller,
+										 save, this);
+
+	this.saveMenu.title.text = "Sauvegarder ?";
+	
+	this.saveMenu.noOption.onSelect.removeAll();
+	this.saveMenu.noOption.onSelect.add(confirm, this);
+
+	this.saveMenu.onEndClose.add(function(){
+		this.saveMenu.destroy();
+		this.saveMenu = null;
+	}, this);
+
+
+	this.saveMenu.toggle();
+}
+
+Level.prototype.gameOver = function(){
+	var choice = 1;
+
+	function gameOver(){
+		if (choice){
+			this.reload();
+		}
+		else{
+			this.returnToTitle();
+		}
+	}
+	
+	function confirm(){
+		if (choice){
+			this.gameOverMenu.title.text = "Êtes-vous sûr ?";
+			
+			choice = !choice;
+		}
+		else{
+			this.gameOverMenu.title.text = "Réessayer ?";
+			
+			choice = !choice;
+		}
+	}
+
+	this.gameOverMenu = new ConfirmationMenu(BasicGame.allPlayers.p1.controller,
+											 gameOver, this);
+
+	this.gameOverMenu.title.text = "Réessayer ?";
+	
+	this.gameOverMenu.noOption.onSelect.removeAll();
+	this.gameOverMenu.noOption.onSelect.add(confirm, this);
+
+	this.gameOverMenu.onEndClose.add(function(){
+		this.gameOverMenu.destroy();
+		this.gameOverMenu = null;
+	}, this);
+
+
+	this.gameOverMenu.toggle();
 }
