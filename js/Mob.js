@@ -496,8 +496,54 @@ var createMob = function(game, x, y, spriteSheet, name, level, tag, initFunction
 var createArcher = function(game, x, y, spriteSheet, level){
 	var newArcher;
 
+	function initArcher(){
+		this.allStats.health.setMax(40);
+		this.allStats.health.setBasic(40);
+		this.allStats.health.set(1, 1);
+		this.allStats.health.setGrowth(function(){
+			return 0.3 * (this._basicValue + 10 * this.entity.allStats.level.get() +
+						  3 * this.entity.allStats.endurance.get());
+		}, -1, [], true);
+
+		this.allStats.attack.setBasic(5);
+		this.allStats.attack.set(1, 1);
+		this.allStats.attack.setGrowth(function(){
+			return 0.5 * (this._basicValue + this.entity.allStats.level.get() +
+						  0.5 * this.entity.allStats.mainStat.get());
+		}, -1, [], true);
+
+		this.allStats.defense.setGrowth(function(){
+		return 0.2 * (this._basicValue + 0.5 * this.entity.allStats.level.get() +
+					  0.1 * this.entity.allStats.endurance.get());
+		}, -1, [], true);
+
+		this.allStats.dodge.setBasic(2);
+		this.allStats.dodge.set(1, 1);
+		this.allStats.dodge.setGrowth(function(){
+			return 0.1 * (this._basicValue + 0.1 * this.entity.allStats.level.get() +
+						  0.2 * this.entity.allStats.agility.get());
+		}, -1, [], true);
+
+		this.allStats.criticalRate.setBasic(5);
+		this.allStats.criticalRate.set(1, 1);
+		this.allStats.criticalRate.setGrowth(function(){
+			return 0.5 * (this._basicValue + 0.125 * this.entity.allStats.level.get() +
+						  0.3 * this.entity.allStats.agility.get());
+		}, -1, [], true);
+
+		this.allStats.attackSpeed.setGrowth(function(){
+			return this._basicValue - 4 * this.entity.allStats.level.get() -
+				2 * this.entity.allStats.agility.get();
+		}, -1, [], true);
+
+		this.allSkills[0] = {
+			firstSkill: new ArrowSkill(this, 1,
+									   ["platform", "hero"])
+		}
+	}
+
 	return createMob(game, x, y, spriteSheet, "Archer", level, "enemy",
-					 null, null, null, "archer");
+					 initArcher, null, null, "archer");
 }
 
 /******************************************************************************/

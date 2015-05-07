@@ -50,6 +50,8 @@ Menu.prototype.constructor = Menu;
 
 Menu.prototype.addOption = function(option){
 	this.allOptions.push(option);
+
+	option.menu = this;
 	
 	this.add(option.display);
 
@@ -66,6 +68,10 @@ Menu.prototype.enableMouse = function(){
 	var self = this;
 	
 	function moveToCursor(sprite){
+		if (this.state != Interface.State.TOGGLED){
+			return;
+		}
+
 		var oldIndex = self.indexCurrentOption;
 		var oldOption = self.getCurrentOption();
 		
@@ -104,6 +110,10 @@ Menu.prototype.enableMouse = function(){
 
 
 Menu.prototype.goNext = function(control, factor){
+	if (this.state != Interface.State.TOGGLED){
+		return;
+	}
+
 	if (typeof(factor) === "undefined"){
 		factor = 1;
 	}
@@ -138,6 +148,10 @@ Menu.prototype.goNext = function(control, factor){
 
 
 Menu.prototype.goPrevious = function(control, factor){
+	if (this.state != Interface.State.TOGGLED){
+		return;
+	}
+
 	if (typeof(factor) === "undefined"){
 		factor = 1;
 	}
@@ -322,6 +336,8 @@ Menu.prototype._del = function(){
 		this.cursorTween.stop();
 		this.cursorTween = null;
 	}
+
+	Interface.prototype._del.call(this);
 }
 /******************************************************************************/
 /* Menu */
@@ -337,12 +353,19 @@ var Option = function(display){
 	this.onOut = new Phaser.Signal();
 	this.onSelect = new Phaser.Signal();
 	this.whileOver = new Phaser.Signal();
+
+	this.menu = null;
 }
 
 Option.prototype.enableMouse = function(){
 	this.display.inputEnabled = true;
 
 	this.display.events.onInputDown.add(function(){
+		if ((this.menu == null) ||
+			(this.menu.state != Interface.State.TOGGLED)){
+			return;
+		}
+
 		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
 
 		this.onSelect.dispatch(this);
@@ -382,6 +405,8 @@ Option.prototype._del = function(){
 
 	this.whileOver.dispose();
 	this.whileOver = null;
+
+	this.menu = null;
 }
 /******************************************************************************/
 /* Option */
@@ -465,6 +490,13 @@ var ConfirmationMenu = function(control, confFunction, context){
 
 	this.fixedToCamera = true;
 	this.enableMouse();
+
+	/*this.alpha = 0;
+
+	this.createAnimation("toggle", "0", "0", 500, 1,
+						 Phaser.Easing.Quadratic.Out);
+	this.createAnimation("close", "0", "0", 500, 1,
+						 Phaser.Easing.Quadratic.Out);*/
 }
 
 ConfirmationMenu.prototype = Object.create(Menu.prototype);

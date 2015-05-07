@@ -33,6 +33,18 @@ var Level = function(mapName, platformTileset, backgroundName,
 	this.allEnemies = null;
 	this.allItems = null;
 	this.allCheckpoints =  null;
+
+	this.allTweens = {
+		opening: {
+			world: null,
+			background: null
+		},
+
+		closing: {
+			world: null,
+			background: null
+		}
+	};
 	
 	this.toKill = [];
 }
@@ -42,6 +54,8 @@ Level.prototype.constructor = Level;*/
 
 Level.prototype.preload = function(){
 	BasicGame.level = this;
+
+	this.game.world.alpha = 1;
 	
 	BasicGame.sfx = {};
 
@@ -61,6 +75,20 @@ Level.prototype.preload = function(){
 	
 	this.game.physics.startSystem(Phaser.Physics.ARCADE);
 	this.game.physics.arcade.gravity.y = 600;
+
+	this.loadMap();
+
+	this.tagPlatforms();
+
+	this.allTweens.opening.world = this.game.add.tween(this.game.world)
+		.from({alpha: 0}, 2000, Phaser.Easing.Quadratic.Out);
+
+	this.allTweens.opening.background = this.game.add.tween(this.background)
+		.from({alpha: 0}, 2000, Phaser.Easing.Quadratic.Out);
+	
+	for(var i in this.allTweens.opening){
+		this.allTweens.opening[i].start();
+	}
 }
 
 //Create a basic grid.
@@ -301,10 +329,6 @@ Level.prototype.createCheckpoints = function(){
 }
 
 Level.prototype.create = function(){
-	var map = this.loadMap();
-
-	this.tagPlatforms();
-
 	this.createMobs();
 	//this.createItems();
 	//this.createCheckpoints();
@@ -354,7 +378,7 @@ Level.prototype.checkComplete = function(){
 }
 
 
-Level.prototype.quit = function(){
+Level.prototype.shutdown = function(){
 	BasicGame.level = null;
 
 	this.onGameOver.dispose();
@@ -371,12 +395,41 @@ Level.prototype.quit = function(){
 
 	this.allEnemies.destroy();
 	this.allEnemies = null;
+
+	if (this.saveMenu != null){
+		this.saveMenu.destroy();
+		this.saveMenu = null;
+	}
+
+	if (this.gameOverMenu != null){
+		this.gameOverMenu.destroy();
+		this.gameOverMenu = null;
+	}
+
+	for(var i in this.allTweens){
+		for(var j in this.allTweens[i]){
+			if (this.allTweens[i][j] != null){
+				this.allTweens[i][j].stop();
+				this.allTweens[i][j] = null;
+			}
+		}
+	}
 }
 
 Level.prototype.goToState = function(state){
-	this.quit();
+	this.allTweens.closing.world = this.game.add.tween(this.game.world)
+		.to({alpha: 0}, 2000, Phaser.Easing.Quadratic.Out);
 
-	this.game.state.start(state);
+	this.allTweens.closing.background = this.game.add.tween(this.background)
+		.to({alpha: 0}, 2000, Phaser.Easing.Quadratic.Out);
+	
+	for(var i in this.allTweens.closing){
+		this.allTweens.closing[i].start();
+	}
+
+	this.allTweens.closing.background.onComplete.addOnce(function(){
+		this.game.state.start(state);
+	}, this);
 }
 
 Level.prototype.returnToTitle = function(){
@@ -421,12 +474,6 @@ Level.prototype.save = function(){
 	this.saveMenu.noOption.onSelect.removeAll();
 	this.saveMenu.noOption.onSelect.add(confirm, this);
 
-	this.saveMenu.onEndClose.add(function(){
-		this.saveMenu.destroy();
-		this.saveMenu = null;
-	}, this);
-
-
 	this.saveMenu.toggle();
 }
 
@@ -462,12 +509,6 @@ Level.prototype.gameOver = function(){
 	
 	this.gameOverMenu.noOption.onSelect.removeAll();
 	this.gameOverMenu.noOption.onSelect.add(confirm, this);
-
-	this.gameOverMenu.onEndClose.add(function(){
-		this.gameOverMenu.destroy();
-		this.gameOverMenu = null;
-	}, this);
-
 
 	this.gameOverMenu.toggle();
 }

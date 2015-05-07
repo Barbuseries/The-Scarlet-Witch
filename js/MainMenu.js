@@ -5,6 +5,8 @@ BasicGame.MainMenu = function(game){
 BasicGame.MainMenu.prototype.create = function(){
 	BasicGame.sfx = {};
 
+	this.game.world.alpha = 1;
+
 	this.music = this.game.add.audio("mainTheme");
 	BasicGame.sfx.cursorSelect = this.game.add.audio("cursor_select");
 	
@@ -69,6 +71,11 @@ BasicGame.MainMenu.prototype.create = function(){
 	}, this);
 
 	this.menu.enableMouse();
+
+	this.menu.createAnimation("toggle", "0", "-100", 1500, 1,
+							  Phaser.Easing.Quadratic.Out, true);
+	this.menu.createAnimation("close", "0", "-100", 1000, 0,
+							  Phaser.Easing.Quadratic.Out);
 	
 	BasicGame.allPlayers.p1.controller.setTargetByTag(this.menu, "menu");
 
@@ -96,12 +103,8 @@ BasicGame.MainMenu.prototype.startGame = function(pointer){
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
 	BasicGame.confirmMenu.close();
-	BasicGame.confirmMenu.destroy();
-	BasicGame.confirmMenu = null;
 
 	this.menu.close();
-	this.menu.destroy();
-	this.menu = null;
 
 	BasicGame.allPlayers.p1.controller.setTargetByTag(null, "menu");
 	BasicGame.allPlayers.p2.controller.setTargetByTag(null, "menu");
@@ -112,4 +115,13 @@ BasicGame.MainMenu.prototype.exit = function(){
 	this.music.stop();
 
 	window.location.replace("site.html");
+}
+
+
+BasicGame.MainMenu.prototype.shutdown = function(){
+	this.menu.destroy();
+	this.menu = null;
+	
+	BasicGame.confirmMenu.destroy();
+	BasicGame.confirmMenu = null;
 }

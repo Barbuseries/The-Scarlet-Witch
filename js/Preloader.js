@@ -100,7 +100,8 @@ BasicGame.Preloader.prototype.create = function(){
 }
 
 BasicGame.Preloader.prototype.update = function(){
-    if (this.cache.isSoundDecoded('mainTheme') && this.ready == false)
+    if (this.cache.isSoundDecoded('mainTheme') &&
+		this.ready == false)
     {
         this.ready = true;
         this.state.start('MainMenu');
