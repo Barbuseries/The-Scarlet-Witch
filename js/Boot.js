@@ -7,9 +7,7 @@ var BasicGame = {
 		p2: null
 	},
 	
-	allLevels: {
-		
-	},
+	allLevels: {},
 
 	pool: {
 		textDamage: null
@@ -20,6 +18,10 @@ var BasicGame = {
 	volume: {
 		sfx: 0.1,
 		music: 0.1
+	},
+
+	emitters: {
+		blood: null,
 	},
 
 	easyStar: {},

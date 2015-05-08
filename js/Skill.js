@@ -2007,10 +2007,13 @@ var TrapSkill = function(user, level, targetTags){
 		function initProjectile(){
 			this.anchor.set(0.5, 1);
 
+			this.tint = H_ORANGE;
+
 			this.x = user.x + user.width / 2;
 			this.y = user.y + user.height - this.height;
 
 			this.width *= (1 + factor);
+			this.height *= (1 + factor);
 
 			this.alpha = 1;
 
@@ -2032,6 +2035,7 @@ var TrapSkill = function(user, level, targetTags){
 			if (obstacle.tag == "platform"){
 				return;
 			}
+			
 
 			explode.call(this);
 		}
@@ -2039,6 +2043,26 @@ var TrapSkill = function(user, level, targetTags){
 		function collideProcess(obstacle){
 			if (obstacle.tag == "platform"){
 				return true;
+			}
+
+			if ((obstacle.tag == "projectile")){
+				this.tint = H_ORANGE;
+
+				switch(obstacle.element){
+				case Elements.FIRE:
+					this.tint = H_RED;
+					this.element = obstacle.element;
+					break;
+				case Elements.ICE:
+					this.tint = H_BLUE;
+					this.element = obstacle.element;
+					break;
+				case Elements.EARTH:
+					this.element = obstacle.element;
+					break;
+				default:
+					break;
+				}
 			}
 
 			return (this.targetTags.indexOf(obstacle.tag) != -1);
@@ -2053,6 +2077,8 @@ var TrapSkill = function(user, level, targetTags){
 		function explode(){
 			function initProjectile2(){
 				this.anchor.set(0.5);
+				
+				this.tint = H_ORANGE;
 
 				this.x = trap.x;
 				this.y = trap.y;
@@ -2068,6 +2094,17 @@ var TrapSkill = function(user, level, targetTags){
 
 				this.animations.add("animation", [0, 1, 2, 3, 4, 5], 30);
 				this.animations.play("animation", null, false, true);
+
+				switch(this.element){
+				case Elements.FIRE:
+					this.tint = H_ORANGE;
+					break;
+				case Elements.ICE:
+					this.tint = H_BLUE;
+					break;
+				default:
+					break;
+				}
 			}
 
 			function collideFunction2(obstacle){
@@ -2076,7 +2113,7 @@ var TrapSkill = function(user, level, targetTags){
 					var damageRange = [0.9, 1.1];
 					var criticalRate = user.allStats.criticalRate.get();
 
-					var stunDuration = 2000;
+					var effectDuration = 2000;
 
 					switch(self.level){
 					case 1:
@@ -2095,7 +2132,7 @@ var TrapSkill = function(user, level, targetTags){
 						
 					case 5:
 						damage *=2;
-						stunDuration *= 2;
+						effectDuration *= 2;
 						break;
 
 					default:
@@ -2103,7 +2140,23 @@ var TrapSkill = function(user, level, targetTags){
 					}
 					
 					obstacle.suffer(damage, damageRange, criticalRate, this.element);
-					obstacle.stun(stunDuration, 0.5 + 0.4 * factor);
+
+					switch(this.element){
+					case Elements.FIRE:
+						obstacle.dot(effectDuration, 400, 0.5 + 0.4 * factor,
+									 damage / 4, damageRange, criticalRate,
+									 this.element);
+						break;
+						
+					case Elements.ICE:
+						obstacle.slow(effectDuration, 0.5 + 0.4 * factor);
+						break;
+
+					default:
+						obstacle.stun(effectDuration, 0.5 + 0.4 * factor);
+						break;
+					}
+					
 
 					this.alreadyHit.push(obstacle);
 				}
@@ -2218,6 +2271,8 @@ var PoweredArrowSkill = function(user, level, targetTags){
 			var speed = -1600;
 
 			this.anchor.set(0, 0.5);
+
+			this.scale.setTo(1 + factor);
 			
 			this.x = user.x;
 			this.y = user.y + user.width / 2;
@@ -2334,7 +2389,10 @@ var PoweredArrowSkill = function(user, level, targetTags){
 				}
 
 				this.element = obstacle.element;
+
+				return false;
 			}
+
 			return (this.targetTags.indexOf(obstacle.tag) != -1) &&
 				this.body.allowGravity;
 		}

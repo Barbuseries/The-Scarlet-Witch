@@ -205,6 +205,15 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	stat.subtract(actualDamage);
 	this._textDamageDir *= -1;
 
+	if (actualDamage > 0){
+		BasicGame.emitters.blood.x = this.x + this.width / 2;
+		BasicGame.emitters.blood.y = this.y + this.height / 2;
+
+		BasicGame.emitters.blood.start(true, 250, null,
+									   ((actualDamage / stat.getMax()) * 20)
+									   .toFixed(0));
+	}
+
 	return actualDamage;
 }
 

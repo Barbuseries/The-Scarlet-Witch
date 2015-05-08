@@ -227,6 +227,10 @@ Level.prototype.update = function(){
 		}
 	}
 
+	for(var i in BasicGame.emitters){
+		this.game.physics.arcade.collide(BasicGame.emitters[i], this.game.platforms);
+	}
+
 	// Collisions (Mob)
 	this.game.physics.arcade.overlap(this.allHeroes, this.game.platforms);
 	this.game.physics.arcade.overlap(this.allEnemies, this.game.platforms);
@@ -329,6 +333,14 @@ Level.prototype.createCheckpoints = function(){
 }
 
 Level.prototype.create = function(){
+	for(var i in BasicGame.emitters){
+		BasicGame.emitters[i] = this.game.add.emitter(0, 0);
+
+		BasicGame.emitters[i].gravity = 200;
+		BasicGame.emitters[i].makeParticles(i);
+		BasicGame.emitters[i].setAlpha(0, 1, 4000, Phaser.Easing.Quadratic.Out);
+	}
+
 	this.createMobs();
 	//this.createItems();
 	//this.createCheckpoints();

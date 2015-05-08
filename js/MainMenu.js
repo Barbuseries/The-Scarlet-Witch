@@ -25,13 +25,90 @@ BasicGame.MainMenu.prototype.create = function(){
 											   2 * centerX,
 											   this.game.cache.getImage("sky").height,
 											   "sky");
-	this.background.scale.y = this.background.height / (2 * centerX - 10);
+	this.background.scale.y = (2 * centerY - 10) / this.background.height;
 
 	this.ground = this.add.sprite(0, 2 * centerY - 10, "ground");
 	this.ground.width = 2 * centerX;
 	this.ground.height = 10;
 	
-	this.logo = this.game.add.sprite(centerX, 100, "logo");
+	this.heroes = this.game.add.group();
+
+	this.lucy = this.game.add.sprite(2 * centerX, 2 * centerY, "lucy");
+	this.lucy.animations.add("spellCastLeft", [14, 15, 16, 17, 18], 15);
+	this.lucy.anchor.setTo(0.5);
+
+	this.lucy.frame = 18;
+	this.lucy.angle = -20;
+
+	this.barton = this.game.add.sprite(0,  2 * centerY, "barton");
+	this.barton.animations.add("swordRight", [195, 196, 197, 198, 199, 200],
+							   15);
+	this.barton.anchor.setTo(0.5);
+
+	this.barton.frame = 200;
+	this.barton.angle = -20;
+
+	this.heroes.add(this.lucy);
+	this.heroes.add(this.barton);
+
+	this.heroes.forEach(function(item){
+		item.scale.setTo(5);
+		item.alpha = 0;
+	});
+	
+	this.lucy.y += this.lucy.height / 2;
+	this.barton.x -= this.barton.width / 2;
+
+	this.allTweens = {
+		opening: {
+			lucy: this.game.add.tween(this.lucy)
+				.to({x: centerX - this.lucy.width / 1.5,
+					 y: centerY + this.lucy.height / 4,
+					 alpha: 1}, 1000, Phaser.Easing.Cubic.Out),
+
+			barton: this.game.add.tween(this.barton)
+				.to({x: centerX + this.barton.width / 2,
+					 y: centerY - this.barton.height / 4,
+					 alpha: 1}, 1000, Phaser.Easing.Cubic.Out)
+			
+		},
+
+		closing: {
+			lucy: this.game.add.tween(this.lucy)
+				.to({x: 2 * centerX,
+					 y: 2 * centerY + this.lucy.height / 2,
+					 alpha: 1}, 1000, Phaser.Easing.Cubic.In),
+
+			barton: this.game.add.tween(this.barton)
+				.to({x: -this.barton.height,
+					 y: 2 * centerY,
+					 alpha: 0}, 1000, Phaser.Easing.Cubic.In)
+		}
+	}
+
+	this.allTimers = {
+		lucy: this.game.time.create(false),
+
+		barton: this.game.time.create(false)
+	}
+
+	this.allTimers.lucy.loop(5000, function(){
+		this.lucy.animations.play("spellCastLeft", 10);
+	}, this);
+
+	this.allTimers.barton.loop(7000, function(){
+		this.barton.animations.play("swordRight", 10);
+	}, this);
+
+	this.allTweens.opening.lucy.onComplete.addOnce(function(){
+		this.allTweens.opening.barton.start();
+	}, this);
+	
+	this.allTweens.closing.barton.onComplete.addOnce(function(){
+		this.allTweens.closing.lucy.start();
+	}, this);
+	
+	this.logo = this.game.add.sprite(250, 100, "logo");
 
 	this.logo.scale.setTo(0.5);
 	this.logo.anchor.setTo(0.5);
@@ -42,6 +119,8 @@ BasicGame.MainMenu.prototype.create = function(){
 						 500,
 						 "", "icons");
 	this.menu.horizontal = false;
+
+	this.menu.addChild(this.logo);
 
 	this.newGameOption = createBasicMenuOption(this.menu, 300, "Nouvelle Partie",
 											   function(){
@@ -72,14 +151,32 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	this.menu.enableMouse();
 
-	this.menu.createAnimation("toggle", "0", "-100", 1500, 1,
+	this.menu.createAnimation("toggle", "0", "-200", 1500, 1,
 							  Phaser.Easing.Quadratic.Out, true);
-	this.menu.createAnimation("close", "0", "-100", 1000, 0,
+	this.menu.createAnimation("close", "0", "-200", 500, 0,
 							  Phaser.Easing.Quadratic.Out);
+
+	this.menu.onEndToggle.addOnce(function(){
+		this.allTimers.lucy.start();
+		this.allTimers.barton.start();
+	}, this);
+
+	this.menu.onEndClose.addOnce(function(){
+		this.allTweens.closing.barton.start();
+	}, this);
+
+	this.menu.onStartClose.addOnce(function(){
+		this.allTimers.lucy.stop();
+		this.allTimers.barton.stop();
+	}, this);
 	
 	BasicGame.allPlayers.p1.controller.setTargetByTag(this.menu, "menu");
 
-	this.menu.toggle();
+	this.allTweens.opening.barton.onComplete.addOnce(function(){
+		this.menu.toggle();
+	}, this);
+
+	this.allTweens.opening.lucy.start();
 	
 	this.music.play("", 0, BasicGame.volume.music, true);
 }
@@ -93,12 +190,13 @@ BasicGame.MainMenu.prototype.update = function(){
 }
 
 BasicGame.MainMenu.prototype.startGame = function(pointer){
-	this.cleanUp();
-
-	this.music.fadeOut(1000);
-	this.music.onFadeComplete.addOnce(function(){
+	this.allTweens.closing.lucy.onComplete.addOnce(function(){
 		this.state.start("Level_1");
 	}, this);
+
+	this.cleanUp();
+
+	this.music.fadeOut(2500);
 }
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
@@ -111,10 +209,13 @@ BasicGame.MainMenu.prototype.cleanUp = function(){
 }
 
 BasicGame.MainMenu.prototype.exit = function(){
-	this.cleanUp();
-	this.music.stop();
+	this.allTweens.closing.lucy.onComplete.addOnce(function(){
+		window.location.replace("site.html");
+	});
 
-	window.location.replace("site.html");
+	this.cleanUp();
+
+	this.music.fadeOut(2500);
 }
 
 
@@ -124,4 +225,22 @@ BasicGame.MainMenu.prototype.shutdown = function(){
 	
 	BasicGame.confirmMenu.destroy();
 	BasicGame.confirmMenu = null;
+
+	for(var i in this.allTweens){
+		for(var j in this.allTweens[j]){
+			if (this.allTweens[i][j] != null){
+				this.allTweens[i][j].stop();
+				this.allTweens[i][j].destroy();
+				this.allTweens[i][j] = null;
+			}
+		}
+	}
+
+	for(var i in this.allTimers){
+		if (this.allTimers[i] != null){
+			this.allTimers[i].stop();
+			this.allTimers[i].destroy();
+			this.allTimers[i] = null;
+		}
+	}
 }
