@@ -158,8 +158,10 @@ var collideProjectile = function(projectile, obstacle){
 		projectile.collideFunction.call(projectile,
 										obstacle);
 		if (typeof(obstacle.body) != "undefined"){
-			obstacle.body.velocity.x += projectile.body.velocity.x;
-			obstacle.body.velocity.y += projectile.body.velocity.y;
+			obstacle.body.velocity.x += projectile.body.velocity.x *
+				projectile.transfer.velocity.x;
+			obstacle.body.velocity.y += projectile.body.velocity.y *
+				projectile.transfer.velocity.y;
 		}
 	}
 }

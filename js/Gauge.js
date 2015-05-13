@@ -386,6 +386,8 @@ var Gauge  = function(game, x, y, width, height, stat, belowSprite, upperSprite,
 	stat.onUpdate.add(this.updateValueText, this);
 	stat.onUpdateMax.add(this.updateValueText, this);
 
+	stat.onUpdateLink.add(this.setCurrentValue, this);
+
 	this.updateAnimation = null;
 	this.updateAnimationType = -1;
 
@@ -471,7 +473,11 @@ Gauge.prototype.resizeGauge = function(stat, oldMaxValue, newMaxValue){
 		
 	}
 
-	this.fill.scale.x = this.currentValue / newMaxValue;
+	this.fill.scale.x = stat.get() / stat.getMax();
+}
+
+Gauge.prototype.setCurrentValue = function(){
+	this.currentValue = this.stat.get();
 }
 
 Gauge.prototype.stopAnimation = function(type){
@@ -501,6 +507,7 @@ Gauge.prototype._del = function(){
 	this.stat.onUpdateMax.remove(this.resizeGauge);
 	this.stat.onUpdate.remove(this.updateValueText);
 	this.stat.onUpdateMax.remove(this.updateValueText);
+	this.stat.onUpdateLink.remove(this.setCurrentValue);
 
 	this.onUpdate.dispose();
 	this.onUpdate = null;
@@ -536,6 +543,8 @@ MonoGauge.prototype.constructor = MonoGauge;
 
 
 MonoGauge.prototype.updateGauge = function(stat, oldValue, newValue){
+	newValue = stat.get();
+
 	if (oldValue != newValue){
 		
 		if (this.currentValue != newValue){
@@ -557,7 +566,7 @@ MonoGauge.prototype.updateGauge = function(stat, oldValue, newValue){
 				}
 
 				this.currentValue = newValue;
-				this.fill.scale.x = this.currentValue / this.stat.getMax();				
+				this.fill.scale.x = this.currentValue / this.stat.getMax();
 			}
 		}
 	}

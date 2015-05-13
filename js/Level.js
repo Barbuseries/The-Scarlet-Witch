@@ -1,7 +1,12 @@
 var Level = function(mapName, platformTileset, backgroundName,
-					 tilesetCollisions, walkableTiles, nextLevel){
+					 tilesetCollisions, walkableTiles, nextLevel,
+					 nextLevelCheckpoint){
 	if (typeof(tilesetCollisions) === "undefined"){
 		tilesetCollisions = [];
+	}
+
+	if (typeof(nextLevelCheckpoint) != "number"){
+		nextLevelCheckpoint = 0;
 	}
 
 	//Phaser.State.call(this);
@@ -20,6 +25,9 @@ var Level = function(mapName, platformTileset, backgroundName,
 	this.walkableTiles = walkableTiles;
 
 	this.nextLevel = nextLevel;
+	this.nextLevelCheckpoint = nextLevelCheckpoint;
+
+	this.checkpoint = 0;
 
 	this.onGameOver = null;
 	this.checkGameOverFuncion = null;
@@ -55,6 +63,8 @@ Level.prototype.constructor = Level;*/
 Level.prototype.preload = function(){
 	BasicGame.level = this;
 
+	console.log(BasicGame.gameSave);
+
 	this.game.world.alpha = 1;
 	
 	BasicGame.sfx = {};
@@ -62,12 +72,15 @@ Level.prototype.preload = function(){
 	BasicGame.sfx.EXPLOSION_0 = this.game.add.audio("explosion_0");
 	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;
 
+	BasicGame.allPlayers.p1.controller.setTargetByTag(BasicGame.gameSave, "save");
+
 	this.onGameOver = new Phaser.Signal();
 	this.onComplete = new Phaser.Signal();
 
 	this.allHeroes = this.game.add.group();
 	this.allEnemies = this.game.add.group();
 	this.allItems = this.game.add.group();
+	this.allCheckpoints = this.game.add.group();
 	
 	for(var i in BasicGame.pool) {
 		BasicGame.pool[i] = this.game.add.group();
@@ -356,6 +369,26 @@ Level.prototype.create = function(){
 	//this.createItems();
 	//this.createCheckpoints();
 
+	var checkpoint = this.game.add.sprite(0, 0, "");
+
+	checkpoint.barton = {
+		x: 1000,
+		
+			y: 200
+	};
+	
+	checkpoint.lucy = {
+		x: 600,
+		
+		y: 800
+	};
+
+	
+
+	this.allCheckpoints.addChild(checkpoint);
+
+	BasicGame.gameSave.reload();
+
 	this.game.world.bringToTop(this.allHeroes);
 	this.game.world.bringToTop(this.allEnemies);
 	
@@ -365,9 +398,6 @@ Level.prototype.create = function(){
 }
 
 Level.prototype.initPlayers = function(){
-	BasicGame.allPlayers.p1.setHero(this.allHeroes.getChildAt(1));
-	BasicGame.allPlayers.p2.setHero(this.allHeroes.getChildAt(0));
-
 	for(var i in BasicGame.allPlayers){
 		BasicGame.allPlayers[i].menu = new PlayerMenu(BasicGame.allPlayers[i]);
 
@@ -426,6 +456,12 @@ Level.prototype.shutdown = function(){
 
 	this.allEnemies.destroy();
 	this.allEnemies = null;
+
+	this.allItems.destroy();
+	this.allItems = null;
+
+	this.allCheckpoints.destroy();
+	this.allCheckpoints = null;
 
 	if (this.saveMenu != null){
 		this.saveMenu.destroy();
@@ -487,11 +523,18 @@ Level.prototype.save = function(){
 
 	function save(){
 		if (choice){
-			console.log("Sauvegardé !");
-			console.log("Prochain niveau : ", this.nextLevel);
+			console.log("Sauvegardé ! (Mais pas HARD !)");
+
+			BasicGame.gameSave.save();
+
+			console.log(BasicGame.gameSave);
+			
+			this.reload();
 		}
 		else{
 			console.log("Pas Sauvegardé !");
+
+			this.returnToTitle();
 		}
 	}
 	

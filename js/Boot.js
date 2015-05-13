@@ -1,4 +1,8 @@
 var BasicGame = {
+	allGameSaves: [],
+
+	gameSave: null,
+
 	level: null,
 
 	allPlayers: {
@@ -116,6 +120,7 @@ BasicGame.Boot.prototype.preload = function(){
 	this.load.image("sky",  "assets/Backgrounds/background0_2.png");
 	this.load.image("ground", miscDir + "platform.png");
 }
+
 BasicGame.Boot.prototype.create = function(){
     this.logoGroup = this.game.add.group();
 
@@ -243,7 +248,9 @@ BasicGame.Boot.prototype.startPreload = function(){
 		.bindControl(-1, Phaser.Keyboard.M, -1,
 					 "mute", "onDown", "system")
 		.bindControl(-1, Phaser.Keyboard.ESC, -1,
-					"returnToTitle", "onDown", "system");
+					"returnToTitle", "onDown", "system")
+		.bindControl(-1, Phaser.Keyboard.H, -1,
+					 "hardSave", "onDown", "save");
 
 	this.game.input.onDown.removeAll();
 	this.state.start("Preloader");

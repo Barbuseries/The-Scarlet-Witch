@@ -564,7 +564,6 @@ var PlayerMenu = function(player){
 	
 	this.onStartToggle.add(function(){
 		if (player.hero.menu != null){
-			console.log(1);
 			this.onStartClose.addOnce(player.hero.menu.close, player.hero.menu);
 		}
 	}, this);
@@ -673,13 +672,9 @@ var HeroMenu = function(hero){
 
 	this.upOptions.mainStat.display.anchor.setTo(0, 0.5);
 	this.upOptions.mainStat.onSelect.add(function(){
-		if ((this.hero.statPoints > 0) &&
-		   (this.hero.allStats.mainStat.canAdd(5))){
-			this.hero.allStats.mainStat.add(5);
-			this.hero.statPoints--;
-
-			this.updateStatPoints();
-		}
+		this.hero.upgradeStat("mainStat");
+		
+		this.updateStatPoints();
 	}, this);
 
 	this.addOption(this.upOptions.mainStat);
@@ -690,13 +685,9 @@ var HeroMenu = function(hero){
 
 	this.upOptions.endurance.display.anchor.setTo(0, 0.5);
 	this.upOptions.endurance.onSelect.add(function(){
-		if ((this.hero.statPoints > 0) &&
-		   (this.hero.allStats.endurance.canAdd(5))){
-			this.hero.allStats.endurance.add(5);
-			this.hero.statPoints--;
+		this.hero.upgradeStat("endurance");
 
-			this.updateStatPoints();
-		}
+		this.updateStatPoints();
 	}, this);
 
 	this.addOption(this.upOptions.endurance);
@@ -707,13 +698,9 @@ var HeroMenu = function(hero){
 
 	this.upOptions.agility.display.anchor.setTo(0, 0.5);
 	this.upOptions.agility.onSelect.add(function(){
-		if ((this.hero.statPoints > 0) &&
-		   (this.hero.allStats.agility.canAdd(5))){
-			this.hero.allStats.agility.add(5);
-			this.hero.statPoints--;
+		this.hero.upgradeStat("agility");
 
-			this.updateStatPoints();
-		}
+		this.updateStatPoints();
 	}, this);
 
 	this.addOption(this.upOptions.agility);

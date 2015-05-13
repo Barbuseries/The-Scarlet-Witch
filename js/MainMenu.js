@@ -5,6 +5,16 @@ BasicGame.MainMenu = function(game){
 BasicGame.MainMenu.prototype.create = function(){
 	BasicGame.sfx = {};
 
+	for(var i = 0; i < 5; i++){
+		var save = localStorage.getItem("save_" + i.toString());
+		
+		if (save != null){
+			BasicGame.allGameSaves.push(JSON.parse(save));
+
+			console.log(JSON.parse(save));
+		}
+	}
+
 	this.game.world.alpha = 1;
 
 	this.music = this.game.add.audio("mainTheme");
@@ -125,6 +135,8 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.newGameOption = createBasicMenuOption(this.menu, 300, "Nouvelle Partie",
 											   function(){
 												   console.log("New !");
+												   BasicGame.gameSave = new GameSave(BasicGame.allGameSaves.length);
+												   BasicGame.gameSave.level.key = "Level_1";
 												   this.startGame();
 											   }, this);
 	this.loadGameOption = createBasicMenuOption(this.menu,  400, "Charger une Partie",

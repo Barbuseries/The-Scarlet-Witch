@@ -7,7 +7,7 @@ var Hero = function(game, x, y, name, level){
 	this.body.setSize(32, 48, 16, 16);
 
 	this.currentMode = 0;
-	this.statPoints = 0;
+	this.statPoints = (level - 1) * 50;
 
 	this.allStats.level.onUpdate.add(function(stat, oldValue, newValue){
 		if (oldValue != newValue){
@@ -18,18 +18,18 @@ var Hero = function(game, x, y, name, level){
 	this.player = null;
 
 	this.allStats.experience = new Stat(this, "Experience", STAT_NO_LINK, 0, 10);
-	this.allStats.experience.onUpdate.add(function(stat, oldValue, newValue){
+	/*this.allStats.experience.onUpdate.add(function(stat, oldValue, newValue){
 		if (this.get(1) == 1){
 			this.entity.allStats.level.add(1);
+
+			//this.set(0);
 		}
-	}, this.allStats.experience);
+	}, this.allStats.experience);*/
 
 	this.allStats.level.onUpdate.add(this.allStats.experience.grow,
 									 this.allStats.experience);
 
 	this.allStats.experience.setGrowth(function(){
-		this.set(0);
-		
 		var level = this.entity.allStats.level.get();
 
 		return (level == 99 ) ? 0 : this.entity.allStats.level.get() * 10;
@@ -97,7 +97,7 @@ Hero.prototype.gainExperience = function(experience){
 	while (experience > 0){
 		var maxToAdd = this.allStats.experience.getMax() - this.allStats.experience.get();
 
-		if (maxToAdd > experience){
+		if (maxToAdd >= experience){
 			this.allStats.experience.add(experience);
 
 			experience = 0;
@@ -107,10 +107,32 @@ Hero.prototype.gainExperience = function(experience){
 			
 			experience -= maxToAdd;
 		}
+
+		if (this.allStats.experience.get(1) == 1){
+			this.allStats.level.add(1);
+
+			this.allStats.experience.set(0);
+		}
+	}
+}
+
+Hero.prototype.upgradeStat = function(statName){
+	if (typeof(statName) != "string"){
+		return;
+	}
+
+	if ((this.statPoints > 0) &&
+		(this.allStats[statName].canAdd(5))){
+		this.allStats[statName].add(5);
+		this.statPoints--;
 	}
 }
 
 Hero.prototype.destroy = function(){
+	if (this.menu == null){
+		return;
+	}
+
 	this.menu.destroy();
 	this.menu = null;
 
@@ -312,6 +334,8 @@ var Barton = function(game, x, y, level){
 	this.allStats.special = this.allStats.fury;
 	
 	this.menu = new HeroMenu(this);
+
+	this.quiverRegen.start();
 }
 
 Barton.prototype =  Object.create(Hero.prototype);

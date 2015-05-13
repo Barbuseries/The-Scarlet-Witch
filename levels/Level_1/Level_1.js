@@ -23,9 +23,9 @@ BasicGame.allLevels.Level_1.prototype.preload = function(){
 			if (victory){
 				this.save();
 
-				this.saveMenu.onEndClose.add(function(){
+				/*this.saveMenu.onEndClose.add(function(){
 					this.returnToTitle();
-				}, this);
+				}, this);*/
 			}
 			else{
 				this.gameOver();
@@ -65,32 +65,10 @@ BasicGame.allLevels.Level_1.prototype.create = function(){
 
 	this.initPathFinders();
 
-	this.barton = new Barton(this.game, 1000, 200, 1);
-	//this.barton.scale.setTo(1.3);
-	this.barton.allResistances[Elements.FIRE] = 2;
-	/*this.barton.allStats.endurance.add(100);
-	this.barton.allStats.mainStat.add(100);
-	this.barton.allStats.health.set(1, 1);
-	this.barton.allStats.agility.add(99);*/
-
-	this.lucy = new Lucy(this.game, 600, 800, 1);
-/*	this.lucy.allStats.endurance.add(100);
-	this.lucy.allStats.mainStat.add(100);
-	this.lucy.allStats.agility.add(100);
-	this.lucy.allStats.special.set(1, 1);*/
-	this.lucy.allResistances[Elements.WIND] = 0.5;
-	this.lucy.allResistances[Elements.PHYSIC] = -0.5;
-
-	this.allHeroes.add(this.barton);
-	this.allHeroes.add(this.lucy);
-
 	this.initPlayers();
 
 	mob1 = this.allEnemies.getChildAt(0);
 	mob2 = this.allEnemies.getChildAt(1);
-
-	mob1.follow(this.lucy);
-	mob2.follow(this.barton);
 
 	mob1.allStats.special.setMax(1000);
 	mob1.allStats.special.set(1, 1);
@@ -99,38 +77,49 @@ BasicGame.allLevels.Level_1.prototype.create = function(){
 
 	mob1.onDeath.add(function(){
 		this.allHeroes.forEach(function(item){
-			item.gainExperience(10);
+			item.gainExperience(100);
 		})
 	}, this);
 
 	mob1.allSkills[0].firstSkill = new ArrowSkill(mob1, 1, ["platform", "hero"]);
-
-	this.barton.quiverRegen.start();
 }
 
 BasicGame.allLevels.Level_1.prototype.update = function (){
     Level.prototype.update.call(this);
 
 	if (!this.completed && !this.gameOvered){
-		this.lucy.allStats.special.add(0.01 / 60, 1);
-		this.lucy.allStats.health.add(0.01, 1);
+		/*this.lucy.allStats.special.add(0.01 / 60, 1);
+		this.lucy.allStats.health.add(0.01, 1);*/
 
 		//this.lucy.allStats.experience.add(100);
 
-		if (Math.abs(this.lucy.x - mob1.x) < 500){
+		var nearest = mob1.getNearestTarget();
 
-			if (this.lucy.x < mob1.x){
-				mob1.orientLeft();
-			}
-
-			else{
-				mob1.orientRight();
-			}
-
-			mob1.castFirst(null, 0.75);
+		if (nearest != mob1.target){
+			mob1.follow(nearest);
 		}
-		else if (mob1.allSkills[mob1.currentMode].firstSkill.chargeTime.get()){
-			mob1.releaseFirst();
+
+		if (mob1.target != null){
+			if (Math.abs(mob1.target.x - mob1.x) < 500){
+				if (mob1.target.x < mob1.x){
+					mob1.orientLeft();
+				}
+
+				else{
+					mob1.orientRight();
+				}
+
+				mob1.castFirst(null, 0.75);
+			}
+			else if (mob1.allSkills[mob1.currentMode].firstSkill.chargeTime.get()){
+				mob1.releaseFirst();
+			}
+		}
+
+		var nearest = mob2.getNearestTarget();
+
+		if (nearest != mob2.target){
+			mob2.follow(nearest);
 		}
 	}
 }

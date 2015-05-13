@@ -95,7 +95,8 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 	};
 
 	this.path = null;
-	
+	this.target = null;
+
 	this.onMovement = new Phaser.Signal();
 	this.onDeath = new Phaser.Signal();
 
@@ -319,6 +320,41 @@ Npc.prototype.follow = function(target, tickRecompute){
 	this.onUpdate.add(this.followPath, this);
 
 	this.allTimers.follow.start();
+}
+
+Npc.prototype.getNearestTarget = function(){
+	var target = null;
+
+	if (this.tag == "enemy"){
+		var min = 1000 * 1000; // this.fieldView squared;
+
+		BasicGame.level.allHeroes.forEachAlive(function(item){
+			var distanceSquared = (item.x - this.x) * (item.x - this.x) +
+				(item.y - this.y) * (item.y - this.y);
+
+			if (distanceSquared < min){
+				target = item;
+
+				min = distanceSquared;
+			}
+		}, this);
+	}
+	else if (this.tag == "hero"){
+		var min = 1000 * 1000; // this.fieldView squared;
+
+		BasicGame.level.allEnemies.forEachAlive(function(item){
+			var distanceSquared = (item.x - this.x) * (item.x - this.x) +
+				(item.y - this.y) * (item.y - this.y);
+
+			if (distanceSquared < min){
+				target = item;
+
+				min = distanceSquared;
+			}
+		}, this);
+	}
+
+	return target;
 }
 
 Npc.prototype.unFollow = function(){

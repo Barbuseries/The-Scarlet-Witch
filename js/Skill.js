@@ -404,6 +404,14 @@ var Projectile = function(game, x, y, spriteName, initFunction, updateFunction,
 	this.element = Elements.ALMIGHTY;
 
 	this.targetTags = [];
+	
+	this.transfer = {
+		velocity: {
+			x: 1,
+
+			y: 1
+		}
+	};
 }
 
 Projectile.prototype = Object.create(Entity.prototype);
@@ -1517,6 +1525,8 @@ var ArrowSkill = function(user, level, targetTags){
 
 			this.targetTags = self.targetTags;
 			this.element = self.element;
+
+			this.transfer.velocity.x = 0.3;
 		}
 
 		function damageFunction(obstacle){
@@ -1605,6 +1615,8 @@ var ArrowSkill = function(user, level, targetTags){
 		user.orientLeft = Hero.prototype.orientLeft;
 		user.orientRight = Hero.prototype.orientRight;
 
+		user.can.orient = false;
+
 		createProjectile(this.game, 0, 0, "arrow",
 						 initProjectile, updateFunction, 
 						 undefined, collideFunction,
@@ -1623,6 +1635,7 @@ var ArrowSkill = function(user, level, targetTags){
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
+			this.user.can.orient = true;
 		}, this);
 	}
 
@@ -1743,6 +1756,8 @@ var MultArrowSkill = function(user, level, targetTags){
 
 			this.targetTags = self.targetTags;
 			this.element = self.element;
+
+			this.transfer.velocity.x = 0.2;
 		}
 
 		function damageFunction(obstacle){
@@ -1991,6 +2006,11 @@ var TrapSkill = function(user, level, targetTags){
 
 	Skill.call(this, user, level, costFunction, 10000,
 			   Elements.EARTH, targetTags);
+
+	this.onBreak.add(function(){
+		this.user.can.move = true;
+		this.user.can.orient = true;
+	}, this);
 
 	this.onCharge.add(function(){
 		this.user.can.move = false;
@@ -2395,6 +2415,8 @@ var PoweredArrowSkill = function(user, level, targetTags){
 
 		user.orientLeft = Hero.prototype.orientLeft;
 		user.orientRight = Hero.prototype.orientRight;
+		
+		user.can.orient = false;
 
 		createProjectile(this.game, 0, 0, "arrow",
 						 initProjectile, updateFunction, 
@@ -2442,6 +2464,7 @@ var PoweredArrowSkill = function(user, level, targetTags){
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
+			this.user.can.orient = true;
 		}, this);
 	}
 

@@ -39,8 +39,8 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 
 	this.allStats.level = new Stat(this, "Level", STAT_NO_MAXSTAT, level, level,
 								   0, 99);
-	this.allStats.health = new Stat(this, "Health", STAT_NO_LINK, 1);
-	this.allStats.special = new Stat(this, "Special", STAT_NO_LINK, 0);
+	this.allStats.health = new Stat(this, "Health", STAT_PERCENT_LINK, 1);
+	this.allStats.special = new Stat(this, "Special", STAT_PERCENT_LINK, 0);
 
 	this.allStats.attack = new Stat(this, "Attack", STAT_NO_MAXSTAT, 0);
 	this.allStats.defense = new Stat(this, "Defense", STAT_NO_MAXSTAT, 0, 0, 0, 100);
@@ -245,12 +245,12 @@ Mob.prototype.stun = function(duration, chanceToStun){
 			this.allTimers.stun = null;
 		}, this);
 
-		this.can.move = false;
-		this.can.action = false;
-
 		if (this.current.action instanceof Skill){
 			this.current.action.breakSkill();
 		}
+
+		this.can.move = false;
+		this.can.action = false;
 
 		this.allTimers.stun.start();
 	}
