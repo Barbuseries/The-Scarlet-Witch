@@ -21,6 +21,11 @@ Player.prototype.setHero = function(hero){
 	}
 
 	this.hero.player = this;
+	this.hero.menu.manager = this.controller;
+	
+	if (this.menu != null){
+		this.menu.statusOption.display.text = hero.name;
+	}
 
 	var statusUi = this.hero.statusUi;
 

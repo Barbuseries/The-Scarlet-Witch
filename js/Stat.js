@@ -99,7 +99,8 @@ Stat.prototype.addMax = function(value, isPercentage, percentageFrom){
     this._addTo(2, value, isPercentage, percentageFrom);
 }
 
-Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom, updateType){
+Stat.prototype._addTo = function(type, value, isPercentage, percentageFrom,
+								 updateType){
     if (typeof(value) != "number"){
         return;
     }
@@ -242,8 +243,14 @@ Stat.prototype._canAddTo = function(type, value, isPercentage, percentageFrom){
 			}
         }
         else{
-            return getFinalValue(this._value, value,
-                                 this._min, this._maxValue);
+			if (this._link == STAT_NO_MAXSTAT){
+				return getFinalValue(this._value, value,
+									 this._min, this._max);
+			}
+			else{
+				return getFinalValue(this._value, value,
+									 this._min, this._maxValue);
+			}
         }
     }
     else if ((type == 2) &&

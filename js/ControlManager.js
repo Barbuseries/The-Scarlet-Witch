@@ -94,12 +94,13 @@ ControlManager.prototype.update = function(){
 ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 												gamepadCode,
 												functionName, signal, allTags,
-												target){
+												target, fps){
 	var code;
 	var funct;
 	var sig;
 	var targ;
 	var tags;
+	var fp;
 
 	// If we're trying to bind a button from a Gamepad, it needs to be
 	// done only after the Gamepad has been connected.
@@ -113,7 +114,7 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 
 	function setAfterCheck(){
 		manager.bindControl(controlName, -1, gamepadCode, functionName, signal,
-							allTags, target);
+							allTags, target, fps);
 	}
 	
 	if (!this.pad.connected){
@@ -142,6 +143,7 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 		sig = getFinalValue(signal, "signal");
 		targ = getFinalValue(target, "target");
 		tags = getFinalValue(allTags, "allTags");
+		fp = getFinalValue(allTags, "fps");
 
 		this.unbindControl(controlName);
 	}
@@ -153,10 +155,11 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 		sig = signal;
 		targ = target;
 		tags = allTags;
+		fp = fps;
 	}
 
 	this.allControls[controlName] = new Control(this, kCode, gCode, funct, sig, tags,
-												targ);
+												targ, fp);
 
 	return this;
 } 
@@ -166,7 +169,7 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 */
 ControlManager.prototype.bindPadControl = function(padControlName, axis, min, max,
 												   functionName, signal, allTags,
-												   target){
+												   target, fps){
 	var ax;
 	var mi;
 	var ma;
@@ -174,6 +177,7 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 	var sig;
 	var targ;
 	var tags;
+	var fp;
 	
 	var manager = this;
 
@@ -183,7 +187,7 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 
 	function setAfterCheck(){
 		manager.bindPadControl(padControlName, axis, min, max, functionName, signal,
-							   allTags, target);
+							   allTags, target, fps);
 	}
 
 	if (!this.pad.connected){
@@ -211,6 +215,7 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 		sig = getFinalValue(signal, "signal");
 		targ = getFinalValue(target, "target");
 		tags = getFinalValue(allTags, "allTags");
+		fp = getFinalValue(fps, "fps");
 
 		this.unbindPadControl(padControlName);
 	}
@@ -222,10 +227,11 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 		sig = signal;
 		targ = target;
 		tags = allTags;
+		fp = fps;
 	}
 
 	this.allControls[padControlName] = new PadControl(this, ax, mi, ma, funct,
-													  sig, tags, targ);
+													  sig, tags, targ, fp);
 
 	return this;
 }
@@ -297,6 +303,8 @@ ControlManager.prototype.swapControls = function(controlName1, controlName2, typ
 	var target1 = control1.target;
 	var target2 = control2.target;
 	
+	var fps1 = control1.fps;
+	var fps2 = control2.fps;
 	
 	this.unbindControl(controlName1);
 	this.unbindControl(controlName2);
@@ -304,16 +312,16 @@ ControlManager.prototype.swapControls = function(controlName1, controlName2, typ
 	// If type == 0, swap the key/buttonCodes. 
 	if (!type){
 		this.bindControl(controlName1, kCode2, gCode2, controlFunction1,
-						 controlSignal1, allTags2, target2);
+						 controlSignal1, allTags2, target2, fps2);
 		this.bindControl(controlName2, kCode1, gCode1, controlFunction2,
-						 controlSignal2, allTags1, target1);
+						 controlSignal2, allTags1, target1, fps1);
 	}
 	// Else, swap the functions (and the signals).
 	else{
 		this.bindControl(controlName1, kCode1, gCode1, controlFunction2,
-						 controlSignal2, allTags2, target2);
+						 controlSignal2, allTags2, target2, fps2);
 		this.bindControl(controlName2, kCode2, gCode2, controlFunction1,
-						 controlSignal1, allTags1, target1);
+						 controlSignal1, allTags1, target1, fps1);
 	}
 
 	return this;
@@ -421,49 +429,16 @@ ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded, c
 
 	if (typeof(allTags) === "undefined"){
 		if (cache){
-			this._cached.enabled.push(this.target);
+			this._cached.target.push(this.target);
 		}
 
 		this.target = target;
 	}
-	else if (typeof(allTags) === "object"){
-		for (controlName in this.allControls){	
-			var i = 0;
-			var control = this.allControls[controlName];
+	else{
+		var allControls = this.getByTag(allTags, allNeeded);
 
-			if (allNeeded){
-				if (control.allTags.length < allTags.length){
-					continue;
-				}
-				
-				while (validIndex(i, allTags) &&
-					   (control.allTags.indexOf(allTags[i]) != -1)){
-					i++;
-				}
-
-				if (i == allTags.length){
-					control.setTarget(target, cache);
-				}
-			}
-			else{
-				while (validIndex(i, allTags) &&
-					   !(control.allTags.indexOf(allTags[i]) != -1)){
-					i++;
-				}
-
-				if (i < allTags.length){
-					control.setTarget(target, cache);
-				}
-			}		
-		}
-	}
-	else if (typeof(allTags) === "string"){
-		for (controlName in this.allControls){
-			var control = this.allControls[controlName];
-
-			if (control.allTags.indexOf(allTags) != -1){
-				control.setTarget(target, cache);
-			}	
+		for(var i in allControls){
+			allControls[i].setTarget(target, cache);
 		}
 	}
 }
@@ -491,6 +466,8 @@ ControlManager.prototype._able = function(allTags, allNeeded, cache, enabled){
 	if (!booleanable(allNeeded)) allNeeded = false;
 	if (!booleanable(cache)) cache = false;
 
+	
+
 	if (typeof(allTags) === "undefined"){
 		if (cache){
 			this._cached.enabled.push(this.enabled);
@@ -498,44 +475,11 @@ ControlManager.prototype._able = function(allTags, allNeeded, cache, enabled){
 
 		this.enabled = enabled;
 	}
-	else if (typeof(allTags) === "object"){
-		for (controlName in this.allControls){	
-			var i = 0;
-			var control = this.allControls[controlName];
+	else{
+		var allControls = this.getByTag(allTags, allNeeded);
 
-			if (allNeeded){
-				if (control.allTags.length < allTags.length){
-					continue;
-				}
-				
-				while (validIndex(i, allTags) &&
-					   (control.allTags.indexOf(allTags[i]) != -1)){
-					i++;
-				}
-
-				if (i == allTags.length){
-					control._able(enabled, cache);
-				}
-			}
-			else{
-				while (validIndex(i, allTags) &&
-					   !(control.allTags.indexOf(allTags[i]) != -1)){
-					i++;
-				}
-
-				if (i < allTags.length){
-					control._able(enabled, cache);
-				}
-			}		
-		}
-	}
-	else if (typeof(allTags) === "string"){
-		for (controlName in this.allControls){
-			var control = this.allControls[controlName];
-
-			if (control.allTags.indexOf(allTags) != -1){
-				control._able(enabled, cache);
-			}	
+		for(var i in allControls){
+			allControls[i]._able(enabled, cache);
 		}
 	}
 }
@@ -543,7 +487,7 @@ ControlManager.prototype._able = function(allTags, allNeeded, cache, enabled){
 
 ControlManager.prototype.rollback = function(type, allTags, allNeeded){
 	if (!booleanable(allNeeded)) allNeeded = false;
-	if (type != "string") type = "all";
+	if (typeof(type) != "string") type = "all";
 
 	if (typeof(allTags) === "undefined"){
 		if ((type == "target") || (type == "all")){
@@ -564,44 +508,11 @@ ControlManager.prototype.rollback = function(type, allTags, allNeeded){
 			}
 		}
 	}
-	else if (typeof(allTags) === "object"){
-		for (controlName in this.allControls){	
-			var i = 0;
-			var control = this.allControls[controlName];
+	else{
+		var allControls = this.getByTag(allTags, allNeeded);
 
-			if (allNeeded){
-				if (control.allTags.length < allTags.length){
-					continue;
-				}
-				
-				while (validIndex(i, allTags) &&
-					   (control.allTags.indexOf(allTags[i]) != -1)){
-					i++;
-				}
-
-				if (i == allTags.length){
-					control.rollback(type);
-				}
-			}
-			else{
-				while (validIndex(i, allTags) &&
-					   !(control.allTags.indexOf(allTags[i]) != -1)){
-					i++;
-				}
-
-				if (i < allTags.length){
-					control.rollback(type);
-				}
-			}		
-		}
-	}
-	else if (typeof(allTags) === "string"){
-		for (controlName in this.allControls){
-			var control = this.allControls[controlName];
-
-			if (control.allTags.indexOf(allTags) != -1){
-				control.rollback(type);
-			}	
+		for(var i in allControls){
+			allControls[i].rollback(type);
 		}
 	}
 }
@@ -619,21 +530,259 @@ ControlManager.prototype.swap = function(cache){
 /* ControlManager */
 /******************/
 
+/**********************/
+/* Control Squeletton */
+/******************************************************************************/
+
+var ControlSqueletton = function(manager, functionName, signal, allTags, target,
+								 fps){
+	if (typeof(manager) != "object") return;
+	if ((typeof(target) != "undefined") &&
+		(typeof(target) != "object") && (target != -1)) return;
+	if (typeof(target) === "undefined") target = -1;
+	if (typeof(functionName) != "string") return;
+	if (typeof(fps) == "undefined") fps = 0;
+	if ((typeof(fps) != "number") ||
+	   (fps < 0)) return;
+
+	if (typeof(signal) === "undefined") signal = "update";
+	
+	this.manager = manager;
+	this.target = target;
+	this.functionName = functionName;
+	this.signal = signal;
+	this.allTags = [];
+	this.fps = fps;
+	this._fps = 0;
+
+	this.enabled = true;
+	this._cached = {
+		target: [],
+		enabled: [],
+		functionName: [],
+		signal: [],
+		fps: []
+	};
+
+	this._canFire = true;
+
+	if (fps){
+		manager.onUpdate.add(this._checkFire, this);
+	}
+
+	if (typeof(allTags) === "object"){
+		for(var i = 0; i < allTags.length; i++) {
+			this.allTags.push(allTags[i]);
+		}
+	}
+	else{
+		this.allTags.push(allTags);
+	}
+}
+
+ControlSqueletton.prototype._checkFire = function(){
+	if (this._fps <= 0){
+		this._fps = 0;
+
+		this._canFire = true;
+
+		return;
+	}
+
+	this._fps--;
+}
+
+ControlSqueletton.prototype.setTarget = function(target, cache){
+	if (typeof(target) === "undefined"){
+		return;
+	}
+
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.target.push(this.target);
+	}
+
+	this.target = target;
+}
+
+ControlSqueletton.prototype.setFunction = function(functionName, cache){
+	if (typeof(functionName) != "string"){
+		return;
+	}
+
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.functionName.push(this.functionName);
+	}
+
+	this.functionName = functionName;
+}
+
+ControlSqueletton.prototype.setFps = function(fps, cache){
+	if ((typeof(fps) != "number") ||
+		(fps < 0)){
+		return;
+	}
+
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.fps.push(this.fps);
+	}
+
+	if (this.fps){
+		this.manager.onUpdate.remove(this._checkFire);
+	}
+	
+	this.fps = fps;
+	this._fps = 0;
+
+	if (fps){
+		this.manager.onUpdate.add(this._checkFire, this);
+	}
+}
+
+ControlSqueletton.prototype.setSignal = function(signal, cache){
+	if (typeof(signal) != "string"){
+		return;
+	}
+
+	if (!booleanable(cache)) cache = false;
+	
+	if (cache){
+		this._cached.signal.push(this.signal);
+	}
+
+	this.signal = signal;
+}
+
+ControlSqueletton.prototype.enable = function(cache){
+	this._able(true, cache);
+}
+
+ControlSqueletton.prototype.disable = function(cache){
+	this._able(false, cache);
+}
+
+ControlSqueletton.prototype._able = function(enabled, cache){
+	if (!booleanable(enabled)) enabled = true;
+	if (!booleanable(cache)) cache = false;
+
+	if (cache){
+		this._cached.enabled.push(this.enabled);
+	}
+
+	this.enabled = enabled;
+}
+
+ControlSqueletton.prototype.rollback = function(type){
+	if (typeof(type) == "object"){
+		for(var i in type){
+			this.rollback(type[i]);
+		}
+
+		return;
+	}
+
+	if (typeof(type) != "string") type = "all";
+
+	if ((type == "target") || (type == "all")){
+		if (this._cached.target.length > 0){
+			this.target = this._cached.target.pop();
+		}
+	}
+	
+	if ((type == "enabled") || (type == "all")){
+		if (this._cached.enabled.length > 0){
+			this.enabled = this._cached.enabled.pop();
+		}
+	}
+
+	if ((type == "function") || (type == "all")){
+		if (this._cached.functionName.length > 0){
+			this.functionName = this._cached.functionName.pop();
+		}
+	}
+
+	if ((type == "signal") || (type == "all")){
+		if (this._cached.signal.length > 0){
+			this.setSignal(this._cached.signal.pop());
+		}
+	}
+
+	if ((type == "fps") || (type == "all")){
+		if (this._cached.fps.length > 0){
+			this.setFps(this._cached.fps.pop());
+		}
+	}
+}
+
+ControlSqueletton.prototype.getFunction = function(){
+	if (!this.manager.enabled ||
+		!this.enabled){
+		return null;
+	}
+
+	if (!this._canFire){
+		return null;
+	}
+
+	if (typeof(this.target) === "undefined"){
+		return null;
+	}
+
+	var target = (this.target == -1) ? this.manager.target : this.target;
+
+	if (target == null){
+		if (typeof(window[this.functionName]) === "function"){
+			return window[this.functionName];
+		}
+		else{
+			return null;
+		}
+	}
+	else{
+		if (typeof(target[this.functionName]) === "function"){
+			return target[this.functionName];
+		}
+		else{
+			return null;
+		}
+	}
+}
+
+ControlSqueletton.prototype.destroy = function(){
+	this.manager.onUpdate.remove(this._checkFire);
+
+	this.manager = null;
+	this.functionName = null;
+	this.signal = null;
+	this.allTags = [];
+	this.target = undefined;
+	this.enabled = false;
+	this.fps = 0;
+
+	this._cached = null;
+	this._canFire = false;
+	this._fps = -1;
+}
+/******************************************************************************/
+/* Control Squeletton */
+/**********************/
+
 /***********/
 /* Control */
 /******************************************************************************/
 
 var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
-					   allTags, target){
-	if (typeof(manager) != "object") return;
-	if ((typeof(target) != "undefined") &&
-		(typeof(target) != "object") && (target != -1)) return;
-	if (typeof(target) === "undefined") target = -1;
+					   allTags, target, fps){
 	if (typeof(keyboardCode) != "number") return;
 	if (typeof(gamepadCode) != "number") return;
-	if (typeof(functionName) != "string") return;
 
-	if (typeof(signal) === "undefined") signal = "update";
+	ControlSqueletton.call(this, manager, functionName, signal, allTags, target,
+						   fps);
 
 	this.inputKeyboard = manager.keyboard.addKey(keyboardCode);
 
@@ -644,22 +793,24 @@ var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
 		this.inputGamepad = null;
 	}
 
-	this.manager = manager;
-	this.target = target;
-	this.functionName = functionName;
-	this.signal = signal;
 	this.keyboardCode = keyboardCode;
 	this.gamepadCode = gamepadCode;
-	this.allTags = [];
 
-	this.enabled = true;
-	this._cached = {
-		target: [],
-		enabled: [],
-		functionName: [],
-		keyboardCode: [],
-		gamepadCode: []
-	};
+	this._cached.keyboardCode = [];
+	this._cached.gamepadCode =  [];
+
+	this.setSignal(signal);
+}
+
+Control.prototype = Object.create(ControlSqueletton.prototype);
+Control.prototype.constructor = Control;
+
+Control.prototype.setSignal = function(signal, cache){
+	if (typeof(signal) != "string"){
+		return;
+	}
+
+	this.removeSignal();
 
 	var signalKeyboard = null;
 	var signalGamepad = null;
@@ -667,8 +818,8 @@ var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
 	if ((signal == "update") ||
 		(signal == "down") ||
 		(signal == "up")){
-		signalKeyboard = manager.onUpdate;
-		signalGamepad = manager.onUpdate;
+		signalKeyboard = this.manager.onUpdate;
+		signalGamepad = this.manager.onUpdate;
 	}
 	else if (signal == "onDown"){
 		if (this.inputKeyboard != null){
@@ -706,83 +857,24 @@ var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
 		signalGamepad.add(this.executeGamepad, this);
 	}
 
-	if (typeof(allTags) === "object"){
-		for(var i = 0; i < allTags.length; i++) {
-			this.allTags.push(allTags[i]);
-		}
+	if ((signalKeyboard != null) ||
+		(signalGamepad != null)){
+		ControlSqueletton.prototype.setSignal.call(this, signal, cache);
 	}
-	else{
-		this.allTags.push(allTags);
-	}
-}
-
-Control.prototype.setTarget = function(target, cache){
-	if (typeof(target) === "undefined"){
-		return;
-	}
-
-	if (!booleanable(cache)) cache = false;
-
-	if (cache){
-		this._cached.target.push(this.target);
-	}
-
-	this.target = target;
-}
-
-Control.prototype.setFunction = function(functionName, cache){
-	if (typeof(functionName) != "string"){
-		return;
-	}
-
-	if (!booleanable(cache)) cache = false;
-
-	if (cache){
-		this._cached.functionName.push(this.functionName);
-	}
-
-	this.functionName = functionName;
-}
-
-Control.prototype.enable = function(cache){
-	this._able(true, cache);
-}
-
-Control.prototype.disable = function(cache){
-	this._able(false, cache);
-}
-
-Control.prototype._able = function(enabled, cache){
-	if (!booleanable(enabled)) enabled = true;
-	if (!booleanable(cache)) cache = false;
-
-	if (cache){
-		this._cached.enabled.push(this.enabled);
-	}
-
-	this.enabled = enabled;
 }
 
 Control.prototype.rollback = function(type){
-	if (type != "string") type = "all";
+	if (typeof(type) == "object"){
+		for(var i in type){
+			this.rollback(type[i]);
+		}
 
-	if ((type == "target") || (type == "all")){
-		if (this._cached.target.length > 0){
-			this.target = this._cached.target.pop();
-		}
-	}
-	
-	if ((type == "enabled") || (type == "all")){
-		if (this._cached.enabled.length > 0){
-			this.enabled = this._cached.enabled.pop();
-		}
+		return;
 	}
 
-	if ((type == "function") || (type == "all")){
-		if (this._cached.functionName.length > 0){
-			this.functionName = this._cached.functionName.pop();
-		}
-	}
+	if (typeof(type) != "string") type = "all";
+
+	ControlSqueletton.prototype.rollback.call(this, type);
 	
 	if ((type == "code") || (type == "all")){
 		if (this._cached.keyboardCode.length > 0){
@@ -819,6 +911,7 @@ Control.prototype.change = function(keyboardCode, gamepadCode, signal, cache){
 	var functionName = this.functionName;
 	var allTags = this.allTags;
 	var cached = this._cached;
+	var fps = this.fps;
 
 	if (cache){
 		cached.keyboardCode.push(this.keyboardCode);
@@ -828,7 +921,7 @@ Control.prototype.change = function(keyboardCode, gamepadCode, signal, cache){
 	this.destroy();
 
 	Control.call(this, manager, keyboardCode, gamepadCode, functionName, signal,
-				 allTags, target);
+				 allTags, target, fps);
 
 	this._cached = cached;
 }
@@ -846,34 +939,13 @@ Control.prototype.executeGamepad = function(){
 }
 
 Control.prototype.execute = function(type){
-	if (!this.manager.enabled ||
-		!this.enabled){
-		return;
-	}
+	var actualFunction = this.getFunction();
 
-	if (typeof(this.target) === "undefined"){
+	if (actualFunction == null){
 		return;
 	}
 
 	var target = (this.target == -1) ? this.manager.target : this.target;
-	var actualFunction;
-
-	if (target == null){
-		if (typeof(window[this.functionName]) === "function"){
-			actualFunction = window[this.functionName];
-		}
-		else{
-			return;
-		}
-	}
-	else{
-		if (typeof(target[this.functionName]) === "function"){
-			actualFunction = target[this.functionName];
-		}
-		else{
-			return;
-		}
-	}
 
 	var input = null;
 	
@@ -883,25 +955,38 @@ Control.prototype.execute = function(type){
 		return;
 	}
 
+	var toFire = false;
+
 	switch(this.signal){
 	case "down":
-		if (input.isDown) actualFunction.call(target, this);;
+		toFire = input.isDown;
 		break;
 		
 	case "up":
-		if (input.isUp) actualFunction.call(target, this);;
+		toFire = input.isUp;
 		break;
 		
 	default:
-		actualFunction.call(target, this);
+		toFire = true;
 		break;
+	}
+
+
+	if (toFire){
+		actualFunction.call(target, this);
+
+		if (this.fps){
+			this._fps = FPS / this.fps;
+			
+			this._canFire = false;
+		}
 	}
 }
 
 
-Control.prototype.destroy = function(){
+Control.prototype.removeSignal = function(){
 	switch(this.signal){
-		case "onDown":
+	case "onDown":
 		if (this.inputKeyboard != null){
 			this.inputKeyboard.onDown.remove(this.executeKeyboard, this);
 		}
@@ -912,29 +997,29 @@ Control.prototype.destroy = function(){
 
 		break;
 		
-		case "onUp":
+	case "onUp":
 		if (this.inputKeyboard != null){
 			this.inputKeyboard.onUp.remove(this.executeKeyboard, this);
 		}
-
+		
 		if (this.inputGamepad != null){
 			this.inputGamepad.onUp.remove(this.executeGamepad, this);
 		}
-
+		
 		break;
 		
-		case "onFloat":
+	case "onFloat":
 		if (this.inputKeyboard != null){
 			this.inputKeyboard.onFloat.remove(this.executeKeyboard, this);
 		}
-
+		
 		if (this.inputGamepad != null){
 			this.inputGamepad.onFloat.remove(this.executeGamepad, this);
 		}
-
+		
 		break;
-
-		default:
+		
+	default:
 		if (this.manager != null){
 			if (this.inputKeyboard != null){
 				this.manager.onUpdate.remove(this.executeKeyboard, this);
@@ -946,17 +1031,17 @@ Control.prototype.destroy = function(){
 		}
 		break;
 	}
+}
 
-	this.manager = null;
+Control.prototype.destroy = function(){
+	this.removeSignal();
+
 	this.inputKeyboard = null;
 	this.inputGamepad = null;
 	this.keyboardCode = -1;
 	this.gamepadCode = -1;
-	this.functionName = null;
-	this.signal = null;
-	this.allTags = [];
-	this.target = undefined;
-	this.enabled = false;
+
+	ControlSqueletton.prototype.destroy.call(this);
 }
 
 /******************************************************************************/
@@ -968,102 +1053,52 @@ Control.prototype.destroy = function(){
 /******************************************************************************/
 var PadControl = function(manager, axis, min, max, functionName, signal,
 						  allTags, target){
-	if (typeof(manager) != "object") return;
-	if ((typeof(target) != "undefined") &&
-		(typeof(target) != "object") && (target != -1)) return;
-	if (typeof(target) === "undefined") target = -1;
 	if (typeof(min) != "number") return;
 	if (typeof(max) != "number") return;
-	if (typeof(functionName) != "string") return;
 
-	if (typeof(signal) === "undefined") signal = "update";
-
-	this.manager = manager;
+	ControlSqueletton.call(this, manager, functionName, signal, allTags, target);
+	
 	this.axis = axis;
 	this.min = min;
 	this.max = max;
-	this.functionName = functionName;
-	this.allTags = [];
-	this.signal = signal;
-	this.target = target;
 	
-	this.enabled = true;
-	
-	this._cached = {
-		target: [],
-		enabled: [],
-		axis: []
-	};
+	this._cached.axis = [];
+
+	this.setSignal(signal);
+}
+
+PadControl.prototype.setSignal = function(signal, cache){
+	this.removeSignal();
 
 	if (signal == "update"){
-		signal = manager.onUpdate;
+		signal = this.manager.onUpdate;
 	}
 	else if (signal == "onDown"){
-		signal = manager.pad.onDown;
+		signal = this.manager.pad.onDown;
 	}
 	else if (signal == "onUp"){
-		signal = manager.pad.onUp;
+		signal = this.manager.pad.onUp;
 	}
 
-	signal.add(this.execute, this);
+	if (typeof(signal) != "string"){
+		ControlSqueletton.prototype.setSignal(signal, cache);
 
-	if (typeof(allTags) === "object"){
-		for(var i = 0; i < allTags.length; i++) {
-			this.allTags.push(allTags[i]);
-		}
+		signal.add(this.execute, this);
 	}
-	else{
-		this.allTags.push(allTags);
-	}
-}
-
-PadControl.prototype.setTarget = function(target, cache){
-	if (typeof(target) === "undefined"){
-		return;
-	}
-
-	if (!booleanable(cache)) cache = false;
-
-	if (cache){
-		this._cached.target.push(this.target);
-	}
-
-	this.target = target;
-}
-
-PadControl.prototype.enable = function(cache){
-	this._able(true, cache);
-}
-
-PadControl.prototype.disable = function(cache){
-	this._able(false, cache);
-}
-
-PadControl.prototype._able = function(enabled, cache){
-	if (!booleanable(enabled)) enabled = true;
-	if (!booleanable(cache)) cache = false;
-
-	if (cache){
-		this._cached.enabled.push(this.enabled);
-	}
-
-	this.enabled = enabled;
 }
 
 PadControl.prototype.rollback = function(type){
-	if (type != "string") type = "all";
+	if (typeof(type) == "object"){
+		for(var i in type){
+			this.rollback(type[i]);
+		}
 
-	if ((type == "target") || (type == "all")){
-		if (this._cached.target.length > 0){
-			this.target = this._cached.target.pop();
-		}
+		return;
 	}
-	
-	if ((type == "enabled") || (type == "all")){
-		if (this._cached.enabled.length > 0){
-			this.enabled = this._cached.enabled.pop();
-		}
-	}
+
+	if (typeof(type) != "string") type = "all";
+
+	ControlSqueletton.prototype.rollback.call(this, type);
 
 	if ((type == "axis") || (type == "all")){
 		if (this._cached.axis.length > 0){
@@ -1101,79 +1136,70 @@ PadControl.prototype.change = function(axis, min, max, signal, cache){
 	var functionName = this.functionName;
 	var allTags = this.allTags;
 	var cached = this._cached;
+	var fps = this.fps;
 
 	cached.axis.push([this.axis, this.min, this.max]);
 
 	this.destroy();
 
 	PadControl.call(this, manager, axis, min, max, functionName, signal,
-					allTags, target);
+					allTags, target, fps);
 
 	this._cached = cached;
 }
 
 PadControl.prototype.execute = function(){
-	if (!this.manager.enabled ||
-		!this.enabled){
+	if (this.manager.type != CONTROL_GAMEPAD){
 		return;
 	}
 
-	if (this.manager.typer != CONTROL_GAMEPAD){
-		return;
-	}
-
-	if (typeof(this.target) === "undefined") return;
+	var actualFunction = this.getFunction();
 
 	var target = (this.target == -1) ? this.manager.target : this.target;
-	var actualFunction;
+
 	var pad = this.manager.pad;
 
-	if (target == null){
-		if (typeof(window[this.functionName]) === "function"){
-			actualFunction = window[this.functionName];
-		}
-		else{
-			return;
-		}
-	}
-	else{
-		if (typeof(target[this.functionName]) === "function"){
-			actualFunction = target[this.functionName];
-		}
-		else{
-			return;
-		}
-	}
 
 	if ((pad.axis(this.axis) >= this.min) && (pad.axis(this.axis) <= this.max)){
-		actualFunction.call(target, this, pad.axis(this.axis));
+
+		if (toFire){
+			actualFunction.call(target, this, pad.axis(this.axis));
+
+			if (this.fps){
+				this._fps = FPS / this.fps;
+				
+				this._canFire = false;
+			}
+		}
+	}
+}
+
+PadControl.prototype.removeSignal = function(){
+	var pad = this.manager.pad;
+	
+	switch(this.signal){
+	case "onDown":
+		pad.onDown.remove(this.execute, this);
+		break;
+		
+	case "onUp":
+		pad.onUp.remove(this.execute, this);
+		break;
+		
+	default:
+		this.manager.onUpdate.remove(this.execute, this);
+		break;
 	}
 }
 
 PadControl.prototype.destroy = function(){
-	var pad = this.manager.pad;
-	
-	switch(this.signal){
-		case "onDown":
-		pad.onDown.remove(this.execute, this);
-		break;
-		
-		case "onUp":
-		pad.onUp.remove(this.execute, this);
-		break;
-		
-		default:
-		this.manager.onUpdate.remove(this.execute, this);
-		break;
-	}
+	this.removeSignal();
 
-	this.manager = null;
 	this.axis = null;
-	this.functionName = null;
-	this.signal = null;
-	this.allTags = [];
-	this.target = undefined;
-	this.enabled = false;
+	this.min = -1;
+	this.max = -1;
+
+	ControlSqueletton.prototype.destroy.call(this);
 }
 /******************************************************************************/
 /* PadControl */

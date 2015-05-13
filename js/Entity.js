@@ -59,7 +59,7 @@ Entity.prototype.update = function(){
 		this.updateFunction();
 	}
 
-	Phaser.Sprite.prototype.update.apply(this);
+	Phaser.Sprite.prototype.update.call(this);
 }
 
 // If killFunction returns true, kill the Entity.

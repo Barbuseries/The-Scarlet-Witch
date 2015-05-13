@@ -166,6 +166,12 @@ Interface.prototype.createAnimation = function(type, x, y, time, alpha, easing, 
 	}
 }
 
+Interface.prototype.update = function(){
+	Phaser.Group.prototype.update.call(this);
+	
+	this.onUpdate.dispatch(this);
+}
+
 Interface.prototype.kill = function(){
 	this.destroy();
 }

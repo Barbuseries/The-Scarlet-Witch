@@ -45,9 +45,12 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.allStats.attack = new Stat(this, "Attack", STAT_NO_MAXSTAT, 0);
 	this.allStats.defense = new Stat(this, "Defense", STAT_NO_MAXSTAT, 0, 0, 0, 100);
 
-	this.allStats.mainStat = new Stat(this, "Main Stat", STAT_NO_MAXSTAT, 0);
-	this.allStats.endurance = new Stat(this, "Endurance", STAT_NO_MAXSTAT, 0);
-	this.allStats.agility = new Stat(this, "Agility", STAT_NO_MAXSTAT, 0);
+	this.allStats.mainStat = new Stat(this, "Main Stat", STAT_NO_MAXSTAT, 0, 0,
+									  0, 100);
+	this.allStats.endurance = new Stat(this, "Endurance", STAT_NO_MAXSTAT, 0, 0,
+									   0, 100);
+	this.allStats.agility = new Stat(this, "Agility", STAT_NO_MAXSTAT, 0, 0,
+									 0, 100);
 
 	this.allStats.dodge = new Stat(this, "Dodge", STAT_NO_MAXSTAT, 0, 0, 0, 100);
 	this.allStats.criticalRate = new Stat(this, "Critical Rate", STAT_NO_MAXSTAT, 0,
@@ -61,14 +64,14 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 									 this.allStats.special);
 	this.allStats.level.onUpdate.add(this.allStats.attack.grow,
 									 this.allStats.attack);
-	this.allStats.level.onUpdate.add(this.allStats.mainStat.grow,
+/*	this.allStats.level.onUpdate.add(this.allStats.mainStat.grow,
 									 this.allStats.mainStat);
 	this.allStats.level.onUpdate.add(this.allStats.endurance.grow,
-									 this.allStats.endurance);
+									 this.allStats.endurance);*/
 	this.allStats.level.onUpdate.add(this.allStats.defense.grow,
 									 this.allStats.defense);
-	this.allStats.level.onUpdate.add(this.allStats.agility.grow,
-									 this.allStats.agility);
+/*	this.allStats.level.onUpdate.add(this.allStats.agility.grow,
+									 this.allStats.agility);*/
 	this.allStats.level.onUpdate.add(this.allStats.dodge.grow,
 									 this.allStats.dodge);
 	this.allStats.level.onUpdate.add(this.allStats.criticalRate.grow,
@@ -92,7 +95,6 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 									   this.allStats.criticalRate);
 	this.allStats.agility.onUpdate.add(this.allStats.attackSpeed.grow,
 									   this.allStats.attackSpeed);
-
 
 	this.allStats.health.onUpdate.add(function(stat, oldValue, newValue){
 		if (newValue == 0){
@@ -245,6 +247,10 @@ Mob.prototype.stun = function(duration, chanceToStun){
 
 		this.can.move = false;
 		this.can.action = false;
+
+		if (this.current.action instanceof Skill){
+			this.current.action.breakSkill();
+		}
 
 		this.allTimers.stun.start();
 	}
@@ -510,7 +516,7 @@ var createArcher = function(game, x, y, spriteSheet, level){
 		this.allStats.health.setBasic(40);
 		this.allStats.health.set(1, 1);
 		this.allStats.health.setGrowth(function(){
-			return 0.3 * (this._basicValue + 10 * this.entity.allStats.level.get() +
+			return 0.5 * (this._basicValue + 10 * this.entity.allStats.level.get() +
 						  3 * this.entity.allStats.endurance.get());
 		}, -1, [], true);
 

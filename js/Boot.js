@@ -17,7 +17,7 @@ var BasicGame = {
 
 	volume: {
 		sfx: 0.1,
-		music: 0.1
+		music: 0.5
 	},
 
 	emitters: {
@@ -48,10 +48,40 @@ var BasicGame = {
 	},
 
 	swapHeroes: function(){
-		var temp = BasicGame.allPlayers.p1.getHero();
+		var heroP1 = BasicGame.allPlayers.p1.getHero();
+		var heroP2 = BasicGame.allPlayers.p2.getHero();
+
+		var menuHero1Open;
+		var menuHero2Open;
+
+		if ((heroP1 != null) &&
+			(heroP1.menu != null)){
+			menuHero1Open = (heroP1.menu.state == Interface.State.TOGGLED);
+		}
+
+		if ((heroP2 != null) &&
+			(heroP2.menu != null)){
+			menuHero2Open = (heroP2.menu.state == Interface.State.TOGGLED);
+		}
+
+		if (menuHero1Open){
+			heroP1.menu.close();
+		}
+
+		if (menuHero2Open){
+			heroP2.menu.close();
+		}
 		
-		BasicGame.allPlayers.p1.setHero(BasicGame.allPlayers.p2.getHero());
-		BasicGame.allPlayers.p2.setHero(temp);
+		BasicGame.allPlayers.p1.setHero(heroP2);
+		BasicGame.allPlayers.p2.setHero(heroP1);
+
+		if (menuHero1Open){
+			heroP2.menu.toggle();
+		}
+
+		if (menuHero2Open){
+			heroP1.menu.toggle();
+		}
 	}
 };
 
@@ -77,12 +107,14 @@ BasicGame.Boot.prototype.init = function(){
     }
 }
 BasicGame.Boot.prototype.preload = function(){
-	this.load.image("phaserLogo", "assets/Phaser-Logo-Small.png");
-    this.load.image('preloaderBarBackground', 'assets/campfire_wood.png');
-    this.load.image('preloaderBar', 'assets/campfire_fire.png');
-	this.load.image("logo", "assets/TheScarletWitch-Logo.png");
-	this.load.image("sky", "assets/Backgrounds/background0_2.png");
-	this.load.image("ground", "assets/platform.png");
+	var miscDir = "assets/Misc/";
+
+	this.load.image("phaserLogo", miscDir + "Phaser-Logo-Small.png");
+    this.load.image('preloaderBarBackground', miscDir + 'campfire_wood.png');
+    this.load.image('preloaderBar', miscDir + 'campfire_fire.png');
+	this.load.image("logo", miscDir + "TheScarletWitch-Logo.png");
+	this.load.image("sky",  "assets/Backgrounds/background0_2.png");
+	this.load.image("ground", miscDir + "platform.png");
 }
 BasicGame.Boot.prototype.create = function(){
     this.logoGroup = this.game.add.group();
@@ -160,12 +192,12 @@ BasicGame.Boot.prototype.startPreload = function(){
 	BasicGame.allPlayers.p2 = new Player(this.game, "2");
 
 	BasicGame.allPlayers.p1.controller
-		.bindControl("menu_toggle", Phaser.Keyboard.ENTER, -1,
+		.bindControl("menu_toggle", Phaser.Keyboard.M, -1,
 					 "toggle", "onDown", "menu")
 		.bindControl("menu_next", Phaser.Keyboard.S, -1,
-					 "goNext", "onDown", "menu")
+					 "goNext", "down", "menu", -1, 6)
 		.bindControl("menu_previous", Phaser.Keyboard.Z, -1,
-					 "goPrevious", "onDown", "menu")
+					 "goPrevious", "down", "menu", -1, 6)
 		.bindControl("menu_select", Phaser.Keyboard.SPACEBAR, -1,
 					 "select", "onDown", "menu")
 		.bindControl(-1, Phaser.Keyboard.Q, -1,

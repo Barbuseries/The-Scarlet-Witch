@@ -113,7 +113,7 @@ BasicGame.allLevels.Level_1.prototype.update = function (){
 
 	if (!this.completed && !this.gameOvered){
 		this.lucy.allStats.special.add(0.01 / 60, 1);
-		//this.lucy.allStats.health.add(0.01, 1);
+		this.lucy.allStats.health.add(0.01, 1);
 
 		//this.lucy.allStats.experience.add(100);
 

@@ -581,10 +581,7 @@ MonoGauge.prototype._createIncreaseTween = function(newValue){
 
 	this.additionalFill.scale.x = (maxScale - initScale);
 
-	this.additionalFill.x = maxScale * this.width;
-	this.additionalFill.y = this.height / 2 - this.scale.x;
-	
-	this.additionalFill.angle = 180;
+	this.additionalFill.x = initScale * this.width;
 	
 	this.additionalFill.tint = this.increaseColor;
 	
@@ -595,6 +592,7 @@ MonoGauge.prototype._createIncreaseTween = function(newValue){
 	
 	function updateCurrentValue(){
 		this.fill.scale.x = maxScale - Math.abs(this.additionalFill.scale.x);
+		this.additionalFill.x = this.fill.scale.x * this.width;
 
 		this.currentValue = this.fill.scale.x * this.stat.getMax();
 	}

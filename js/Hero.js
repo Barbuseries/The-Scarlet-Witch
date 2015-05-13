@@ -7,6 +7,13 @@ var Hero = function(game, x, y, name, level){
 	this.body.setSize(32, 48, 16, 16);
 
 	this.currentMode = 0;
+	this.statPoints = 0;
+
+	this.allStats.level.onUpdate.add(function(stat, oldValue, newValue){
+		if (oldValue != newValue){
+			this.statPoints += 50;
+		}
+	}, this);
 	
 	this.player = null;
 
@@ -103,6 +110,13 @@ Hero.prototype.gainExperience = function(experience){
 	}
 }
 
+Hero.prototype.destroy = function(){
+	this.menu.destroy();
+	this.menu = null;
+
+	Mob.prototype.destroy.call(this);
+}
+
 var Lucy = function(game, x, y, level){
 	Hero.apply(this, [game, x, y, "Lucy", level]);
 
@@ -188,6 +202,7 @@ var Lucy = function(game, x, y, level){
 												   ["enemy"]);
 	this.allSkills[0].fourthSkill.setChargeTime(5000);
 
+	this.menu = new HeroMenu(this);
 }
 
 Lucy.prototype = Object.create(Hero.prototype);
@@ -198,7 +213,7 @@ var Barton = function(game, x, y, level){
 
 	this.JUMP_POWER = 250;
 
-	this.allStats.mainStat.name = "Intelligence";
+	this.allStats.mainStat.name = "Force";
 	this.allStats.special.destroy();
 	this.allStats.special = null;
 
@@ -295,6 +310,8 @@ var Barton = function(game, x, y, level){
 	}, this);
 
 	this.allStats.special = this.allStats.fury;
+	
+	this.menu = new HeroMenu(this);
 }
 
 Barton.prototype =  Object.create(Hero.prototype);

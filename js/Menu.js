@@ -193,8 +193,10 @@ Menu.prototype.setFocus = function(focus){
 		if (!focus){
 			this.stopCursorTween();
 			
-			for(var i = 0; i < this.allOptions.length; i++) {
-				this.allOptions[i].display.input.enabled = false;
+			if (this.mouseEnabled){
+				for(var i = 0; i < this.allOptions.length; i++) {
+					this.allOptions[i].display.input.enabled = false;
+				}
 			}
 		}
 		else{
@@ -332,10 +334,21 @@ Menu.prototype.destroy = function(){
 }
 
 Menu.prototype._del = function(){
+	for(var i in this.animations){
+		if (this.animations[i] != null){
+			this.animations[i].stop();
+			this.animations[i] = null;
+		}
+	}
+
+	this.close();
+
 	if (this.cursorTween != null){
 		this.cursorTween.stop();
 		this.cursorTween = null;
 	}
+
+	this.allOptions = [];
 
 	Interface.prototype._del.call(this);
 }
@@ -394,6 +407,10 @@ Option.prototype.destroy = function(){
 }
 
 Option.prototype._del = function(){
+	if (this.onOver == null){
+		return;
+	}
+
 	this.onOver.dispose();
 	this.onOver = null;
 
@@ -511,7 +528,216 @@ ConfirmationMenu.prototype.setFunction = function(confFunction, context){
 
 	this.yesOption.onSelect.add(confFunction, context);
 }
-
 /******************************************************************************/
 /* Confirmation Menu */
 /********************/
+
+/***************/
+/* Player Menu */
+/******************************************************************************/
+
+var PlayerMenu = function(player){
+	var game = player.hero.game;
+
+	Menu.call(this, game, player.controller, "Menu",
+			  game.camera.width * 0.25, game.camera.height * 0.25,
+			  game.camera.width / 2, game.camera.height / 2,
+			  "ground2", "icons");
+
+	this.title.fontWeight = "bold";
+	this.title.stroke = BLACK;
+	this.title.strokeThickness = 3;
+	this.title.fontSize = 64;
+	this.title.setShadow(5, 5, BLACK, 5);
+	this.background.tint = H_GREY;
+
+	this.horizontal = false;
+	this.showTitle = true;
+	this.cursor.frame = 5;
+	
+	player.controller.setTargetByTag(this, "menu");
+
+	this.onStartToggle.add(bindMenu, this);
+	this.onStartToggle.add(function(){
+		player.controller.enable("system");
+	});
+	
+	this.onStartToggle.add(function(){
+		if (player.hero.menu != null){
+			console.log(1);
+			this.onStartClose.addOnce(player.hero.menu.close, player.hero.menu);
+		}
+	}, this);
+	
+	this.fixedToCamera = true;
+
+	this.statusOption = createBasicMenuOption(this, 130, player.hero.name,
+											  function(){
+												  player.getHero().menu.toggle();
+											  }, this);
+
+	this.optionsOption = createBasicMenuOption(this, 200, "Options", 
+											   undefined, null);
+	this.quitOption = createBasicMenuOption(this, 270, "Quitter",
+					function(){
+					BasicGame.returnToTitle(player.controller.get("menu_toggle"));
+					});
+
+	this.enableMouse();
+}
+
+PlayerMenu.prototype = Object.create(Menu.prototype);
+PlayerMenu.prototype.constructor = PlayerMenu;
+
+/******************************************************************************/
+/* Player Menu */
+/***************/
+
+/*************/
+/* Hero Menu */
+/******************************************************************************/
+
+var HeroMenu = function(hero){
+	var game = hero.game;
+
+	Menu.call(this, game, undefined, hero.name,
+			  game.camera.width * 0.25, game.camera.height * 0.25,
+			  game.camera.width / 2, game.camera.height / 2,
+			  "ground2", "icons");
+
+	this.title.fontWeight = "bold";
+	this.title.stroke = BLACK;
+	this.title.strokeThickness = 3;
+	this.title.fontSize = 64;
+	this.title.setShadow(5, 5, BLACK, 5);
+	this.background.tint = H_GREY;
+
+	this.horizontal = false;
+	this.showTitle = true;
+	this.cursor.frame = 5;
+
+	this.hero = hero;
+
+	this.onStartToggle.add(bindMenu, this);
+	this.onStartToggle.add(function(){
+		this.hero.player.controller.enable("system");
+
+		var select = this.hero.player.controller.get("menu_select");
+		
+		select.setSignal("down", true);
+		select.setFps(10, true);
+	}, this);
+
+	this.onEndClose.add(function(){
+		var select = this.hero.player.controller.get("menu_select");
+		
+		select.rollback(["signal", "fps"]);
+	}, this);
+	
+	this.fixedToCamera = true;
+
+	this.upOptions = {
+		mainStat: new Option(),
+		endurance: new Option(),
+		agility: new Option()
+	};
+
+	this.bars = {
+		mainStat: new MonoGauge(game, this.width - 450, 140 - 5, 400, 10,
+								hero.allStats.mainStat,
+								H_YELLOW, H_BLACK, "", ""),
+		endurance: new MonoGauge(game, this.width - 450, 200 - 5, 400, 10,
+								hero.allStats.endurance,
+								H_YELLOW, H_BLACK, "", ""),
+		agility: new MonoGauge(game, this.width - 450, 260 - 5, 400, 10,
+								hero.allStats.agility,
+								H_YELLOW, H_BLACK, "", "")
+	};
+
+	this.bars.mainStat.allowIncreaseAnimation = false;
+	this.bars.mainStat.allowDecreaseAnimation = false;
+
+	this.bars.endurance.allowIncreaseAnimation = false;
+	this.bars.endurance.allowDecreaseAnimation = false;
+
+	this.bars.agility.allowIncreaseAnimation = false;
+	this.bars.agility.allowDecreaseAnimation = false;
+
+	this.addChild(this.bars.mainStat);
+	this.addChild(this.bars.endurance);
+	this.addChild(this.bars.agility);
+
+	this.upOptions.mainStat.display = game.add.text(50, 140,
+													hero.allStats.mainStat.name,
+											{font: "30px Arial", fill: "#ffffff"});
+
+	this.upOptions.mainStat.display.anchor.setTo(0, 0.5);
+	this.upOptions.mainStat.onSelect.add(function(){
+		if ((this.hero.statPoints > 0) &&
+		   (this.hero.allStats.mainStat.canAdd(5))){
+			this.hero.allStats.mainStat.add(5);
+			this.hero.statPoints--;
+
+			this.updateStatPoints();
+		}
+	}, this);
+
+	this.addOption(this.upOptions.mainStat);
+
+	this.upOptions.endurance.display = game.add.text(50, 200,
+													hero.allStats.endurance.name,
+											{font: "30px Arial", fill: "#ffffff"});
+
+	this.upOptions.endurance.display.anchor.setTo(0, 0.5);
+	this.upOptions.endurance.onSelect.add(function(){
+		if ((this.hero.statPoints > 0) &&
+		   (this.hero.allStats.endurance.canAdd(5))){
+			this.hero.allStats.endurance.add(5);
+			this.hero.statPoints--;
+
+			this.updateStatPoints();
+		}
+	}, this);
+
+	this.addOption(this.upOptions.endurance);
+
+	this.upOptions.agility.display = game.add.text(50, 260,
+													hero.allStats.agility.name,
+											{font: "30px Arial", fill: "#ffffff"});
+
+	this.upOptions.agility.display.anchor.setTo(0, 0.5);
+	this.upOptions.agility.onSelect.add(function(){
+		if ((this.hero.statPoints > 0) &&
+		   (this.hero.allStats.agility.canAdd(5))){
+			this.hero.allStats.agility.add(5);
+			this.hero.statPoints--;
+
+			this.updateStatPoints();
+		}
+	}, this);
+
+	this.addOption(this.upOptions.agility);
+	
+	this.displayStatPoints = game.add.text(this.width - 20, this.height,
+										  "Point(s) restant(s) : " +
+										   hero.statPoints.toString(),
+										   {font: "30px Arial", fill: "#ffffff"});
+	this.displayStatPoints.anchor.setTo(1);
+	this.addChild(this.displayStatPoints);
+
+	hero.allStats.level.onUpdate.add(this.updateStatPoints, this);
+
+	this.enableMouse();
+}
+
+HeroMenu.prototype = Object.create(Menu.prototype);
+HeroMenu.prototype.constructor = HeroMenu;
+
+HeroMenu.prototype.updateStatPoints = function(){
+	this.displayStatPoints.text = "Point(s) restant(s) : " +
+		this.hero.statPoints.toString();
+}
+
+/******************************************************************************/
+/* Hero Menu */
+/*************/

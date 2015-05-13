@@ -9,6 +9,8 @@ BasicGame.Preloader.prototype.preload =  function(){
 	var centerY = this.game.camera.height / 2; 
 
 	var assetsDir = "assets/";
+	var miscDir = assetsDir + "Misc/";
+	var particlesDir = miscDir + "Particles/";
 
     this.preloadBar = this.game.add.sprite(centerX - 50,
 										   centerY,
@@ -22,9 +24,10 @@ BasicGame.Preloader.prototype.preload =  function(){
     this.load.setPreloadSprite(this.preloadBar);
 	this.preloadBar.angle = -90;
     
-	this.load.image("ground2", assetsDir + "platform2.png");
-	this.load.image("blood", assetsDir + "bloodParticle.png");
-	this.load.image("circle", assetsDir + "circle.png");
+	this.load.image("ground2", miscDir + "platform2.png");
+	this.load.image("blood", particlesDir + "blood.png");
+	this.load.image("circle", miscDir + "circle.png");
+	this.load.spritesheet("icons", miscDir + "icons.png", 16, 16);
 
 	// Skills
 	var skillDir = assetsDir + "Skills/";
@@ -32,7 +35,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("template_icon", skillDir + "template_icon.png", 64, 64);
 	this.load.image("barrier_icon", skillDir + "barrier_icon.png");
 	this.load.image("teleport_icon", skillDir + "teleport_icon.png");
-	this.load.spritesheet("icons", "assets/icons.png", 16, 16);
 	this.load.spritesheet("slash", skillDir + "swoosh_0.png", 32, 32);
 	this.load.spritesheet("fireball_0", skillDir + "fireball_1.png", 64, 16);
 	this.load.image("fireball_icon", skillDir + "fireball_icon.png");
@@ -54,7 +56,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("explosion_1", skillDir + "explosion_1.png", 64, 64);
 
 	// Ammo
-	var ammoDir = assetsDir + "Ammo/";
+	var ammoDir = miscDir + "Ammo/";
 
 	this.load.spritesheet("arrow", ammoDir + "arrow.png", 25, 4);
 

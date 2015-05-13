@@ -109,7 +109,8 @@ function bindMenu(){
 	controller.setTargetByTag(this, "menu", false, true);
 	controller.disable(["movement", "action", "system"], false, true);
 	controller.get("menu_toggle").setFunction("close", true);
-
+	controller.get("menu_select").setSignal("onDown", true);
+	controller.get("menu_select").setFps(0, true);
 
 	// TODO: Add pad controls.
 	if (this.horizontal){
@@ -131,12 +132,13 @@ function bindMenu(){
 
 	this.setFocus(true);
 	
-	this.onEndClose.add(function(){
+	this.onEndClose.addOnce(function(){
 		controller.rollback("target", "menu");
 		controller.rollback("enabled", ["movement", "action", "system"]);
 		controller.get("menu_toggle").rollback("function");
 		controller.get("menu_next").rollback("code");
 		controller.get("menu_previous").rollback("code");
+		controller.get("menu_select").rollback(["signal", "fps"]);
 
 		this.setFocus(false);
 		

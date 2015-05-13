@@ -86,6 +86,17 @@ Level.prototype.preload = function(){
 	this.allTweens.opening.background = this.game.add.tween(this.background)
 		.from({alpha: 0}, 2000, Phaser.Easing.Quadratic.Out);
 	
+	for(var i in BasicGame.allPlayers){
+			BasicGame.allPlayers[i].controller.disable();
+		}
+
+	this.allTweens.opening.background.onComplete.add(function(){
+		for(var i in BasicGame.allPlayers){
+			BasicGame.allPlayers[i].controller.enable();
+		}
+	});
+	
+	
 	for(var i in this.allTweens.opening){
 		this.allTweens.opening[i].start();
 	}
@@ -354,11 +365,19 @@ Level.prototype.create = function(){
 }
 
 Level.prototype.initPlayers = function(){
-	BasicGame.allPlayers.p1.setHero(this.allHeroes.getChildAt(0));
-	BasicGame.allPlayers.p2.setHero(this.allHeroes.getChildAt(1));
+	BasicGame.allPlayers.p1.setHero(this.allHeroes.getChildAt(1));
+	BasicGame.allPlayers.p2.setHero(this.allHeroes.getChildAt(0));
 
-	BasicGame.allPlayers.p1.controller.enable("action");
-	BasicGame.allPlayers.p2.controller.enable("action");
+	for(var i in BasicGame.allPlayers){
+		BasicGame.allPlayers[i].menu = new PlayerMenu(BasicGame.allPlayers[i]);
+
+		BasicGame.allPlayers[i].controller.enable("action");
+
+		if (BasicGame.allPlayers[i].hero != null){
+			this.game.world.bringToTop(BasicGame.allPlayers[i].hero.menu);
+		}
+	}
+
 }
 
 Level.prototype.checkGameOver = function(){
@@ -426,6 +445,10 @@ Level.prototype.shutdown = function(){
 			}
 		}
 	}
+
+	for(var i in BasicGame.allPlayers){
+		BasicGame.allPlayers[i].controller.enable();
+	}
 }
 
 Level.prototype.goToState = function(state){
@@ -442,6 +465,13 @@ Level.prototype.goToState = function(state){
 	this.allTweens.closing.background.onComplete.addOnce(function(){
 		this.game.state.start(state);
 	}, this);
+
+	for(var i in BasicGame.allPlayers){
+		BasicGame.allPlayers[i].menu.destroy();
+		BasicGame.allPlayers[i].menu = null;
+
+		BasicGame.allPlayers[i].controller.disable();
+	}
 }
 
 Level.prototype.returnToTitle = function(){

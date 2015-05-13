@@ -281,10 +281,6 @@ Skill.prototype.setCooldown = function(cooldown){
 }
 
 
-Skill.prototype.breakSkill = function(){
-	//this.breakArmor.set(1, 1);
-}
-
 Skill.prototype._checkBreak = function(oldBreakArmor, newBreakArmor){
 	if (newBreakArmor == 0){
 		this.breakSkill();
