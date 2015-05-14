@@ -15,11 +15,6 @@ var GameSave = function(index){
 			hero: "barton"
 		}
 	};
-
-	for(var i in this.players){
-		this.players[i].controls = {};
-		this.players[i].controlType = CONTROL_KEYBOARD;
-	}
 	
 	this.heroes = {
 		lucy: {},
@@ -43,12 +38,8 @@ var GameSave = function(index){
 	};
 
 	this.misc = {
-		volume: {
-			music: 1,
-			sfx: 1
-		},
-
 		timePlayed: 0,
+
 		scarletWitch: false
 	};
 }
@@ -59,7 +50,6 @@ var GameSave = function(index){
 GameSave.prototype.save = function(){
 	var players = BasicGame.allPlayers;
 
-
 	for(var i in players){
 		var hero = players[i].hero;
 		var heroName = hero.name.toLowerCase();
@@ -67,30 +57,6 @@ GameSave.prototype.save = function(){
 		this.players[i].hero = heroName;
 		
 		var controls = players[i].controller.allControls;
-
-		for(var j in controls){
-			this.players[i].controls[j] = {};
-
-			if (controls[j] instanceof Control){
-				this.players[i].controls[j] = {
-					keyboardCode: controls[j].keyboardCode,
-
-					gamePadCode: controls[j].gamepadCode
-				};
-			}
-
-			if (controls[j] instanceof PadControl){
-				this.players[i].controls[j] = {
-					axis: controls[j].axis,
-
-					min: controls[j].min,
-
-					min: controls[j].max
-				};
-			}
-		}
-
-		this.players[i].controlType = players[i].controller.type;
 
 		for(var j in this.heroes[heroName]){
 			this.heroes[heroName][j] = hero.allStats[j].get();
@@ -110,11 +76,6 @@ GameSave.prototype.save = function(){
 		this.level.key = BasicGame.level;
 		this.level.checkpoint = BasicGame.level.checkpoint;
 	}
-
-	for(var i in this.misc.volume){
-		this.misc.volume[i] = BasicGame.volume[i];
-	}
-
 }
 
 
@@ -172,4 +133,96 @@ GameSave.prototype.hardSave = function(){
 	localStorage.setItem("save_" + this.index.toString(), JSON.stringify(this));
 
 	console.log("HARD SAVED !");
+}
+
+
+
+var OptionsSave = function(){
+	this.players = {
+		p1: {},
+
+		p2: {}
+	};
+
+	for(var i in this.players){
+		this.players[i].controls = {};
+		this.players[i].controlType = CONTROL_KEYBOARD;
+	}
+
+	this.misc = {
+		volume: {},
+		
+		soundOn: true
+	};
+}
+
+OptionsSave.prototype.save = function(){
+	var players = BasicGame.allPlayers;
+
+	for(var i in players){
+		var controls = players[i].controller.allControls;
+
+		for(var j in controls){
+			this.players[i].controls[j] = {};
+
+			if (controls[j] instanceof Control){
+				this.players[i].controls[j] = {
+					keyboardCode: controls[j].keyboardCode,
+
+					gamePadCode: controls[j].gamepadCode
+				};
+			}
+			else if (controls[j] instanceof PadControl){
+				this.players[i].controls[j] = {
+					axis: controls[j].axis,
+
+					min: controls[j].min,
+
+					min: controls[j].max
+				};
+			}
+		}
+
+		this.players[i].controlType = players[i].controller.type;
+	}
+
+	for(var i in BasicGame.volume){
+		this.misc.volume[i] = BasicGame.volume[i];
+	}
+
+	this.soundOn = !BasicGame.game.sound.mute;
+}
+
+
+OptionsSave.prototype.load = function(){
+	for(var i in this.players){
+		var player = BasicGame.allPlayers[i];
+		
+		for(var j in this.players[i].controls){
+			var savedControl = this.players[i].controls[j];
+			var control = player.controller.get(savedControl);
+
+			if (control instanceof Control){
+				control.change(savedControl.keyboardCode, savedControl.gamepadCode);
+			}
+			else if (control instanceof PadControl){
+				control.change(savedControl.axis, savedControl.min, savedControl.max);
+			}
+		}
+
+		player.controller.type = this.players[i].controlType;
+	}
+
+	for(var i in this.misc.volume){
+		BasicGame.volume[i] = this.misc.volume[i];
+	}
+
+	BasicGame.game.sound.mute = !this.soundOn;
+}
+
+
+OptionsSave.prototype.hardSave = function(){
+	localStorage.setItem("options", JSON.stringify(this));
+
+	console.log("OPTIONS HARD SAVED !");
 }

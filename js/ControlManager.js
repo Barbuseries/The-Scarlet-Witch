@@ -443,6 +443,35 @@ ControlManager.prototype.setTargetByTag = function(target, allTags, allNeeded, c
 	}
 }
 
+ControlManager.prototype.setFpsByTag = function(fps, allTags, allNeeded, cache){
+	if ((typeof(fps) != "number") ||
+		(fps < 0)){
+		return;
+	}
+	if (typeof(allTags) === "undefined") return;
+	if (!booleanable(allNeeded)) allNeeded = false;
+	if (!booleanable(cache)) cache = false;
+
+	var allControls = this.getByTag(allTags, allNeeded);
+	
+	for(var i in allControls){
+		allControls[i].setFps(fps, cache);
+	}
+}
+
+ControlManager.prototype.setSignalByTag = function(signal, allTags, allNeeded, cache){
+	if (typeof(signal) != "string") return;
+	if (typeof(allTags) === "undefined") return;
+	if (!booleanable(allNeeded)) allNeeded = false;
+	if (!booleanable(cache)) cache = false;
+
+	var allControls = this.getByTag(allTags, allNeeded);
+	
+	for(var i in allControls){
+		allControls[i].setSignal(signal, cache);
+	}
+}
+
 // Disable all controls with one (or all if allNeeded is true) of the tags
 // in allTags.
 // If allTags is undefined, disable the ControlManager.

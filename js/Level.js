@@ -68,6 +68,7 @@ Level.prototype.preload = function(){
 	this.game.world.alpha = 1;
 	
 	BasicGame.sfx = {};
+	BasicGame.musics = {};
 
 	BasicGame.sfx.EXPLOSION_0 = this.game.add.audio("explosion_0");
 	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;

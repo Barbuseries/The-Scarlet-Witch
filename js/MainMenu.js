@@ -4,20 +4,26 @@ BasicGame.MainMenu = function(game){
 
 BasicGame.MainMenu.prototype.create = function(){
 	BasicGame.sfx = {};
+	BasicGame.musics = {};
 
 	for(var i = 0; i < 5; i++){
 		var save = localStorage.getItem("save_" + i.toString());
 		
 		if (save != null){
-			BasicGame.allGameSaves.push(JSON.parse(save));
+			var parsedSave = JSON.parse(save);
+			
+			parsedSave.__proto__ = GameSave.prototype;
 
-			console.log(JSON.parse(save));
+			BasicGame.allGameSaves.push(parsedSave);
+
+			console.log(parsedSave);
 		}
 	}
 
 	this.game.world.alpha = 1;
 
-	this.music = this.game.add.audio("mainTheme");
+	BasicGame.musics.mainTheme = this.game.add.audio("mainTheme");
+
 	BasicGame.sfx.cursorSelect = this.game.add.audio("cursor_select");
 	
 	BasicGame.allPlayers.p1.controller.setTargetByTag(BasicGame, "system");
@@ -131,6 +137,8 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.menu.horizontal = false;
 
 	this.menu.addChild(this.logo);
+	
+	this.optionsMenu = new OptionsMenu(this.game, BasicGame.allPlayers.p1.controller);
 
 	this.newGameOption = createBasicMenuOption(this.menu, 300, "Nouvelle Partie",
 											   function(){
@@ -142,15 +150,15 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.loadGameOption = createBasicMenuOption(this.menu,  400, "Charger une Partie",
 												function(){
 												   console.log("Load !");
-											   }, null);
+											   }, this);
 	this.optionGameOption = createBasicMenuOption(this.menu, 500, "Options",
 												  function(){
-												   console.log("Options !");
-											   }, null);
+												   this.optionsMenu.toggle();
+											   }, this);
 	this.exitGameOption = createBasicMenuOption(this.menu, 600, "Quitter",
 												function(){
 												   console.log("Exit !");
-											   }, null);
+											   }, this);
 
 	this.menu.cursor.frame = 5;
 
@@ -190,7 +198,7 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	this.allTweens.opening.lucy.start();
 	
-	this.music.play("", 0, BasicGame.volume.music, true);
+	BasicGame.musics.mainTheme.play("", 0, BasicGame.volume.music, true);
 }
 
 BasicGame.MainMenu.prototype.update = function(){
@@ -208,7 +216,7 @@ BasicGame.MainMenu.prototype.startGame = function(pointer){
 
 	this.cleanUp();
 
-	this.music.fadeOut(2500);
+	BasicGame.musics.mainTheme.fadeOut(2500);
 }
 
 BasicGame.MainMenu.prototype.cleanUp = function(){
@@ -227,7 +235,7 @@ BasicGame.MainMenu.prototype.exit = function(){
 
 	this.cleanUp();
 
-	this.music.fadeOut(2500);
+	BasicGame.musics.mainTheme.fadeOut(2500);
 }
 
 
@@ -254,5 +262,15 @@ BasicGame.MainMenu.prototype.shutdown = function(){
 			this.allTimers[i].destroy();
 			this.allTimers[i] = null;
 		}
+	}
+
+	for(var i in BasicGame.sfx){
+		BasicGame.sfx[i].destroy();
+		BasicGame.sfx[i] = null;
+	}
+
+	for(var i in BasicGame.musics){
+		BasicGame.musics[i].destroy();
+		BasicGame.musics[i] = null;
 	}
 }

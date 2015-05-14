@@ -2,6 +2,8 @@ var BasicGame = {
 	allGameSaves: [],
 
 	gameSave: null,
+	
+	optionsSave: null,
 
 	level: null,
 
@@ -18,10 +20,13 @@ var BasicGame = {
 	},
 
 	sfx: {},
+	
+	musics: {},
 
 	volume: {
+		music: 0.1,
+
 		sfx: 0.1,
-		music: 0.5
 	},
 
 	emitters: {
@@ -109,6 +114,8 @@ BasicGame.Boot.prototype.init = function(){
     {
 
     }
+
+	BasicGame.game = this;
 }
 BasicGame.Boot.prototype.preload = function(){
 	var miscDir = "assets/Misc/";
@@ -245,12 +252,30 @@ BasicGame.Boot.prototype.startPreload = function(){
 					 "swapMode", "onDown", "action")
 		.bindControl(-1, Phaser.Keyboard.TAB, -1,
 					 "swapHeroes", "onDown", ["system" ,"action"])
-		.bindControl(-1, Phaser.Keyboard.M, -1,
-					 "mute", "onDown", "system")
+		/*.bindControl(-1, Phaser.Keyboard.M, -1,
+					 "mute", "onDown", "system")*/
 		.bindControl(-1, Phaser.Keyboard.ESC, -1,
 					"returnToTitle", "onDown", "system")
 		.bindControl(-1, Phaser.Keyboard.H, -1,
 					 "hardSave", "onDown", "save");
+
+	var optionsSave = localStorage.getItem("options");
+
+	if (optionsSave == null){
+		BasicGame.optionsSave = new OptionsSave();
+		
+		BasicGame.optionsSave.save();
+
+		BasicGame.optionsSave.hardSave();
+	}
+	else{
+		BasicGame.optionsSave = JSON.parse(optionsSave);
+		BasicGame.optionsSave.__proto__ = OptionsSave.prototype;
+
+		console.log(BasicGame.optionsSave);
+
+		BasicGame.optionsSave.load();
+	}
 
 	this.game.input.onDown.removeAll();
 	this.state.start("Preloader");
