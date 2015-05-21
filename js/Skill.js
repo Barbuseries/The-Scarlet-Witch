@@ -991,6 +991,7 @@ var PoisonSkill = function(user, level, targetTags){
 
 				if (damages > 0){
 					obstacle.slow(self.level * 1000, self.level / 10 * 1.5, 0.33);
+					//	obstacle.tint = 003300;
 				}
 			}
 			catch(err){}
@@ -1029,7 +1030,8 @@ var PoisonSkill = function(user, level, targetTags){
 			var damageRange = [0.9, 1.1];
 			var criticalRate = self.user.allStats.criticalRate.get();
 			
-			return obstacle.dot(3000,15,1,3,[0.8,1.1],0,Elements.ALMIGHTY, /*quelque chose en attendant */ 0);
+			return obstacle.dot(5000, 500, 0.25, user.allStats.attack.get() / 5,
+								 [0.9, 1.1], 0.1, Elements.ALMIGHTY);
 		}
 
 		createProjectile(this.game, 0, 0, "iceball_0",
