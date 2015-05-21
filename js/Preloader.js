@@ -42,6 +42,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("iceball_icon", skillDir + "iceball_icon.png");
 	this.load.spritesheet("thunder_0", skillDir + "thunder_0.png", 256, 64);
 	this.load.image("thunder_icon", skillDir + "thunder_icon.png");
+	this.load.image("poison_icon", skillDir + "poison_icon.png");
 	this.load.image("arrow_icon", skillDir + "arrow_icon.png");
 	this.load.image("multArrow_icon", skillDir + "multArrow_icon.png");
 	this.load.image("speedUpArrow_icon", skillDir + "speedUpArrow_icon.png");

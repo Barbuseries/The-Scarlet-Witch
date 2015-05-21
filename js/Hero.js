@@ -220,9 +220,11 @@ var Lucy = function(game, x, y, level){
 	this.allSkills[0].thirdSkill = new ThunderSkill(this, 5,
 													["enemy"]);
 	this.allSkills[0].thirdSkill.setChargeTime(5000);
-	this.allSkills[0].fourthSkill = new DeathSkill(this, 1,
+	this.allSkills[0].fourthSkill = new PoisonSkill(this, 5, ["enemy"]);
+	this.allSkills[0].fourthSkill.setChargeTime(1000);
+	this.allSkills[0].fifthSkill = new DeathSkill(this, 1,
 												   ["enemy"]);
-	this.allSkills[0].fourthSkill.setChargeTime(5000);
+	this.allSkills[0].fifthSkill.setChargeTime(5000);
 
 	this.menu = new HeroMenu(this);
 }

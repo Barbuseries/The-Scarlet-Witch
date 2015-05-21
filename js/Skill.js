@@ -872,8 +872,199 @@ var IceBallSkill = function(user, level, targetTags){
 	this.icon = "iceball_icon";
 };
 
+
 IceBallSkill.prototype = Object.create(Skill.prototype);
 IceBallSkill.prototype.constructor = IceBallSkill;
+
+var PoisonSkill = function(user, level, targetTags){
+	var cooldown = [15000 / 3, 14000 / 3, 13000 / 3,
+					12000/3, 11000 / 3];
+
+	function costFunction(applyCost){
+		var cost = (20 - this.level) * this.user.allStats.special.getMax() / 100;
+
+		if (this.user.allStats.special.canSubtract(cost)){
+			if (applyCost){
+				this.user.allStats.special.subtract(cost);
+			}
+
+			return true;
+		}
+		else{
+			return false;
+		}
+		
+	}
+	
+	Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+			   targetTags);
+
+	this.launchFunction = function(factor){
+		var user = this.user;
+		var self = this;
+
+		function initProjectile(direction){
+			this.x = user.x;
+			this.y = user.y + user.height * 0.65;
+
+			this.anchor.setTo(0.5);
+			this.tint = null;
+			this.tint = 009900;
+			this.frame = 0;
+			
+			this.lifespan = 1000 * (15000 / 3 / self.getCooldown()) *
+				(15000 / 3 / self.getCooldown() * (1  + 0.5*factor));
+
+			this.orientationH = user.orientationH;
+			
+			if (user.orientationH >= 0){
+				this.animations.add("animation", [32, 33, 34, 35, 36, 37, 38, 39], 15);
+			}
+			else{
+				this.animations.add("animation", [0, 1, 2, 3, 4, 5, 6, 7], 15);
+			}
+			
+			this.animations.play("animation", null, true);
+			
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+			this.body.velocity.x = 500 ;
+			
+			if (user.orientationH < 0){
+				this.x += user.width * 1 / 4;
+				this.body.velocity.x *= -1;
+			}
+			else{
+				this.x += user.width * 3 / 4;
+			}
+
+			this.body.velocity.y = -direction * 100 * (1 + factor);
+			this.body.allowGravity = false;
+
+			this.tween = this.game.add.tween(this.body.velocity)
+				.to({y : direction * 100 * (1 + factor)},
+					this.lifespan / (1 + factor), Phaser.Easing.Quintic.InOut);
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+
+			this.tween.yoyo();
+			this.tween.loop();
+
+			this.tween.start();
+		}
+
+		function initProjectile1(){
+			initProjectile.call(this, 1);
+		}
+		
+		function initProjectile2(){
+			initProjectile.call(this, -1);
+		}
+
+		function updateProjectile(){
+			this.scale.x = this.lifespan / 1000;
+			this.scale.y = this.scale.x;
+		}
+
+		function killProjectile(){
+			if (this.tween != null){
+				this.tween.stop();
+				this.tween = null;
+			}
+
+			var x = this.x;
+			var y = this.y;
+
+			if (this.orientationH > 0){
+				x += this.width / 2;
+			}
+			else{
+				x -= this.width / 2;
+			}
+			
+			return true;
+		}
+
+		function collideFunction(obstacle){
+			try{
+				var damages = this.damageFunction(obstacle);
+
+				if (damages > 0){
+					obstacle.slow(self.level * 1000, self.level / 10 * 1.5, 0.33);
+				}
+			}
+			catch(err){}
+
+			this.kill();
+		}
+
+		function damageFunction(obstacle){
+			var damage = self.user.allStats.attack.get();
+
+			switch(self.level){
+			case 1:
+				damage *= 2;
+				break;
+				
+			case 2:
+				damage *= 2.5;
+				break;
+				
+			case 3:
+				damage *= 3;
+				break;
+				
+			case 4:
+				damage *= 3;
+				break;
+
+			case 5:
+				damage *= 4;
+				break;
+				
+			default:
+				break;
+			}
+
+			var damageRange = [0.9, 1.1];
+			var criticalRate = self.user.allStats.criticalRate.get();
+			
+			return obstacle.dot(3000,15,1,3,[0.8,1.1],0,Elements.ALMIGHTY, /*quelque chose en attendant */ 0);
+		}
+
+		createProjectile(this.game, 0, 0, "iceball_0",
+						 initProjectile1, updateProjectile, killProjectile,
+						 collideFunction, undefined, damageFunction);
+		
+		if (factor >= 0.5){
+			createProjectile(this.game, 0, 0, "iceball_0",
+							 initProjectile2, updateProjectile, killProjectile,
+							 collideFunction, undefined, damageFunction);
+		}
+
+		var animation = null;
+		
+		if (this.user.orientationH >= 0){
+			animation = this.user.animations.play("spellCastRight");
+		}
+		else{
+			animation = this.user.animations.play("spellCastLeft");
+		}
+		
+		this.user.can.move = false;
+
+		animation.onComplete.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.action = true;
+			this.user.current.action = null;
+		}, this);
+	};
+	
+	this.icon = "poison_icon";
+};
+
+PoisonSkill.prototype = Object.create(Skill.prototype);
+PoisonSkill.prototype.constructor = PoisonSkill;
 
 var DeathSkill = function (user, level, targetTags) {
     var cooldown = 1500;
