@@ -90,6 +90,11 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("barton", heroesDir + "barton_full.png", 64, 64);
 	this.load.spritesheet("archer_1", ennemiesDir + "archer_1.png", 64, 64);
 	this.load.spritesheet("mob_1", ennemiesDir + "mob_1.png", 64, 64);
+	this.load.spritesheet("boss_1", ennemiesDir + "boss_1.png", 64, 64);
+
+	// Checkpoints
+
+	this.load.spritesheet("checkpoint", tilesDir + "separate png/tile_50.png", 32, 32);
 
 
 	// Audio
