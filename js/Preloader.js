@@ -46,6 +46,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("multArrow_icon", skillDir + "multArrow_icon.png");
 	this.load.image("speedUpArrow_icon", skillDir + "speedUpArrow_icon.png");
 	this.load.image("poweredArrow_icon", skillDir + "poweredArrow_icon.png");
+	this.load.image("heroicStrike_icon", skillDir + "heroicStrike_icon.png");
 	this.load.image("spikes_0", skillDir + "spikes_0.png");
 	this.load.spritesheet("quake_0", skillDir + "quake_0.png", 256, 128);
 	this.load.image("trap_icon", skillDir + 'trap_icon.png');
