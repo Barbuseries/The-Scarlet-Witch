@@ -6,7 +6,9 @@ BasicGame.MainMenu.prototype.create = function(){
 	BasicGame.sfx = {};
 	BasicGame.musics = {};
 
-	for(var i = 0; i < 5; i++){
+	BasicGame.allGameSaves = [];
+
+	for(var i = 0; i < 4; i++){
 		var save = localStorage.getItem("save_" + i.toString());
 		
 		if (save != null){
@@ -139,6 +141,7 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.menu.addChild(this.logo);
 	
 	this.optionsMenu = new OptionsMenu(this.game, BasicGame.allPlayers.p1.controller);
+	this.loadMenu = new LoadSaveMenu(this.game, BasicGame.allPlayers.p1.controller);
 
 	this.newGameOption = createBasicMenuOption(this.menu, 300, "Nouvelle Partie",
 											   function(){
@@ -149,7 +152,8 @@ BasicGame.MainMenu.prototype.create = function(){
 											   }, this);
 	this.loadGameOption = createBasicMenuOption(this.menu,  400, "Charger une Partie",
 												function(){
-												   console.log("Load !");
+													console.log("Load !");
+													this.loadMenu.toggle();
 											   }, this);
 	this.optionGameOption = createBasicMenuOption(this.menu, 500, "Options",
 												  function(){
@@ -171,7 +175,7 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	this.menu.enableMouse();
 
-	this.menu.createAnimation("toggle", "0", "-200", 1500, 1,
+	this.menu.createAnimation("toggle", "0", "-200", 1500, 0,
 							  Phaser.Easing.Quadratic.Out, true);
 	this.menu.createAnimation("close", "0", "-200", 500, 0,
 							  Phaser.Easing.Quadratic.Out);

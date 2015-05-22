@@ -8,12 +8,13 @@ var Elements = {
 	WIND: 3,
 	EARTH: 4,
 	THUNDER: 5,
-	ALMIGHTY: 6
+	POISON: 6,
+	ALMIGHTY: 7
 };
 
 var Disabilities = {
-	STUN: 7,
-	SLOW: 8
+	STUN: 8,
+	SLOW: 9
 };
 
 var Skill = function(user, level, costFunction, cooldown, element,
@@ -261,10 +262,10 @@ Skill.prototype.setCooldown = function(cooldown){
 
 	if (this.cooldownTween != null){
 		this.cooldownTween.stop();
-		this.refreshSkill();
+		//this.refreshSkill();
 		this.cooldownTween = null;
 	}
-
+	
 	this.cooldown.setMax(cooldown);
 	this._cooldown = cooldown;
 
@@ -278,6 +279,18 @@ Skill.prototype.setCooldown = function(cooldown){
 	this.cooldownTween.onUpdateCallback(updateCooldown, this);
 	this.cooldownTween.onRepeat.add(this.refreshSkill, this);
 	this.cooldownTween.loop();
+	
+	if (this.cooldown.get() != 0){
+		this.cooldownTween.start();
+	}
+}
+
+Skill.prototype.updateCooldown = function(cooldown){
+	this.setCooldown(cooldown);
+}
+
+Skill.prototype.updateChargeTime = function(chargeTime){
+	this.setChargeTime(chargeTime);
 }
 
 
@@ -334,7 +347,7 @@ Skill.prototype.breakSkill = function(){
 		this.user.current.action = null;
 	}
 
-	this.onBreak.dispatch();
+	this.onBreak.dispatch(this);
 }
 
 Skill.prototype.destroy = function(){
@@ -493,6 +506,7 @@ function createProjectile(game, x, y, spriteName, initFunction,
 	}
 
 	newProjectile.tag = "projectile";
+	newProjectile.tint = H_WHITE;
 	newProjectile.init();
 
 	return newProjectile;
@@ -643,6 +657,10 @@ var FireBallSkill = function(user, level, targetTags){
 		createProjectile(this.game, 0, 0, "fireball_0",
 						 initProjectile, updateProjectile, killProjectile,
 						 collideFunction, collideProcess, damageFunction);
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
 		
 		var animation = null;
 
@@ -659,6 +677,8 @@ var FireBallSkill = function(user, level, targetTags){
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
+
+			this.onBreak.removeAll();
 		}, this);
 	};
 
@@ -701,6 +721,8 @@ var IceBallSkill = function(user, level, targetTags){
 			this.y = user.y + user.height * 0.65;
 
 			this.anchor.setTo(0.5);
+
+			this.alpha = 1;
 
 			this.frame = 0;
 			
@@ -851,6 +873,10 @@ var IceBallSkill = function(user, level, targetTags){
 							 collideFunction, undefined, damageFunction);
 		}
 
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
+
 		var animation = null;
 		
 		if (this.user.orientationH >= 0){
@@ -866,12 +892,13 @@ var IceBallSkill = function(user, level, targetTags){
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
+
+			this.onBreak.removeAll();
 		}, this);
 	};
 	
 	this.icon = "iceball_icon";
 };
-
 
 IceBallSkill.prototype = Object.create(Skill.prototype);
 IceBallSkill.prototype.constructor = IceBallSkill;
@@ -896,24 +923,27 @@ var PoisonSkill = function(user, level, targetTags){
 		
 	}
 	
-	Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+	Skill.call(this, user, level, costFunction, cooldown, Elements.POISON,
 			   targetTags);
 
 	this.launchFunction = function(factor){
 		var user = this.user;
 		var self = this;
 
-		function initProjectile(direction){
+		function initProjectile(){
 			this.x = user.x;
 			this.y = user.y + user.height * 0.65;
 
 			this.anchor.setTo(0.5);
-			this.tint = null;
-			this.tint = 009900;
+
+			this.alpha = 1;
+			
+			this.tint = H_PURPLE;
 			this.frame = 0;
 			
 			this.lifespan = 1000 * (15000 / 3 / self.getCooldown()) *
 				(15000 / 3 / self.getCooldown() * (1  + 0.5*factor));
+			this.maxLifespan = this.lifespan;
 
 			this.orientationH = user.orientationH;
 			
@@ -927,7 +957,7 @@ var PoisonSkill = function(user, level, targetTags){
 			this.animations.play("animation", null, true);
 			
 			this.game.physics.enable(this, Phaser.Physics.ARCADE);
-			this.body.velocity.x = 500 ;
+			this.body.velocity.x = 200 * (1 + 0.5 * factor) ;
 			
 			if (user.orientationH < 0){
 				this.x += user.width * 1 / 4;
@@ -937,70 +967,45 @@ var PoisonSkill = function(user, level, targetTags){
 				this.x += user.width * 3 / 4;
 			}
 
-			this.body.velocity.y = -direction * 100 * (1 + factor);
+			this.body.velocity.y = 0;
 			this.body.allowGravity = false;
-
-			this.tween = this.game.add.tween(this.body.velocity)
-				.to({y : direction * 100 * (1 + factor)},
-					this.lifespan / (1 + factor), Phaser.Easing.Quintic.InOut);
 
 			this.targetTags = self.targetTags;
 			this.element = self.element;
 
-			this.tween.yoyo();
-			this.tween.loop();
+			this.alreadyHit = [];
 
-			this.tween.start();
-		}
-
-		function initProjectile1(){
-			initProjectile.call(this, 1);
-		}
-		
-		function initProjectile2(){
-			initProjectile.call(this, -1);
+			this.transfer.velocity.x = 0;
+			this.transfer.velocity.y = 0;
 		}
 
 		function updateProjectile(){
 			this.scale.x = this.lifespan / 1000;
 			this.scale.y = this.scale.x;
+
+			this.alpha = this.lifespan / this.maxLifespan;
 		}
 
 		function killProjectile(){
-			if (this.tween != null){
-				this.tween.stop();
-				this.tween = null;
-			}
-
-			var x = this.x;
-			var y = this.y;
-
-			if (this.orientationH > 0){
-				x += this.width / 2;
-			}
-			else{
-				x -= this.width / 2;
-			}
+			this.alreadyHit = [];
 			
 			return true;
 		}
 
 		function collideFunction(obstacle){
-			try{
-				var damages = this.damageFunction(obstacle);
+			this.damageFunction(obstacle);
+			this.alreadyHit.push(obstacle);
+			
+			obstacle.slow(5000, 0.5, 0.5);
+		}
 
-				if (damages > 0){
-					obstacle.slow(self.level * 1000, self.level / 10 * 1.5, 0.33);
-					//	obstacle.tint = 003300;
-				}
-			}
-			catch(err){}
-
-			this.kill();
+		function collideProcess(obstacle){
+			return ((this.targetTags.indexOf(obstacle.tag) != -1) &&
+					(this.alreadyHit.indexOf(obstacle) == -1));
 		}
 
 		function damageFunction(obstacle){
-			var damage = self.user.allStats.attack.get();
+			var damage = self.user.allStats.attack.get() / 5;
 
 			switch(self.level){
 			case 1:
@@ -1030,19 +1035,14 @@ var PoisonSkill = function(user, level, targetTags){
 			var damageRange = [0.9, 1.1];
 			var criticalRate = self.user.allStats.criticalRate.get();
 			
-			return obstacle.dot(5000, 500, 0.25, user.allStats.attack.get() / 5,
-								 [0.9, 1.1], 0.1, Elements.ALMIGHTY);
+			return obstacle.dot(5000, 500, 1,
+								damage * (1 + this.alpha),
+								[0.9, 1.1], 0.1, this.element);
 		}
 
 		createProjectile(this.game, 0, 0, "iceball_0",
-						 initProjectile1, updateProjectile, killProjectile,
-						 collideFunction, undefined, damageFunction);
-		
-		if (factor >= 0.5){
-			createProjectile(this.game, 0, 0, "iceball_0",
-							 initProjectile2, updateProjectile, killProjectile,
-							 collideFunction, undefined, damageFunction);
-		}
+						 initProjectile, updateProjectile, killProjectile,
+						 collideFunction, collideProcess, damageFunction);
 
 		var animation = null;
 		
@@ -1055,10 +1055,16 @@ var PoisonSkill = function(user, level, targetTags){
 		
 		this.user.can.move = false;
 
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
+
 		animation.onComplete.addOnce(function(){
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
+
+			this.onBreak.removeAll();
 		}, this);
 	};
 	
@@ -1103,6 +1109,12 @@ var DeathSkill = function (user, level, targetTags) {
 		user.can.move = false;
 		user.can.jump = false;
 		user.can.orient = false;
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.jump = true;
+			this.user.can.orient = true;
+		}, this);
 
 		function initProjectile(){
 			this.anchor.setTo(0.5);
@@ -1155,7 +1167,7 @@ var DeathSkill = function (user, level, targetTags) {
 		}
 
 		function damageFunction(obstacle){
-			var damage = obstacle.allStats.health.get();
+			var damage = obstacle.allStats.health.getMax();
 
             obstacle.suffer(damage, [1, 1], 0, this.element);
 		}	
@@ -1181,7 +1193,7 @@ var DeathSkill = function (user, level, targetTags) {
 		}
 
 		this.deathZone.activated = true;
-		this.onBreak.remove(this.deathZone.kill);
+		this.onBreak.removeAll();
 		BasicGame.level.toKill.push(this.deathZone);
 
 		this.deathZone = null;
@@ -1375,13 +1387,13 @@ var ThunderSkill = function (user, level, targetTags) {
         }
 
         function collideProcess(obstacle) {
-            return ((this.alpha >= 0.5) && (this.alpha <= 1)) &&
+            return ((this.alpha >= 0.95) && (this.alpha <= 1)) &&
 				((this.targetTags.indexOf(obstacle.tag) != -1) ||
 				 (obstacle.tag == "platform"));
         }
 
         function damageFunction(obstacle) {
-			var damage = self.user.allStats.attack.get() / 5;
+			var damage = self.user.allStats.attack.get() / 20;
             var damageRange = [0.9, 1.1];
             var criticalRate = self.user.allStats.criticalRate.get();
 
@@ -1413,6 +1425,10 @@ var ThunderSkill = function (user, level, targetTags) {
             obstacle.suffer(damage * (1 + factor) * (1 + factor), damageRange,
 							2 * criticalRate, this.element);
         }
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
 
         var animation = null;
 		
@@ -1450,6 +1466,8 @@ var ThunderSkill = function (user, level, targetTags) {
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
+			
+			this.onBreak.removeAll();
 		}, this);
     };
 
@@ -1471,29 +1489,40 @@ var SlashSkill = function(user, level, targetTags){
 	var speed = (1 + this.user.allStats.agility.get()) / 100;
 	
 	this.onCharge.add(function(){
-		if (this.orientationH >= 0){
-			this.frame = 195;
+		if (this.user.orientationH >= 0){
+			this.user.frame = 195;
 		}
 		else{
-			this.frame = 169;
+			this.user.frame = 169;
 		}
 
-		
-		this.can.move = false;
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
 
+		this.user.can.move = false;
 		
-		this.orientRight = function(){
+		this.user.orientRight = function(){
 			this.orientationH = 1;
 			
 			this.frame = 195;
 		}
 		
-		this.orientLeft = function(){
+		this.user.orientLeft = function(){
 			this.orientationH = -1;
 			
 			this.frame = 169;
 		}
-	}, this.user);
+
+		this.user.animations.currentAnim.stop();
+
+		if (this.user.orientationH >= 0){
+			this.user.orientRight();
+		}
+		else{
+			this.user.orientLeft();
+		}
+	}, this);
 
 	this.launchFunction = function(factor){
 		var self = this;
@@ -1564,10 +1593,17 @@ var SlashSkill = function(user, level, targetTags){
 				obstacle.body.velocity.x -= 100 * (1 + 2 * factor);
 			}
 
-			user.allStats.special.add(5 * (1 + factor));
+			user.allStats.special.add(10 * (1 + factor));
 
 			this.damageFunction(obstacle);
 		}
+
+		this.onBreak.removeAll();
+		
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+		}, this);
 
 		user.orientRight = Hero.prototype.orientRight;
 		user.orientLeft = Hero.prototype.orientLeft;
@@ -1588,14 +1624,34 @@ var SlashSkill = function(user, level, targetTags){
 		}
 		
 		animation.onComplete.add(function(){
-			user.can.move = true;
-			user.can.action = true;
-			user.current.action = null;
-			user.can.orient = true;
-		});
+			this.user.can.move = true;
+			this.user.can.action = true;
+			this.user.current.action = null;
+			this.user.can.orient = true;
+
+			this.onBreak.removeAll();
+		}, this);
 	}
 
 	this.setChargeTime(this.user.allStats.attackSpeed.get());
+	
+	this.updateChargeTime = function(){
+		Skill.prototype.updateChargeTime.call(this, this.user.allStats.attackSpeed.get());
+	}
+
+	this.updateCooldown = function(){
+		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
+	}
+	
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
+
+	this.onDestroy.addOnce(function(){
+		if (this.user.allStats.attackSpeed.onUpdate != null){
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateChargeTime);
+		}
+	}, this);
 
 	this.icon = 'slash_icon';
 };
@@ -1621,12 +1677,19 @@ var ArrowSkill = function(user, level, targetTags){
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
 			   Elements.PHYSIC, targetTags);
 
+	var self = this;
+
 	this.onCharge.add(function(){
 		var animation = null;
 		var user = this.user;
 		var speed = 60 / (1 + this.user.allStats.attackSpeed.get()) * 200;
 		
 		function orient(direction){
+			if (!user.alive ||
+				user._dying){
+				return;
+			}
+
 			if (!user.can.orient){
 				return;
 			}
@@ -1636,6 +1699,10 @@ var ArrowSkill = function(user, level, targetTags){
 				
 				user.animations.currentAnim.stop();
 				
+				self.onBreak.addOnce(function(){
+					this.user.can.orient = true;
+				}, self);
+
 				user.can.orient = false;
 				
 				var animationName = (direction >= 0) ? "bendBowRight" : "bendBowLeft";
@@ -1644,6 +1711,8 @@ var ArrowSkill = function(user, level, targetTags){
 					.onComplete.addOnce(
 						function(){
 							user.can.orient = true;
+
+							self.onBreak.removeAll();
 						}, this);
 			}
 		}
@@ -1669,6 +1738,10 @@ var ArrowSkill = function(user, level, targetTags){
 			user.orientRight();
 		}
 
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this)
+
 		user.can.move = false;
 	}, this);
 
@@ -1681,7 +1754,6 @@ var ArrowSkill = function(user, level, targetTags){
 			return;
 		}
 		
-		var self = this;
 		var user = this.user;
 		var speed = 60 / (1 + this.user.allStats.attackSpeed.get()) * 200;
 
@@ -1772,41 +1844,21 @@ var ArrowSkill = function(user, level, targetTags){
 		}
 
 		function collideProcess(obstacle){
-			// La flêche change d'élément en fonction de ce qu'elle rencontre.
-			if (obstacle.tag == "projectile"){
-				this.tint = H_WHITE;
+			arrowElementChange.call(this, obstacle);
 
-				switch(obstacle.element){
-				case Elements.ALMIGHTY:
-					this.tint = H_GREY;
-					break;
-				case Elements.FIRE:
-					this.tint = H_RED;
-					break;
-				case Elements.ICE:
-					this.tint = H_BLUE;
-					break;
-				case Elements.WIND:
-					this.tint = H_GREEN;
-					break;
-				case Elements.EARTH:
-					this.tint = H_ORANGE;
-					break;
-				case Elements.THUNDER:
-					this.tint = H_YELLOW;
-					break;
-				default:
-					break;
-				}
-
-				this.element = obstacle.element;
-			}
 			return (this.targetTags.indexOf(obstacle.tag) != -1) &&
 				this.body.allowGravity;
 		}
 
+		this.onBreak.removeAll();
+
 		user.orientLeft = Hero.prototype.orientLeft;
 		user.orientRight = Hero.prototype.orientRight;
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+		}, this);
 
 		user.can.orient = false;
 
@@ -1829,6 +1881,8 @@ var ArrowSkill = function(user, level, targetTags){
 			this.user.can.action = true;
 			this.user.current.action = null;
 			this.user.can.orient = true;
+
+			this.onBreak.removeAll();
 		}, this);
 	}
 
@@ -1856,11 +1910,13 @@ var MultArrowSkill = function(user, level, targetTags){
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
 			   Elements.PHYSIC, targetTags);
 
+	var self = this;
+
 	this.onCharge.add(function(){
 		var animation = null;
 		var user = this.user;
 		var speed = 60 / (1 + this.user.allStats.attackSpeed.get()) * 200;
-
+		
 		function orient(direction){
 			if (!user.can.orient){
 				return;
@@ -1871,6 +1927,10 @@ var MultArrowSkill = function(user, level, targetTags){
 				
 				user.animations.currentAnim.stop();
 				
+				self.onBreak.addOnce(function(){
+					this.user.can.orient = true;
+				}, self);
+
 				user.can.orient = false;
 				
 				var animationName = (direction >= 0) ? "bendBowRight" : "bendBowLeft";
@@ -1879,6 +1939,8 @@ var MultArrowSkill = function(user, level, targetTags){
 					.onComplete.addOnce(
 						function(){
 							user.can.orient = true;
+
+							self.onBreak.removeAll();
 						}, this);
 			}
 		}
@@ -1897,8 +1959,16 @@ var MultArrowSkill = function(user, level, targetTags){
 			user.orientationH = -1;
 		}
 
-		user.orientLeft();
-		user.orientRight();
+		if (user.orientationH > 0){
+			user.orientLeft();
+		}
+		else{
+			user.orientRight();
+		}
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this)
 
 		user.can.move = false;
 	}, this);
@@ -1912,7 +1982,6 @@ var MultArrowSkill = function(user, level, targetTags){
 			return;
 		}
 		
-		var self = this;
 		var user = this.user;
 		var speed = 60 / (1 + this.user.allStats.attackSpeed.get()) * 200;
 
@@ -2005,41 +2074,21 @@ var MultArrowSkill = function(user, level, targetTags){
 		}
 
 		function collideProcess(obstacle){
-			// La flêche change d'élément en fonction de ce qu'elle rencontre.
-			if (obstacle.tag == "projectile"){
-				this.tint = H_WHITE;
+			arrowElementChange.call(this, obstacle);
 
-				switch(obstacle.element){
-				case Elements.ALMIGHTY:
-					this.tint = H_GREY;
-					break;
-				case Elements.FIRE:
-					this.tint = H_RED;
-					break;
-				case Elements.ICE:
-					this.tint = H_BLUE;
-					break;
-				case Elements.WIND:
-					this.tint = H_GREEN;
-					break;
-				case Elements.EARTH:
-					this.tint = H_ORANGE;
-					break;
-				case Elements.THUNDER:
-					this.tint = H_YELLOW;
-					break;
-				default:
-					break;
-				}
-
-				this.element = obstacle.element;
-			}
 			return (this.targetTags.indexOf(obstacle.tag) != -1) &&
 				this.body.allowGravity;
 		}
 
 		user.orientLeft = Hero.prototype.orientLeft;
 		user.orientRight = Hero.prototype.orientRight;
+
+		this.onBreak.removeAll();
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+		}, this);
 
 		user.can.orient = false;
 
@@ -2070,9 +2119,11 @@ var MultArrowSkill = function(user, level, targetTags){
 				this.user.can.action = true;
 				this.user.can.orient = true;
 				this.user.current.action = null;
+
+				this.onBreak.removeAll();
 			}, this);
 
-			this.onBreak.remove(this.fireTimer.stop);
+			this.onBreak.removeAll();
 
 		}, this);
 
@@ -2200,12 +2251,11 @@ var TrapSkill = function(user, level, targetTags){
 	Skill.call(this, user, level, costFunction, 10000,
 			   Elements.EARTH, targetTags);
 
-	this.onBreak.add(function(){
-		this.user.can.move = true;
-		this.user.can.orient = true;
-	}, this);
-
 	this.onCharge.add(function(){
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
+
 		this.user.can.move = false;
 	}, this);
 
@@ -2385,6 +2435,8 @@ var TrapSkill = function(user, level, targetTags){
 
 		this.onUncheckedCharge.add(explode, trap);
 
+		this.onBreak.removeAll();
+
 		this.user.can.move = true;
 		this.user.can.action = true;
 		this.user.current.action = null;
@@ -2416,11 +2468,13 @@ var PoweredArrowSkill = function(user, level, targetTags){
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
 			   Elements.PHYSIC, targetTags);
 
+	var self = this;
+
 	this.onCharge.add(function(){
 		var animation = null;
 		var user = this.user;
 		var speed = 60 / (1 + this.user.allStats.attackSpeed.get()) * 200;
-
+		
 		function orient(direction){
 			if (!user.can.orient){
 				return;
@@ -2431,6 +2485,10 @@ var PoweredArrowSkill = function(user, level, targetTags){
 				
 				user.animations.currentAnim.stop();
 				
+				self.onBreak.addOnce(function(){
+					this.user.can.orient = true;
+				}, self);
+
 				user.can.orient = false;
 				
 				var animationName = (direction >= 0) ? "bendBowRight" : "bendBowLeft";
@@ -2439,6 +2497,8 @@ var PoweredArrowSkill = function(user, level, targetTags){
 					.onComplete.addOnce(
 						function(){
 							user.can.orient = true;
+
+							self.onBreak.removeAll();
 						}, this);
 			}
 		}
@@ -2457,8 +2517,16 @@ var PoweredArrowSkill = function(user, level, targetTags){
 			user.orientationH = -1;
 		}
 
-		user.orientLeft();
-		user.orientRight();
+		if (user.orientationH > 0){
+			user.orientLeft();
+		}
+		else{
+			user.orientRight();
+		}
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this)
 
 		user.can.move = false;
 	}, this);
@@ -2472,7 +2540,6 @@ var PoweredArrowSkill = function(user, level, targetTags){
 			return;
 		}
 		
-		var self = this;
 		var user = this.user;
 		var speed = 60 / (1 + this.user.allStats.attackSpeed.get()) * 200;
 
@@ -2570,37 +2637,7 @@ var PoweredArrowSkill = function(user, level, targetTags){
 		}
 
 		function collideProcess(obstacle){
-			// La flêche change d'élément en fonction de ce qu'elle rencontre.
-			if (obstacle.tag == "projectile"){
-				this.tint = H_WHITE;
-
-				switch(obstacle.element){
-				case Elements.ALMIGHTY:
-					this.tint = H_GREY;
-					break;
-				case Elements.FIRE:
-					this.tint = H_RED;
-					break;
-				case Elements.ICE:
-					this.tint = H_BLUE;
-					break;
-				case Elements.WIND:
-					this.tint = H_GREEN;
-					break;
-				case Elements.EARTH:
-					this.tint = H_ORANGE;
-					break;
-				case Elements.THUNDER:
-					this.tint = H_YELLOW;
-					break;
-				default:
-					break;
-				}
-
-				this.element = obstacle.element;
-
-				return false;
-			}
+			arrowElementChange.call(this, obstacle);
 
 			return (this.targetTags.indexOf(obstacle.tag) != -1) &&
 				this.body.allowGravity;
@@ -2608,6 +2645,13 @@ var PoweredArrowSkill = function(user, level, targetTags){
 
 		user.orientLeft = Hero.prototype.orientLeft;
 		user.orientRight = Hero.prototype.orientRight;
+
+		this.onBreak.removeAll();
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+		}, this);
 		
 		user.can.orient = false;
 
@@ -2658,6 +2702,8 @@ var PoweredArrowSkill = function(user, level, targetTags){
 			this.user.can.action = true;
 			this.user.current.action = null;
 			this.user.can.orient = true;
+
+			this.onBreak.removeAll();
 		}, this);
 	}
 
@@ -2667,6 +2713,118 @@ var PoweredArrowSkill = function(user, level, targetTags){
 
 PoweredArrowSkill.prototype = Object.create(Skill.prototype);
 PoweredArrowSkill.prototype.constructor = PoweredArrowSkill;
+
+var ShieldSkill = function(user, level){
+	function costFunction(applyCost){
+		if (this.chargeTime.get()){
+			return true;
+		}
+
+		if (this.user.allStats.special.canSubtract(5)){
+
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
+	Skill.call(this, user, level, costFunction, 0, Elements.ALMIGHTY);
+
+	this.onUncheckedCharge.add(function(){
+		if (!this.user.alive ||
+			this.user._dying){
+			return;
+		}
+
+		if ((this.user.current.action instanceof Skill) &&
+		   !(this.user.current.action instanceof ShieldSkill)){
+			this.user.animations.currentAnim.stop();
+			this.user.current.action.breakSkill();
+		}
+	}, this);
+
+	this.onCharge.add(function(){
+		this.user.can.move = false;
+
+		var immovable = this.user.body.immovable;
+
+		this.user.body.immovable = true;
+
+		this.user.animations.play("shieldBoth");
+
+		this.user.allStats.special.subtract(5);
+
+		this.user.allStats.defense.factor *= 2;
+
+		for(var i = Elements.PHYSIC; i < Elements.ALMIGHTY; i++){
+			if (this.user.allResistances[i] < 0){
+				this.user.allResistances[i] /= 2;
+			}
+			else if (this.user.allResistances[i] < 1){
+				this.user.allResistances[i] *= 2;
+			}
+		}
+
+		for(var i = Disabilities.STUN; i <= Disabilities.SLOW; i++){
+			if (this.user.allResistances[i] < 0){
+				this.user.allResistances[i] /= 2;
+			}
+			else if (this.user.allResistances[i] < 1){
+				this.user.allResistances[i] *= 2;
+			}
+		}
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.action = true;
+			this.user.current.action = null;
+
+			this.user.body.immovable = immovable;
+
+			this.user.allStats.defense.factor /= 2;
+
+			for(var i = Elements.PHYSIC; i < Elements.ALMIGHTY; i++){
+				if (this.user.allResistances[i] < 0){
+					this.user.allResistances[i] *= 2;
+				}
+				else if (this.user.allResistances[i] < 1){
+					this.user.allResistances[i] /= 2;
+				}
+			}
+
+			for(var i = Disabilities.STUN; i <= Disabilities.SLOW; i++){
+				if (this.user.allResistances[i] < 0){
+					this.user.allResistances[i] *= 2;
+				}
+				else if (this.user.allResistances[i] < 1){
+					this.user.allResistances[i] /= 2;
+				}
+			}
+		}, this);
+
+		this.onUncheckedRelease.addOnce(function(){
+			this.onBreak.dispatch(this);
+		}, this);
+	}, this);
+
+
+	this.launchFunction = function(){
+		this.onBreak.dispatch(this);
+
+		this.onBreak.removeAll();
+
+		this.user.can.action = true;
+		this.user.current.action = null;
+	}
+
+	
+	this.setChargeTime(1);
+	this.icon = "shield_icon";
+}
+
+ShieldSkill.prototype = Object.create(Skill.prototype);
+ShieldSkill.prototype.constructor = ShieldSkill;
 /******************************************************************************/
 /* Common Skills */
 /*****************/

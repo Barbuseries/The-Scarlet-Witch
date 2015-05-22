@@ -42,7 +42,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("iceball_icon", skillDir + "iceball_icon.png");
 	this.load.spritesheet("thunder_0", skillDir + "thunder_0.png", 256, 64);
 	this.load.image("thunder_icon", skillDir + "thunder_icon.png");
-	this.load.image("poison_icon", skillDir + "poison_icon.png");
 	this.load.image("arrow_icon", skillDir + "arrow_icon.png");
 	this.load.image("multArrow_icon", skillDir + "multArrow_icon.png");
 	this.load.image("speedUpArrow_icon", skillDir + "speedUpArrow_icon.png");
@@ -53,8 +52,10 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("slash_icon", skillDir + "slash_icon.png");
 	this.load.spritesheet("death", skillDir + "death.png", 32, 32);
 	this.load.image("death_icon", skillDir + "death_icon.png");
+	this.load.image("poison_icon", skillDir + "poison_icon.png");
 	this.load.spritesheet("explosion_0", skillDir + "explosion_0.png", 64, 64);
 	this.load.spritesheet("explosion_1", skillDir + "explosion_1.png", 64, 64);
+	this.load.image("shield_icon", skillDir + "shield_icon.png", 64, 64);
 
 	// Ammo
 	var ammoDir = miscDir + "Ammo/";
@@ -63,6 +64,9 @@ BasicGame.Preloader.prototype.preload =  function(){
 
 	// Levels
 	var levelsDir = "levels/";
+	
+	// Tiles assets.
+	var tilesDir = assetsDir + "Tiles 32x32/";
 
 	for(var i in BasicGame.allLevels){
 		var levelDirectory = levelsDir + i + "/";
@@ -70,12 +74,12 @@ BasicGame.Preloader.prototype.preload =  function(){
 
 		this.load.tilemap(i, levelTilemap, null,
 						  Phaser.Tilemap.TILED_JSON);
+		
+		try{
+			this.load.image(i + "_Tiles", tilesDir + "Tiles_32x32.png");
+		}
+		catch(err){}
 	}
-
-	// Tiles assets.
-	var tilesDir = assetsDir + "Tiles 32x32/";
-
-	this.load.image('Level_1_Tiles', tilesDir + 'Tiles_32x32.png');
 
 	// Heroes
 	var charactersDir = assetsDir + "Characters/";

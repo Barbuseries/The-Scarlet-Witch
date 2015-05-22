@@ -1,8 +1,7 @@
+/***************/
+/* Text Damage */
+/******************************************************************************/
 var TextDamage = function (game, x, y){
-	if (typeof(color) != "string") color = WHITE;
-
-	if (typeof(direction) != "undefined") direction = 1;
-
 	Phaser.Sprite.call(this, game, x, y, null);
 
 	this.game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -40,6 +39,9 @@ TextDamage.prototype.kill = function(){
 	Phaser.Sprite.prototype.kill.call(this);
 }
 
+/******************************************************************************/
+/* Text Damage */
+/***************/
 
 function createTextDamage(game, x, y, value, color){
 	var newTextDamage = null;

@@ -7,11 +7,11 @@ var Hero = function(game, x, y, name, level){
 	this.body.setSize(32, 48, 16, 16);
 
 	this.currentMode = 0;
-	this.statPoints = (level - 1) * 50;
+	this.statPoints = (level - 1) * 1;
 
 	this.allStats.level.onUpdate.add(function(stat, oldValue, newValue){
 		if (oldValue != newValue){
-			this.statPoints += 50;
+			this.statPoints += 1;
 		}
 	}, this);
 	
@@ -45,6 +45,10 @@ Hero.prototype.jump = function(control, factor){
 	if (this._dying ||
 	   !this.can.jump){
 		return;
+	}
+
+	if (typeof(control) == "number"){
+		return Mob.prototype.jump.call(this, control);
 	}
 	
     if (typeof(factor) === "undefined"){
@@ -199,8 +203,8 @@ var Lucy = function(game, x, y, level){
 
 
 	this.allStats.attackSpeed.setGrowth(function(){
-		return this._basicValue - 4 * this.entity.allStats.level.get() -
-			2 * this.entity.allStats.agility.get();
+		return this._basicValue - 3 * this.entity.allStats.level.get() -
+			5 * this.entity.allStats.agility.get();
 	}, -1, [], true);
 
 	this.statusUi = new Status_UI(this.game, this, 0, 0);
@@ -208,25 +212,30 @@ var Lucy = function(game, x, y, level){
 
 
 	// Skills.
-	this.allSkills[0].firstSkill = new FireBallSkill(this, 1,
-													 ["platform",
-													  "enemy"]);
-	this.allSkills[0].firstSkill.setChargeTime(2000);
+	this.allSkills[0] = {
+		firstSkill: new FireBallSkill(this, 1,
+									   ["platform", "enemy"]),
 
-	this.allSkills[0].secondSkill = new IceBallSkill(this, 1,
-													 ["enemy"]);
+		secondSkill: new IceBallSkill(this, 1, ["enemy"]),
+		
+		thirdSkill: new ThunderSkill(this, 1, ["enemy"]),
+		
+		fourthSkill: new PoisonSkill(this, 1, ["enemy"]),
+		
+		fifthSkill: new DeathSkill(this, 1, ["enemy"])
+	};
+
 	this.allSkills[0].secondSkill.setChargeTime(3000);
-
-	this.allSkills[0].thirdSkill = new ThunderSkill(this, 5,
-													["enemy"]);
 	this.allSkills[0].thirdSkill.setChargeTime(5000);
-	this.allSkills[0].fourthSkill = new PoisonSkill(this, 5, ["enemy"]);
-	this.allSkills[0].fourthSkill.setChargeTime(1000);
-	this.allSkills[0].fifthSkill = new DeathSkill(this, 1,
-												   ["enemy"]);
+	this.allSkills[0].firstSkill.setChargeTime(2000);
+	this.allSkills[0].fourthSkill.setChargeTime(5000);
 	this.allSkills[0].fifthSkill.setChargeTime(5000);
 
 	this.menu = new HeroMenu(this);
+
+	if (BasicGame.level != null){
+		this.pathFinder = BasicGame.level.createPathFinder(this.MAXJUMP);
+	}
 }
 
 Lucy.prototype = Object.create(Hero.prototype);
@@ -245,8 +254,8 @@ var Barton = function(game, x, y, level){
 	this.allStats.health.setBasic(40);
 	this.allStats.health.set(1, 1);
 	this.allStats.health.setGrowth(function(){
-		return this._basicValue + 10 * this.entity.allStats.level.get() +
-			3 * this.entity.allStats.endurance.get();
+		return this._basicValue + 5 * this.entity.allStats.level.get() +
+			8 * this.entity.allStats.endurance.get();
 	}, -1, [], true);
 
 	this.allStats.fury = new Stat(this, "Fury", STAT_NO_LINK, 0, 100, 0, 100);
@@ -256,14 +265,14 @@ var Barton = function(game, x, y, level){
 	this.allStats.attack.setBasic(5);
 	this.allStats.attack.set(1, 1);
 	this.allStats.attack.setGrowth(function(){
-		return this._basicValue + this.entity.allStats.level.get() +
-			0.5 * this.entity.allStats.mainStat.get();
+		return this._basicValue + 0.5 * this.entity.allStats.level.get() +
+			this.entity.allStats.mainStat.get();
 	}, -1, [], true);
 
 
 	this.allStats.defense.setGrowth(function(){
-		return this._basicValue + 0.5 * this.entity.allStats.level.get() +
-			0.1 * this.entity.allStats.endurance.get();
+		return this._basicValue + 0.1 * this.entity.allStats.level.get() +
+			0.5 * this.entity.allStats.endurance.get();
 	}, -1, [], true);
 
 	this.allStats.dodge.setBasic(2);
@@ -316,7 +325,11 @@ var Barton = function(game, x, y, level){
 										  ["enemy"])
 	};
 	
-	this.allSkills[0].firstSkill = new SlashSkill(this, 1, ["enemy"]);
+	this.allSkills[0] = {
+		firstSkill: new SlashSkill(this, 1, ["enemy"]),
+
+		secondSkill: new ShieldSkill(this, 1)
+	};
 
 	this.quiverRegen = this.game.time.create(false);
 	this.quiverRegen.loop(this.allStats.attackSpeed.get() * 6, function(){
@@ -334,6 +347,11 @@ var Barton = function(game, x, y, level){
 	}, this);
 
 	this.allStats.special = this.allStats.fury;
+
+	this.allResistances[Elements.PHYSIC] = 0.25;
+	this.allResistances[Elements.EARTH] = 0.125;
+
+	this.allResistances[Disabilities.STUN] = 0.125;
 	
 	this.menu = new HeroMenu(this);
 

@@ -102,7 +102,9 @@ Menu.prototype.enableMouse = function(){
 
 		option.display._index = i;
 
-		option.display.events.onInputOver.add(moveToCursor, this);
+		if (!(option.display instanceof Phaser.Group)){
+			option.display.events.onInputOver.add(moveToCursor, this);
+		}
 	}
 	
 	this.mouseEnabled = true;
@@ -195,7 +197,9 @@ Menu.prototype.setFocus = function(focus){
 			
 			if (this.mouseEnabled){
 				for(var i = 0; i < this.allOptions.length; i++) {
-					this.allOptions[i].display.input.enabled = false;
+					if (!(this.allOptions[i].display instanceof Phaser.Group)){
+						this.allOptions[i].display.input.enabled = false;
+					}
 				}
 			}
 		}
@@ -204,7 +208,9 @@ Menu.prototype.setFocus = function(focus){
 
 			if (this.mouseEnabled){
 				for(var i = 0; i < this.allOptions.length; i++) {
-					this.allOptions[i].display.input.enabled = true;
+					if (!(this.allOptions[i].display instanceof Phaser.Group)){
+						this.allOptions[i].display.input.enabled = true;
+					}
 				}
 			}
 		}
@@ -217,12 +223,17 @@ Menu.prototype.updateCursorPosition = function(){
 	var currentOption = this.getCurrentOption();
 
 	if (currentOption != null){
-		this.cursor.x = (currentOption.display.x -
-						 currentOption.display.width * currentOption.display.anchor.x) +
-			this.offsetCursorX;
-		this.cursor.y = (currentOption.display.y +
-						 currentOption.display.height *
-						 (0.5 - currentOption.display.anchor.y)) + this.offsetCursorY;
+		this.cursor.x = currentOption.display.x + this.offsetCursorX ;
+		this.cursor.y = currentOption.display.y + this.offsetCursorY -
+			this.cursor.height / 5;
+		
+		if (!(currentOption.display instanceof Phaser.Group)){
+			this.cursor.x -= currentOption.display.width *
+				currentOption.display.anchor.x;
+
+			this.cursor.y += currentOption.display.height *
+						 (0.5 - currentOption.display.anchor.y);
+		}
 	}
 }
 
@@ -335,9 +346,11 @@ Menu.prototype.destroy = function(){
 
 Menu.prototype._del = function(){
 	for(var i in this.animations){
-		if (this.animations[i] != null){
-			this.animations[i].stop();
-			this.animations[i] = null;
+		for(var j in this.animations[i]){
+			if (this.animations[i][j] != null){
+				this.animations[i][j].stop();
+				this.animations[i][j] = null;
+			}
 		}
 	}
 
@@ -371,18 +384,20 @@ var Option = function(display){
 }
 
 Option.prototype.enableMouse = function(){
-	this.display.inputEnabled = true;
+	if (!(this.display instanceof Phaser.Group)){
+		this.display.inputEnabled = true;
 
-	this.display.events.onInputDown.add(function(){
-		if ((this.menu == null) ||
-			(this.menu.state != Interface.State.TOGGLED)){
-			return;
-		}
+		this.display.events.onInputDown.add(function(){
+			if ((this.menu == null) ||
+				(this.menu.state != Interface.State.TOGGLED)){
+				return;
+			}
 
-		BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
+			BasicGame.sfx.cursorSelect.play("", 0, BasicGame.volume.sfx);
 
-		this.onSelect.dispatch(this);
-	}, this);
+			this.onSelect.dispatch(this);
+		}, this);
+	}
 }
 
 Option.prototype.kill = function(){
@@ -508,12 +523,13 @@ var ConfirmationMenu = function(control, confFunction, context){
 	this.fixedToCamera = true;
 	this.enableMouse();
 
-	/*this.alpha = 0;
+	this.cameraOffset.y = -this.height;
 
-	this.createAnimation("toggle", "0", "0", 500, 1,
-						 Phaser.Easing.Quadratic.Out);
-	this.createAnimation("close", "0", "0", 500, 1,
-						 Phaser.Easing.Quadratic.Out);*/
+	this.createAnimation("toggle", "0", 0, 250, 1,
+						 Phaser.Easing.Quartic.InOut);
+
+	this.createAnimation("close", "0", -this.height, 250, 1,
+						 Phaser.Easing.Quartic.InOut);
 }
 
 ConfirmationMenu.prototype = Object.create(Menu.prototype);
@@ -805,27 +821,28 @@ var VolumeMenu = function(game, manager){
 
 	this.onStartToggle.add(bindMenu, this);
 	this.onStartToggle.add(function(){
-		this.savedGlobal = BasicGame.volume.music;
+		this.savedMusic = BasicGame.volume.music;
 		this.savedSFX = BasicGame.volume.sfx;
+		this.savedSoundOn = !BasicGame.game.sound.mute;
 
-		this.globalVolume.set(Math.ceil(this.savedGlobal * 100));
+		this.musicVolume.set(Math.ceil(this.savedMusic * 100));
 		this.sfxVolume.set(Math.ceil(this.savedSFX * 100));
 	}, this);
 
 	this.fixedToCamera = true;
 
-	this.globalOption = createBasicMenuOption(this, 130, "Global",
-											 function(){
-												 console.log(BasicGame.volume.music);
-											 }, this);
-	this.globalOption.display.x = 50;
-	this.globalOption.display.anchor.x = 0;
+	this.musicOption = createBasicMenuOption(this, 130, "Musique",
+							function(){
+								this.musicVolume.set((!this.musicVolume.get()) * 1, 1);
+							}, this);
+	this.musicOption.display.x = 50;
+	this.musicOption.display.anchor.x = 0;
 	
-	this.globalVolume = new Stat(null, "Global", STAT_NO_LINK,
+	this.musicVolume = new Stat(null, "Music", STAT_NO_LINK,
 								0, 100);
-	this.globalVolume.add(Math.ceil(BasicGame.volume.music * 100));
+	this.musicVolume.add(Math.ceil(BasicGame.volume.music * 100));
 
-	this.globalVolume.onUpdate.add(function(){
+	this.musicVolume.onUpdate.add(function(){
 		BasicGame.volume.music = this.get() / 100;
 
 		for(var i in BasicGame.musics){
@@ -834,26 +851,26 @@ var VolumeMenu = function(game, manager){
 			}
 			catch(err){};
 		}
-	}, this.globalVolume);
+	}, this.musicVolume);
 
-	this.globalBar = new Bar(game, manager, 250, 130 - 5, this.width - 350, 10,
+	this.musicBar = new Bar(game, manager, 250, 130 - 5, this.width - 350, 10,
 							"ground", "ground2",
-							this.globalVolume, true);
+							this.musicVolume, true);
 	
-	this.add(this.globalBar);
+	this.add(this.musicBar);
 
-	this.globalOption.onOver.add(function(){
-		this.globalBar.start();
+	this.musicOption.onOver.add(function(){
+		this.musicBar.start();
 	}, this);
 
-	this.globalOption.onOut.add(function(){
-		this.globalBar.stop();
+	this.musicOption.onOut.add(function(){
+		this.musicBar.stop();
 	}, this);
 	
 	this.sfxOption = createBasicMenuOption(this, 200, "SFX",
-										   function(){
-											   console.log(BasicGame.volume.sfx);
-										   }, this);
+								function(){
+									this.sfxVolume.set((!this.sfxVolume.get()) * 1, 1);
+								}, this);
 	this.sfxOption.display.x = 50;
 	this.sfxOption.display.anchor.x = 0;
 
@@ -887,19 +904,21 @@ var VolumeMenu = function(game, manager){
 	}, this);
 
 	this.onOffOption = createBasicMenuOption(this, 270, "ON/OFF",
-											function(){
-												BasicGame.game.sound.mute = !BasicGame.game.sound.mute;
-												console.log(BasicGame.game.sound.mute);
-											});
+							function(){
+								BasicGame.game.sound.mute = !BasicGame.game.sound.mute;
+
+								this.savedSoundOn = !BasicGame.game.sound.mute;
+							}, this);
 
 	this.confirmOption = createBasicMenuOption(this, 340, "Confirmer",
-											   function(){
-												  BasicGame.optionsSave.save();
-												  BasicGame.optionsSave.hardSave();
-
-												  this.savedGlobal = BasicGame.volume.music;
-												  this.savedSFX = BasicGame.volume.sfx;
-											  }, this);
+										function(){
+											BasicGame.optionsSave.save();
+											BasicGame.optionsSave.hardSave();
+											
+											this.savedMusic = BasicGame.volume.music;
+											this.savedSFX = BasicGame.volume.sfx;
+											this.close();
+										}, this);
 	
 	this.backOption = createBasicMenuOption(this, 410, "Retour",
 											function(){
@@ -909,11 +928,13 @@ var VolumeMenu = function(game, manager){
 	this.enableMouse();
 
 	this.onEndClose.add(function(){
-		this.globalBar.stop();
+		this.musicBar.stop();
 		this.sfxBar.stop();
 
-		BasicGame.volume.music = this.savedGlobal;
+		BasicGame.volume.music = this.savedMusic;
 		BasicGame.volume.sfx = this.savedSFX;
+
+		BasicGame.game.sound.mute = !this.savedSoundOn;
 
 		for(var i in BasicGame.musics){
 			BasicGame.musics[i].volume = BasicGame.volume.music;
@@ -929,8 +950,8 @@ VolumeMenu.prototype = Object.create(Menu.prototype);
 VolumeMenu.prototype.constructor = VolumeMenu;
 
 VolumeMenu.prototype.destroy = function(){
-	this.globalVolume.destroy();
-	this.globalVolume = null;
+	this.musicVolume.destroy();
+	this.musicVolume = null;
 
 	this.sfxVolume.destroy();
 	this.sfxVolume = null;
@@ -940,3 +961,112 @@ VolumeMenu.prototype.destroy = function(){
 /******************************************************************************/
 /* Volume Menu */
 /***************/
+
+
+/*****************/
+/* LoadSave Menu */
+/******************************************************************************/
+
+var LoadSaveMenu = function(game, manager, toSave){
+	if (!booleanable(toSave)){
+		toSave = false;
+	}
+
+	this.toSave = toSave;
+
+	var title = (toSave) ? "Sauvegarder" : "Charger";
+
+	Menu.call(this, game, manager, title,
+			  game.camera.width * 0.33 / 2, game.camera.height * 0.33 / 2,
+			  game.camera.width * 2 / 3, game.camera.height * 2 / 3,
+			  "ground2", "icons");
+
+	this.title.fontWeight = "bold";
+	this.title.stroke = BLACK;
+	this.title.strokeThickness = 3;
+	this.title.fontSize = 64;
+	this.title.setShadow(5, 5, BLACK, 5);
+	this.background.tint = H_GREY;
+
+	this.horizontal = false;
+	this.showTitle = true;
+	this.cursor.frame = 5;
+
+	this.onStartToggle.add(bindMenu, this);
+
+	for(var i = 0; i < BasicGame.allGameSaves.length; i++){
+		var self = this;
+		var saveName = "save_" + i.toString();
+
+		this[saveName] = new Option(this.game.add.group());
+
+		this[saveName].display.add(createBasicMenuOptionText(this,
+															 130 + i * 75,
+															 BasicGame.allGameSaves[i].level.key));
+
+		this[saveName].onOver.add(function(){
+			this.display.getChildAt(0).scale.setTo(1.5);
+			this.display.getChildAt(1).scale.setTo(1.05);
+			this.display.getChildAt(0).stroke = RED;
+
+			this.display.alpha = 1;
+
+			self.game.world.bringToTop(this.display);
+		}, this[saveName]);
+
+		this[saveName].onOut.add(function(){
+			this.display.getChildAt(0).scale.setTo(1);
+			this.display.getChildAt(1).scale.setTo(1);
+			this.display.getChildAt(0).fill = WHITE;
+			this.display.getChildAt(0).stroke = BLACK;
+
+			this.display.alpha = 0.5;
+		}, this[saveName]);
+
+		this[saveName].onSelect.add(function(){
+			var indexSave = this._indexSave;
+							
+			self.close();
+			
+			BasicGame.allGameSaves[indexSave].load(BasicGame.game);
+		}, this[saveName]);
+		
+		this[saveName].display.getChildAt(0).x = 50;
+		this[saveName].display.getChildAt(0).anchor.x = 0;
+
+		this[saveName]._indexSave = i;
+
+		this[saveName].display.add(
+			BasicGame.allGameSaves[i].createMiniature(this.game, 250, 100 + 75 * i));
+
+		this[saveName].display.alpha = 0.5;
+		
+		this.addOption(this[saveName]);
+	}
+
+	this.updateCursorPosition = function(){
+		var currentOption = this.getCurrentOption();
+
+		if (currentOption != null){
+			this.cursor.x = currentOption.display.getChildAt(0).x +
+				this.offsetCursorX;
+			this.cursor.y = currentOption.display.getChildAt(0).y +
+				this.offsetCursorY;
+			
+			this.cursor.x -= currentOption.display.getChildAt(0).width *
+				currentOption.display.getChildAt(0).anchor.x;
+			
+			this.cursor.y += currentOption.display.getChildAt(0).height *
+				(0.5 - currentOption.display.getChildAt(0).anchor.y);
+		}
+	}
+	
+	this.enableMouse();
+}
+
+LoadSaveMenu.prototype = Object.create(Menu.prototype);
+LoadSaveMenu.prototype.constructor = LoadSaveMenu;
+
+/******************************************************************************
+/* LoadSaveMenu */
+/****************/

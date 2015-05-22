@@ -12,6 +12,20 @@ var Bar = function(game, manager, x, y, width, height, sprite, cursorSprite,
 	this.sprite.height = height;
 	this.sprite.width = width;
 	this.add(this.sprite);
+
+	this.sprite.inputEnabled = true;
+	this.sprite.events.onInputDown.add(function(self, pointer){
+		if (this.horizontal){
+			this.stat.set((pointer.x - self.world.x) /
+						  self.width, 1);
+			this.stat.set(Math.ceil(this.stat.get()));
+		}
+		else{
+			this.stat.set((pointer.y - self.world.y) /
+						  self.height, 1);
+			this.stat.set(Math.ceil(this.stat.get()));
+		}
+	}, this);
 	
 	this.manager = manager;
 	this.width = width;
@@ -24,9 +38,11 @@ var Bar = function(game, manager, x, y, width, height, sprite, cursorSprite,
 
 	this.stat = stat;
 
-	this.valueText = this.game.add.text(this.sprite.width * 1.1, this.sprite.height,
+	this.valueText = this.game.add.text(this.sprite.width * 1.1,
+										this.sprite.height / 2,
 										this.stat.get().toString());
 	this.valueText.anchor.setTo(0.5);
+	this.valueText.fill = WHITE;
 
 	this.add(this.valueText);
 

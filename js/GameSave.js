@@ -43,9 +43,6 @@ var GameSave = function(index){
 		scarletWitch: false
 	};
 }
-/******************************************************************************/
-/* Game Save */
-/*************/
 
 GameSave.prototype.save = function(){
 	var players = BasicGame.allPlayers;
@@ -80,51 +77,95 @@ GameSave.prototype.save = function(){
 
 
 GameSave.prototype.reload = function(){
-	for(var i in this.players){
+	var heroes = this.createHeroes(BasicGame.level.game);
+
+	var j = 0;
+
+	for(var i in BasicGame.allPlayers){
 		var player = BasicGame.allPlayers[i];
-		var savedHero = this.heroes[this.players[i].hero];
 		var checkpoint = BasicGame.level.allCheckpoints.getChildAt(this.level.checkpoint);
-		
+
 		if (player.hero != null){
 			player.hero.destroy();
 			player.setHero(null);
 		}
-		
-		if (this.players[i].hero == "barton"){
-			player.setHero(new Barton(BasicGame.level.game,
-									  checkpoint.barton.x, checkpoint.barton.y,
-									  savedHero.level));
-		}
-		else{
-			player.setHero(new Lucy(BasicGame.level.game, 
-									checkpoint.lucy.x, checkpoint.lucy.y,
-									savedHero.level));
-		}
 
-		player.hero.allStats.experience.add(savedHero.experience);
+		heroes[j].x = checkpoint[this.players[i].hero].x;
+		heroes[j].y = checkpoint[this.players[i].hero].y;
 
-		for(var j = 0; j < savedHero.mainStat; j++) {
-			player.hero.upgradeStat("mainStat");
-		}
-
-		for(var j = 0; j < savedHero.endurance; j++) {
-			player.hero.upgradeStat("endurance");
-		}
-
-		for(var j = 0; j < savedHero.agility; j++) {
-			player.hero.upgradeStat("agility");
-		}
+		player.setHero(heroes[j]);
 
 		player.hero.menu.updateStatPoints();
 		
 
 		BasicGame.level.allHeroes.addChild(player.hero);
+
+		j++;
 	}
+}
+
+GameSave.prototype.createHeroes = function(game){
+	var heroes = [];
+
+	for(var i in this.players){
+		var savedHero = this.heroes[this.players[i].hero];
+		var createdHero;
+		
+		if (this.players[i].hero == "barton"){
+			createdHero = new Barton(game, 0, 0, savedHero.level);
+		}
+		else{
+			createdHero = new Lucy(game, 0, 0, savedHero.level);
+		}
+
+		createdHero.allStats.experience.add(savedHero.experience);
+
+		for(var j = 0; j < savedHero.mainStat; j++) {
+			createdHero.upgradeStat("mainStat");
+		}
+
+		for(var j = 0; j < savedHero.endurance; j++) {
+			createdHero.upgradeStat("endurance");
+		}
+
+		for(var j = 0; j < savedHero.agility; j++) {
+			createdHero.upgradeStat("agility");
+		}
+
+		heroes.push(createdHero);
+	}
+
+	return heroes;
+}
+
+GameSave.prototype.load = function(game){
+	BasicGame.gameSave = this;
+
+	game.state.start(this.level.key);
 }
 
 
 GameSave.prototype.retrieve = function(){
 	
+}
+
+GameSave.prototype.createMiniature = function(game, x, y){
+	var miniature = game.add.group();
+
+	var heroes = this.createHeroes(game);
+
+	for(var i = 0; i < heroes.length; i++) {
+		heroes[i].visible = false;
+
+		heroes[i].statusUi.fixedToCamera = false;
+		heroes[i].statusUi.x = x + 300 * i;
+		heroes[i].statusUi.y = y;
+		
+		miniature.add(heroes[i]);
+		miniature.add(heroes[i].statusUi);
+	}
+	
+	return miniature;
 }
 
 GameSave.prototype.hardSave = function(){
@@ -134,9 +175,13 @@ GameSave.prototype.hardSave = function(){
 
 	console.log("HARD SAVED !");
 }
+/******************************************************************************/
+/* Game Save */
+/*************/
 
-
-
+/***************/
+/* Option Save */
+/******************************************************************************/
 var OptionsSave = function(){
 	this.players = {
 		p1: {},
@@ -190,7 +235,7 @@ OptionsSave.prototype.save = function(){
 		this.misc.volume[i] = BasicGame.volume[i];
 	}
 
-	this.soundOn = !BasicGame.game.sound.mute;
+	this.misc.soundOn = !BasicGame.game.sound.mute;
 }
 
 
@@ -217,7 +262,7 @@ OptionsSave.prototype.load = function(){
 		BasicGame.volume[i] = this.misc.volume[i];
 	}
 
-	BasicGame.game.sound.mute = !this.soundOn;
+	BasicGame.game.sound.mute = !this.misc.soundOn;
 }
 
 
@@ -226,3 +271,6 @@ OptionsSave.prototype.hardSave = function(){
 
 	console.log("OPTIONS HARD SAVED !");
 }
+/******************************************************************************/
+/* Option Save */
+/***************/

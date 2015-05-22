@@ -30,8 +30,17 @@ var Interface = function(game, x, y, width, height, sprite){
 	};
 
 	this.animations = {
-		toggle: null,
-		close: null
+		toggle: {
+			position: null,
+			
+			alpha: null
+		},
+
+		close: {
+			position: null,
+			
+			alpha: null
+		}
 	};
 
 	this.state = Interface.State.CLOSED;
@@ -63,13 +72,17 @@ Interface.prototype.toggle = function(){
 
 	this.onStartToggle.dispatch(this);
 
-	if (this.animations.toggle == null){
+	if (this.animations.toggle.position == null){
 		this.state = Interface.State.TOGGLED;
 
 		this.onEndToggle.dispatch(this);
 	}
 	else{
-		this.animations.toggle.start();
+		for(var i in this.animations.toggle){
+			if (this.animations.toggle[i] != null){
+				this.animations.toggle[i].start();
+			}
+		}
 	}
 }
 
@@ -83,7 +96,7 @@ Interface.prototype.close = function(){
 
 	this.onStartClose.dispatch(this);
 
-	if (this.animations.close == null){
+	if (this.animations.close.position == null){
 		this.visible = false;
 
 		this.state = Interface.State.CLOSED;
@@ -91,7 +104,11 @@ Interface.prototype.close = function(){
 		this.onEndClose.dispatch(this);
 	}
 	else{
-		this.animations.close.start();
+		for(var i in this.animations.close){
+			if (this.animations.close[i] != null){
+				this.animations.close[i].start();
+			}
+		}
 	}
 }
 
@@ -102,7 +119,7 @@ Interface.prototype.createAnimation = function(type, x, y, time, alpha, easing, 
         return;
     }
 
-    if (this.animations[type] != null){
+    if (this.animations[type].position != null){
 		return;
 	}
 
@@ -136,28 +153,50 @@ Interface.prototype.createAnimation = function(type, x, y, time, alpha, easing, 
         easing = Phaser.Easing.Linear.None;
     }
 
-    var tween;
+    var tween = null;
+	var tweenAlpha = null;
+	var positionTarget = (this.fixedToCamera) ? this.cameraOffset : this;
 
 	if (!from){
-		tween = this.game.add.tween(this)
-			.to({x: x, y: y, alpha: alpha * (type == "toggle")}, time, easing);
+		if (positionTarget != this){
+			tween = this.game.add.tween(positionTarget)
+				.to({x: x, y: y}, time, easing);
+			
+			tweenAlpha = this.game.add.tween(this)
+				.to({alpha: alpha}, time, easing);
+		}
+		else{
+			tween = this.game.add.tween(this)
+				.to({x: x, y: y, alpha: alpha}, time, easing);
+		}
 	}
     else{
-        tween = this.game.add.tween(this)
-            .from({x: x, y: y, alpha: alpha * (type == "close")}, time, easing);
+		if (positionTarget != this){
+			tween = this.game.add.tween(positionTarget)
+				.from({x: x, y: y}, time, easing);
+
+			tweenAlpha = this.game.add.tween(this)
+				.from({alpha: alpha}, time, easing);
+		}
+		else{
+			tween = this.game.add.tween(this)
+				.from({x: x, y: y, alpha: alpha}, time, easing);
+		}
+			
     }
 
-    this.animations[type] = tween;
+    this.animations[type].position = tween;
+	this.animations[type].alpha = tweenAlpha;
 
 	if (type == "toggle"){
-		this.animations.toggle.onComplete.add(function(){
+		this.animations.toggle.position.onComplete.add(function(){
 			this.state = Interface.State.TOGGLED;
 
 			this.onEndToggle.dispatch(this);
 		}, this);
 	}
 	else{
-		this.animations.close.onComplete.add(function(){
+		this.animations.close.position.onComplete.add(function(){
 			this.state = Interface.State.CLOSED;
 			this.visible = false;
 
@@ -210,9 +249,11 @@ Interface.prototype._del = function(){
 	}
 
 	for(var i in this.animations){
-		if (this.animations[i] != null){
-			this.animations[i].stop();
-			this.animations[i] = null;
+		for(var j in this.animations[i]){
+			if (this.animations[i][j] != null){
+				this.animations[i][j].stop();
+				this.animations[i][j] = null;
+			}
 		}
 	}
 }

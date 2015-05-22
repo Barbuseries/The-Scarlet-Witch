@@ -34,6 +34,7 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 		.allowBreak = false;
 	this.animations.add("spellReleaseBoth", [29, 30, 32, 26], 15)
 		.allowBreak = false;
+	this.animations.add("shieldBoth", [78, 79, 80, 81, 82, 83, 84, 85], 15);
 	/******************************************************************************/
 	this.animations.add("swordRight", [195, 196, 197, 198, 199, 200, 200, 195], 15)
 		.allowBreak = false;
@@ -286,19 +287,19 @@ Npc.prototype.follow = function(target, tickRecompute){
 
 		if ((typeof(myTile) === "undefined") ||
 			(myTile == null) ||
-			(BasicGame.level._grid[myTile.y][myTile.x] == 0)){
+			(BasicGame.level._grid[myTile.y][myTile.x] < 0)){
 			myTile = getTileWorldXY(0, this.x, this.y + iter * 32);
 		}
 
 		if ((typeof(targetTile) === "undefined") ||
 			(targetTile == null) ||
-			(BasicGame.level._grid[targetTile.y][targetTile.x] == 0)){
+			(BasicGame.level._grid[targetTile.y][targetTile.x] < 0)){
 			targetTile = getTileWorldXY(0, this.target.x, this.target.y + iter * 32);
 		}
 
 		if (((myTile == null) || (targetTile == null)) ||
-			((BasicGame.level._grid[myTile.y][myTile.x] == 0) ||
-			 (BasicGame.level._grid[targetTile.y][targetTile.x] == 0))){
+			((BasicGame.level._grid[myTile.y][myTile.x] < 0) ||
+			 (BasicGame.level._grid[targetTile.y][targetTile.x] < 0))){
 			iter++;
 
 			followTarget.call(this, iter, myTile, targetTile);

@@ -37,6 +37,9 @@ var Level = function(mapName, platformTileset, backgroundName,
 	this.checkCompleteFunction = null;
 	this.completed = false;
 
+	this.saveMenu = null;
+	this.gameOverMenu = null;
+
 	this.allHeroes = null;
 	this.allEnemies = null;
 	this.allItems = null;
@@ -116,113 +119,179 @@ Level.prototype.preload = function(){
 	}
 }
 
-//Create a basic grid.
-Level.prototype.initPathFinders = function(){
-	var grid = [];
+Level.prototype.createPathFinder = function(i){
+	if (typeof(i) != "number"){
+		return;
+	}
+	
+	if (i < 0){
+		return;
+	}
+
+	var prevPathFinder = "_" + (i - 1).toString();
+	var pathFinder = "_" + i.toString();
+
+	if (typeof(BasicGame.easyStar[prevPathFinder]) === "undefined"){
+		this.createPathFinder(i - 1);
+	}
+
+	if (typeof(BasicGame.easyStar[pathFinder]) === "undefined"){
+		BasicGame.easyStar[pathFinder] = new EasyStar.js();
+
+		BasicGame.easyStar[pathFinder].enableDiagonals();
+		BasicGame.easyStar[pathFinder].setIterationsPerCalculation(1000);
+	}
+
+	return BasicGame.easyStar[pathFinder];
+}
+
+Level.prototype._create0thGrid = function(){
+	this._grid = [];
+
 	var layer = this.map.layers[0];
 
-	for(var i = 0; i < layer.height; i++){
-		grid.push(new Array(layer.width));
-		
+	for(var i = 0; i < layer.height; i++) {
+		this._grid.push(new Array(layer.width));
+
+		// By default, tile = -1.
 		for(var j = 0; j < layer.width; j++) {
-			grid[i][j] = 0;
+			this._grid[i][j] = -1;
 
 			var tile = layer.data[i][j];
 
-			if (tile.tag == "platform"){
-				grid[i][j] = 0;
+			if (tile.tag == 'platform'){
+				this._grid[i][j] = -3;
+			}
+			else if (this._grid[i][j] == -1){
+				var tileBelow = this.map.getTileBelow(0, j, i);
+				var tileBelowBelow = (tileBelow != null) ?
+					this.map.getTileBelow(0, tileBelow.x, tileBelow.y) :
+					null;
+				var tileAbove = this.map.getTileAbove(0, j, i);
+
+				function isPlatform(tile){
+					return ((tile != null) &&
+							(tile.tag =="platform"));
+				}
+
+				if (isPlatform(tileBelow)){
+					this._grid[i][j] = 0;
+				}
+				else{
+					if (isPlatform(tileBelowBelow)){
+						this._grid[i][j] = 0;
+					}
+				}
+			}
+
+			if (isPlatform(tileAbove)){
+				this._grid[i][j] = -2;
+			}			
+		}
+	}
+
+	return this._grid;
+}
+
+Level.prototype._createIthGrid = function(i){
+	if (typeof(i) != "number"){
+		return;
+	}
+	
+	if (i < 0){
+		return;
+	}
+
+	if (i == 0){
+		return this._create0thGrid();
+	}
+
+	var layer = this.map.layers[0];
+
+	for(var y = 0; y < layer.height; y++) {
+		for(var x = 0; x < layer.width; x++) {
+			var tile = layer.data[y][x];
+
+			if (this._grid[y][x] != -1){
+				
+				/*if (this._grid[y][x] == i){
+					for(var k = 1; k <= 2; k++){
+						if (x + k < layer.width){
+							if (this._grid[y][x + k] == -1){
+								this._grid[y][x + k] = i;
+							}
+							
+							if (this._grid[y - 1][x + k] == -1){
+								this._grid[y - 1][x + k] = i;
+							}
+						}
+					}
+				}*/
 
 				continue;
 			}
-
-			// If the tile is not a platform (you can walk ON a
-			// platform, not THROUGH it).
-			if (tile.tag != "platform"){
-				var tileBelow = this.map.getTileBelow(0, j, i);
-				var tileLeftBelow = (tileBelow != null) ?
-					this.map.getTileLeft(0, tileBelow.x, tileBelow.y) :
-					null;
-				var tileRightBelow = (tileBelow != null) ?
-					this.map.getTileRight(0, tileBelow.x, tileBelow.y) :
-					null;
-				
-				var tileAbove = this.map.getTileAbove(0, j, i);
-				var tileLeftAbove = (tileAbove != null) ?
-					this.map.getTileLeft(0, tileAbove.x, tileAbove.y) :
-					null;
-				var tileRightAbove = (tileAbove != null) ?
-					this.map.getTileRight(0, tileAbove.x, tileAbove.y) :
-					null;
-
-				var tileLeft = this.map.getTileLeft(0, j, i);
-				var tileRight = this.map.getTileRight(0, j, i);
+			else{
+				var tileBelow = this.map.getTileBelow(0, x, y);
 				var tileBelowBelow = (tileBelow != null) ?
 					this.map.getTileBelow(0, tileBelow.x, tileBelow.y) :
 					null;
 
-				// If the tile below is a platform, you can move
-				// through this tile.
-				if ((tileBelow != null) &&
-					(tileBelow.tag == "platform")){
-					grid[i][j] = 1;
-				}
-				else{
-					// You can also do it if the tile in the
-					// bottom-left is a platform (by jumping).
-					if ((tileLeftBelow != null) &&
-						(tileLeftBelow.tag == "platform")){
-						grid[i][j] = 1;
-					}
-					// The same goes for the right.
-					else if ((tileRightBelow != null) &&
-							 (tileRightBelow.tag == "platform")){
-						grid[i][j] = 1;
-					}
-
-					if ((tileBelowBelow != null) &&
-						(tileBelowBelow.tag == "platform")){
-						grid[i][j] = 1;
-					}
+				function isPlatform(tile){
+					return ((tile != null) &&
+							(tile.tag =="platform"));
 				}
 
-				// If the tile above is not a platform.
-				if ((tileAbove == null) ||
-					(tileAbove.tag != "platform")){
-					// You can fall.
-					if ((tileLeftAbove != null) &&
-						(tileLeftAbove.tag == "platform")){
-						grid[i][j] = 1;
-					}
-					else if ((tileRightAbove != null) &&
-							 (tileRightAbove.tag == "platform")){
-						grid[i][j] = 1;
-					}
-				}
-				// TODO: Check to see if there's enough space. Instead
-				// of just setting it to 0.
-				else{
-					grid[i][j] = 0;
- 				}
+				if ((tileBelowBelow != null) &&
+					(this._grid[y + 2][x] == (i - 1))){
+					this._grid[y][x] = i;
 
-				if ((tileLeft != null) &&
-					(tileLeft.tag == "platform")){
-					grid[i][j] = 1;
-				}
-				
-				if ((tileRight != null) &&
-					(tileRight.tag == "platform")){
-					grid[i][j] = 1;
+					if (this._grid[y + 1][x] == -1){
+						this._grid[y + 1][x] = i;
+					}
+
+					/*for(var k = 1; k <= 2; k++){
+						if (x - k >  0){
+							if (this._grid[y][x - k] == -1){
+								this._grid[y][x - k] = i;
+							}
+
+							if (this._grid[y + 1][x - k] == -1){
+								this._grid[y + 1][x - k] = i;
+							}
+						}
+					}*/
 				}
 			}
 		}
 	}
 
-	for(var i in BasicGame.easyStar){
-		BasicGame.easyStar[i].setGrid(grid);
-		BasicGame.easyStar[i].setAcceptableTiles(1);
-	}
+	return this._grid;
+}
 
-	this._grid = grid;
+
+Level.prototype.initPathFinders = function(){
+	var j = 0;
+	var acceptableTiles = [];
+
+	for(var i in BasicGame.easyStar){
+		acceptableTiles.push(j);
+		
+		this._createIthGrid(j);
+
+		BasicGame.easyStar[i].setGrid(this._grid);
+		BasicGame.easyStar[i].setAcceptableTiles(acceptableTiles);
+
+		// A 0 tile cost 0,
+		// A 1 tile cost 10,
+		// ...
+		// That way, mobs will try to stay on the ground,
+		// not jump around like rabbits...
+		for(var k = 0; k < acceptableTiles.length; k++) {
+			BasicGame.easyStar[i].setTileCost(acceptableTiles[k], 10 * k);
+		}
+
+		j++;
+	}
 }
 
 Level.prototype.update = function(){
@@ -256,12 +325,11 @@ Level.prototype.update = function(){
 		this.game.physics.arcade.collide(BasicGame.emitters[i], this.game.platforms);
 	}
 
+	this.game.physics.arcade.collide(this.allHeroes, this.allEnemies);
+
 	// Collisions (Mob)
 	this.game.physics.arcade.overlap(this.allHeroes, this.game.platforms);
 	this.game.physics.arcade.overlap(this.allEnemies, this.game.platforms);
-
-	this.game.physics.arcade.collide(this.allHeroes, this.allEnemies);
-
 	
 	this.game.physics.arcade.overlap(this.allHeroes, this.allCheckpoints);
 
@@ -375,7 +443,7 @@ Level.prototype.create = function(){
 	checkpoint.barton = {
 		x: 1000,
 		
-			y: 200
+		y: 200
 	};
 	
 	checkpoint.lucy = {
@@ -383,8 +451,6 @@ Level.prototype.create = function(){
 		
 		y: 800
 	};
-
-	
 
 	this.allCheckpoints.addChild(checkpoint);
 
@@ -500,12 +566,26 @@ Level.prototype.goToState = function(state){
 	}
 
 	this.allTweens.closing.background.onComplete.addOnce(function(){
+		if (this.saveMenu != null){
+			this.saveMenu.destroy();
+			this.saveMenu = null;
+		}
+
+		if (this.gameOverMenu != null){
+			this.gameOverMenu.destroy();
+			this.gameOverMenu = null;
+		}
+
+		for(var i in BasicGame.allPlayers){
+			BasicGame.allPlayers[i].menu.destroy();
+			BasicGame.allPlayers[i].menu = null;
+		}
+
 		this.game.state.start(state);
 	}, this);
 
 	for(var i in BasicGame.allPlayers){
-		BasicGame.allPlayers[i].menu.destroy();
-		BasicGame.allPlayers[i].menu = null;
+		BasicGame.allPlayers[i].menu.close();
 
 		BasicGame.allPlayers[i].controller.disable();
 	}

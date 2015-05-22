@@ -102,6 +102,26 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 		}
 	}, this);
 
+	this.healthBar = new MonoGauge(this.game,
+								   0, 0,
+								   this.width, 2,
+								   this.allStats.health, H_RED, H_WHITE,
+								   "", "");
+	this.healthBar.width /= this.scale.x;
+	this.healthBar.height /= this.scale.y;
+	this.healthBar.x /= this.scale.x;
+	this.healthBar.y /= this.scale.y;
+
+	this.healthBar.backgroundFill.alpha = 0;
+	this.healthBar.allowIncreaseAnimation = false;
+	this.healthBar.allowDecreaseAnimation = false;
+
+	this.allStats.health.onUpdate.add(function(){
+		this.healthBar.x = (this.width - this.healthBar.fill.width) / 2;
+		this.healthBar.x /= this.scale.x;
+	}, this);
+	this.addChild(this.healthBar);
+
 	this.SPEED = 250;
 	this.ACCELERATION = 200;
 	this.JUMP_POWER = 200;
@@ -169,6 +189,10 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 		color = GREEN;
 	}
 	else{
+		var finalDefense = this.allStats.defense.get() / 100;
+
+		finalDefense = (finalDefense > 1) ? 1 : finalDefense;
+
 		actualDamage *= (1 - this.allStats.defense.get() / 100);
 	}
 
@@ -192,6 +216,9 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	case Elements.THUNDER:
 		stroke = YELLOW;
 		break;
+	case Elements.POISON:
+		stroke = PURPLE;
+		break;k
 	case Elements.ALMIGHTY:
 		stroke = GREY;
 		break;
@@ -205,6 +232,7 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 					 actualDamage, color).text.stroke = stroke;
 
 	stat.subtract(actualDamage);
+
 	this._textDamageDir *= -1;
 
 	if (actualDamage > 0){
@@ -225,11 +253,20 @@ Mob.prototype.heal = function(brutHeal, healRange, criticalChance, stat){
 
 // You can't stun what's already stunned !
 Mob.prototype.stun = function(duration, chanceToStun){
+	if (!this.alive ||
+		this._dying){
+		return;
+	}
+
 	if (this.allTimers.stun != null){
 		return;
 	}
 
 	if (Math.random() < chanceToStun - this.allResistances[Disabilities.STUN]){
+		if (this.current.action instanceof Skill){
+			this.current.action.breakSkill();
+		}
+
 		var canMove = this.can.move;
 		var canAction = this.can.action;
 
@@ -245,10 +282,6 @@ Mob.prototype.stun = function(duration, chanceToStun){
 			this.allTimers.stun = null;
 		}, this);
 
-		if (this.current.action instanceof Skill){
-			this.current.action.breakSkill();
-		}
-
 		this.can.move = false;
 		this.can.action = false;
 
@@ -258,6 +291,11 @@ Mob.prototype.stun = function(duration, chanceToStun){
 
 // You can't slow what's already slowed !
 Mob.prototype.slow = function(duration, slowFactor, chanceToSlow){
+	if (!this.alive ||
+		this._dying){
+		return;
+	}
+
 	if (this.allTimers.slow != null){
 		return;
 	}
@@ -289,6 +327,11 @@ Mob.prototype.slow = function(duration, slowFactor, chanceToSlow){
 // You can't dot what's already dotted !
 Mob.prototype.dot = function(duration, tick, chanceToDot, brutDot, dotRange,
 							 criticalChance, element, stat){
+	if (!this.alive ||
+		this._dying){
+		return;
+	}
+
 	if (this.allTimers.dot != null){
 		return;
 	}
@@ -312,6 +355,11 @@ Mob.prototype.dot = function(duration, tick, chanceToDot, brutDot, dotRange,
 // You can't regen what's already regened !
 Mob.prototype.regen = function(duration, tick, chanceToRegen, brutRegen, regenRange,
 							   criticalChance, stat){
+	if (!this.alive ||
+		this._dying){
+		return;
+	}
+
 	if (this.allTimers.regen != null){
 		return;
 	}
@@ -337,7 +385,8 @@ Mob.prototype.cast = function(skill, control, factor){
 		return;
 	}
 
-	if (this._dying){
+	if (!this.alive ||
+		this._dying){
 		return;
 	}
 
@@ -457,8 +506,7 @@ Mob.prototype.destroy = function(){
 /* Common Mobs */
 /******************************************************************************/
 var createMob = function(game, x, y, spriteSheet, name, level, tag, initFunction,
-						 updateFunction, killFunction, pathFinder){
-	if (typeof(pathFinder) === "undefined") pathFinder = "Mob";
+						 updateFunction, killFunction){
 	var newMob;
 	var mobPool = (tag == "hero" ) ? BasicGame.level.allHeroes :
 		BasicGame.level.allEnemies;
@@ -490,20 +538,10 @@ var createMob = function(game, x, y, spriteSheet, name, level, tag, initFunction
 		return null;
 	}
 
-	if (typeof(BasicGame.easyStar[pathFinder]) != "undefined"){
-		newMob.pathFinder = BasicGame.easyStar[pathFinder];
-	}
-	else{
-		BasicGame.easyStar[pathFinder] = new EasyStar.js();
-		newMob.pathFinder = BasicGame.easyStar[pathFinder];
-
-		//console.log(newMob.pathFinder);
-
-		newMob.pathFinder.enableDiagonals();
-		newMob.pathFinder.setIterationsPerCalculation(1000);
-	}
-
 	newMob.init();
+	newMob.allStats.health.set(1, 1);
+		
+	newMob.pathFinder = BasicGame.level.createPathFinder(newMob.MAXJUMP);
 
 	return newMob;
 }
@@ -558,7 +596,7 @@ var createArcher = function(game, x, y, spriteSheet, level){
 	}
 
 	return createMob(game, x, y, spriteSheet, "Archer", level, "enemy",
-					 initArcher, null, null, "archer");
+					 initArcher, null, null);
 }
 
 /******************************************************************************/
