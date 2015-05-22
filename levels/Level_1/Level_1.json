@@ -68,7 +68,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "image":"..\/Tiles 32x32\/Tiles_32x32.png",
+         "image":"..\/..\/assets\/Tiles 32x32\/Tiles_32x32.png",
          "imageheight":256,
          "imagewidth":256,
          "margin":0,
@@ -88,7 +88,7 @@
         }, 
         {
          "firstgid":65,
-         "image":"..\/Characters\/Ennemies\/archer_1.png",
+         "image":"..\/..\/assets\/Characters\/Ennemies\/archer_1.png",
          "imageheight":1344,
          "imagewidth":832,
          "margin":0,
@@ -103,7 +103,7 @@
         }, 
         {
          "firstgid":338,
-         "image":"..\/Characters\/Ennemies\/mob_1.png",
+         "image":"..\/..\/assets\/Characters\/Ennemies\/mob_1.png",
          "imageheight":1344,
          "imagewidth":832,
          "margin":0,
