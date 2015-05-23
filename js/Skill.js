@@ -2851,7 +2851,7 @@ var PoweredArrowSkill = function(user, level, targetTags){
 
 			this.anchor.set(0, 0.5);
 
-			this.scale.setTo(1 + factor);
+			this.scale.setTo(2 + factor);
 			
 			this.x = user.x;
 			this.y = user.y + user.width / 2;
@@ -3128,6 +3128,85 @@ var ShieldSkill = function(user, level){
 
 ShieldSkill.prototype = Object.create(Skill.prototype);
 ShieldSkill.prototype.constructor = ShieldSkill;
+
+var FurySkill = function(user, level){
+	function costFunction(applyCost){
+		return true
+	}
+
+	Skill.call(this, user, level, costFunction, 20000,
+			   Elements.ALMIGHTY);
+
+	this.launchFunction = function(factor){
+		var attackFactor = 2;
+		var duration = 3000;
+
+		switch(this.level){
+		case 1:
+			attackFactor *= 1.5;
+			break;
+		
+		case 2:
+			attackFactor *= 2;
+			break;
+			
+		case 3:
+			attackFactor *= 2.5;
+			break;
+		
+		case 4:
+			attackFactor *= 3;
+			break;
+
+		case 5:
+			attackFactor *= 3.5;
+			break;
+
+		default:
+			break;
+		}
+
+		switch(this.level){
+		case 5:
+			duration *= 5;
+			break;
+			
+		default:
+			duration *= 3;
+		}
+
+		this.user.allStats.attack.factor *= attackFactor;
+		
+		for(var j in this.user.allSkills[this.user.currentMode]){
+			this.user.allSkills[this.user.currentMode][j].chargeFactor *= attackFactor;
+		}
+
+		this.furyTimer = this.game.time.create(true);
+		this.furyTimer.add(duration, function(){
+			this.user.allStats.attack.factor /= attackFactor;
+			
+			for(var j in this.user.allSkills[this.user.currentMode]){
+				this.user.allSkills[this.user.currentMode][j].chargeFactor *= attackFactor;
+			}
+		}, this);
+
+		this.furyTimer.onComplete.addOnce(this.onBreak.removeAll, this);
+
+		this.furyTimer.start();
+
+		this.onBreak.addOnce(function(){
+			this.furyTimer.stop(true);
+		}, this);
+
+		this.user.can.action = true;
+		this.user.current.action = null;
+	}
+
+	this.icon = "fury_icon";
+}
+
+FurySkill.prototype = Object.create(Skill.prototype);
+FurySkill.prototype.constructor = FurySkill;
 /******************************************************************************/
 /* Common Skills */
 /*****************/

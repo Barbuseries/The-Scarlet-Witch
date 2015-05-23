@@ -330,7 +330,8 @@ var Barton = function(game, x, y, level){
 
 		secondSkill: new ShieldSkill(this, 1),
 		thirdSkill : new HeroicStrikeSkill(this, 1, ["enemy"]),
-		fourthSkill : new DashSkill(this, 1 , ["enemy"])
+		fourthSkill : new DashSkill(this, 1 , ["enemy"]),
+		fifthSkill : new FurySkill(this,1,["enemy"])
 	};
 
 	this.quiverRegen = this.game.time.create(false);
