@@ -1841,6 +1841,128 @@ var HeroicStrikeSkill = function(user, level, targetTags){
 HeroicStrikeSkill.prototype = Object.create(Skill.prototype);
 HeroicStrikeSkill.prototype.constructor = HeroicStrikeSkill;
 
+var DashSkill = function(user, level, targetTags){
+	function costFunction(applyCost){
+		return true;
+	}
+
+	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
+			   Elements.PHYSIC, targetTags);
+
+	var speed = (1 + this.user.allStats.agility.get()) / 300;
+	
+	this.onCharge.add(function(){
+		if (this.user.orientationH >= 0){
+			this.user.frame = 195;
+		}
+		else{
+			this.user.frame = 169;
+		}
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
+
+		this.user.can.move = false;
+		
+		this.user.orientRight = function(){
+			this.orientationH = 1;
+			
+			this.frame = 195;
+		}
+		
+		this.user.orientLeft = function(){
+			this.orientationH = -1;
+			
+			this.frame = 169;
+		}
+
+		this.user.animations.currentAnim.stop();
+
+		if (this.user.orientationH >= 0){
+			this.user.orientRight();
+		}
+		else{
+			this.user.orientLeft();
+		}
+	}, this);
+
+	this.launchFunction = function(factor){
+		var self = this;
+		var user = this.user;
+
+		var velocity = 500;
+
+		this.dashTimer = this.game.time.create(true);
+
+		if(user.orientationH == -1){
+			velocity *= -1;
+		}
+
+		this.dashTimer.repeat(1, 20, function(){
+			user.body.velocity.x = velocity;
+		});
+
+		this.dashTimer.start();
+		user.body.velocity.x = 0;
+
+		this.onBreak.removeAll();
+		
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+		}, this);
+
+		user.orientRight = Hero.prototype.orientRight;
+		user.orientLeft = Hero.prototype.orientLeft;
+
+		user.can.orient = false;
+
+		var animation = null;
+
+		if (user.orientationH >= 0){
+			animation = user.animations.play("swordRight"*2, 12 * (speed + 1));
+		}
+		else{
+			animation = user.animations.play("swordLeft"*2, 12 * (speed + 1));
+		}
+		
+		animation.onComplete.add(function(){
+			this.user.can.move = true;
+			this.user.can.action = true;
+			this.user.current.action = null;
+			this.user.can.orient = true;
+
+			this.onBreak.removeAll();
+		}, this);
+	}
+
+	this.setChargeTime(this.user.allStats.attackSpeed.get());
+	
+	this.updateChargeTime = function(){
+		Skill.prototype.updateChargeTime.call(this, this.user.allStats.attackSpeed.get());
+	}
+
+	this.updateCooldown = function(){
+		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
+	}
+	
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
+
+	this.onDestroy.addOnce(function(){
+		if (this.user.allStats.attackSpeed.onUpdate != null){
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateChargeTime);
+		}
+	}, this);
+
+	this.icon = 'dash_icon';
+};
+
+DashSkill.prototype = Object.create(Skill.prototype);
+DashSkill.prototype.constructor = DashSkill;
+
 var ArrowSkill = function(user, level, targetTags){
 	function costFunction(applyCost){
 		if (this.user.allStats.special.canSubtract(1)){
