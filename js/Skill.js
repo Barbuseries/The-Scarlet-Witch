@@ -1921,10 +1921,10 @@ var DashSkill = function(user, level, targetTags){
 		var animation = null;
 
 		if (user.orientationH >= 0){
-			animation = user.animations.play("swordRight"*2, 12 * (speed + 1));
+			animation = user.animations.play("swordRight", 12 * (speed + 1));
 		}
 		else{
-			animation = user.animations.play("swordLeft"*2, 12 * (speed + 1));
+			animation = user.animations.play("swordLeft", 12 * (speed + 1));
 		}
 		
 		animation.onComplete.add(function(){
