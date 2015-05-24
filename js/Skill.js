@@ -947,12 +947,7 @@ var PoisonSkill = function(user, level, targetTags){
 
 			this.orientationH = user.orientationH;
 			
-			if (user.orientationH >= 0){
-				this.animations.add("animation", [32, 33, 34, 35, 36, 37, 38, 39], 15);
-			}
-			else{
-				this.animations.add("animation", [0, 1, 2, 3, 4, 5, 6, 7], 15);
-			}
+			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
 			
 			this.animations.play("animation", null, true);
 			
@@ -1040,7 +1035,7 @@ var PoisonSkill = function(user, level, targetTags){
 								[0.9, 1.1], 0.1, this.element);
 		}
 
-		createProjectile(this.game, 0, 0, "iceball_0",
+		createProjectile(this.game, 0, 0, "poison",
 						 initProjectile, updateProjectile, killProjectile,
 						 collideFunction, collideProcess, damageFunction);
 
@@ -3530,6 +3525,8 @@ var ManaSkill = function (user, level, targetTags) {
 
 ManaSkill.prototype = Object.create(Skill.prototype);
 ManaSkill.prototype.constructor = ManaSkill;
+
+
 
 /******************************************************************************/
 /* Common Skills */
