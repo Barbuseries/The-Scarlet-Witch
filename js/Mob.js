@@ -167,7 +167,7 @@ Mob.prototype.jump = function(factor){
 }
 
 Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, element,
-								stat){
+								stat, stroke){
 	if (typeof(stat) === "undefined"){
 		stat = this.allStats.health;
 	}
@@ -175,7 +175,6 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	var actualDamage = (Math.random() * (damageRange[1] - damageRange[0]) +
 						damageRange[0]) * brutDamages;
 	var color = (this.tag == "hero") ? RED : WHITE;
-	var stroke = BLACK;
 
 	if (Math.random() * 100 < criticalChance){
 		actualDamage *= 1.5;
@@ -200,30 +199,33 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 		color = GREY;
 	}
 
-	switch(element){
-	case Elements.FIRE:
-		stroke = RED;
-		break;
-	case Elements.ICE:
-		stroke = BLUE;
-		break;
-	case Elements.WIND:
-		stroke = GREEN;
-		break;
-	case Elements.EARTH:
-		stroke = ORANGE;
-		break;
-	case Elements.THUNDER:
-		stroke = YELLOW;
-		break;
-	case Elements.POISON:
-		stroke = PURPLE;
-		break;k
-	case Elements.ALMIGHTY:
-		stroke = GREY;
-		break;
-	default:
-		break;
+	if (typeof(stroke) === "undefined"){
+		switch(element){
+		case Elements.FIRE:
+			stroke = RED;
+			break;
+		case Elements.ICE:
+			stroke = BLUE;
+			break;
+		case Elements.WIND:
+			stroke = GREEN;
+			break;
+		case Elements.EARTH:
+			stroke = ORANGE;
+			break;
+		case Elements.THUNDER:
+			stroke = YELLOW;
+			break;
+		case Elements.POISON:
+			stroke = PURPLE;
+			break;k
+		case Elements.ALMIGHTY:
+			stroke = GREY;
+			break;
+		default:
+			stroke = BLACK;
+			break;
+		}
 	}
 
 	actualDamage = actualDamage.toFixed(0);
@@ -247,8 +249,8 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	return actualDamage;
 }
 
-Mob.prototype.heal = function(brutHeal, healRange, criticalChance, stat){
-	this.suffer(-brutHeal, healRange, criticalChance, Elements.ALMIGHTY, stat);
+Mob.prototype.heal = function(brutHeal, healRange, criticalChance, stat, stroke){
+	this.suffer(-brutHeal, healRange, criticalChance, Elements.ALMIGHTY, stat, stroke);
 }
 
 // You can't stun what's already stunned !
@@ -326,7 +328,7 @@ Mob.prototype.slow = function(duration, slowFactor, chanceToSlow){
 
 // You can't dot what's already dotted !
 Mob.prototype.dot = function(duration, tick, chanceToDot, brutDot, dotRange,
-							 criticalChance, element, stat){
+							 criticalChance, element, stat, stroke){
 	if (!this.alive ||
 		this._dying){
 		return;
@@ -340,7 +342,7 @@ Mob.prototype.dot = function(duration, tick, chanceToDot, brutDot, dotRange,
 		this.allTimers.dot = this.game.time.create(true);
 
 		this.allTimers.dot.repeat(tick, duration / tick, function(){
-			this.suffer(brutDot, dotRange, criticalChance, element, stat);
+			this.suffer(brutDot, dotRange, criticalChance, element, stat, stroke);
 		}, this);
 
 		this.allTimers.dot.onComplete.add(function(){
@@ -354,7 +356,7 @@ Mob.prototype.dot = function(duration, tick, chanceToDot, brutDot, dotRange,
 
 // You can't regen what's already regened !
 Mob.prototype.regen = function(duration, tick, chanceToRegen, brutRegen, regenRange,
-							   criticalChance, stat){
+							   criticalChance, stat, stroke){
 	if (!this.alive ||
 		this._dying){
 		return;
@@ -368,7 +370,7 @@ Mob.prototype.regen = function(duration, tick, chanceToRegen, brutRegen, regenRa
 		this.allTimers.regen = this.game.time.create(true);
 
 		this.allTimers.regen.repeat(tick, duration / tick, function(){
-			this.heal(brutRegen, regenRange, criticalChance, stat);
+			this.heal(brutRegen, regenRange, criticalChance, stat, stroke);
 		}, this);
 
 		this.allTimers.regen.onComplete.add(function(){
@@ -554,7 +556,7 @@ var createArcher = function(game, x, y, spriteSheet, level){
 		this.allStats.health.setBasic(40);
 		this.allStats.health.set(1, 1);
 		this.allStats.health.setGrowth(function(){
-			return 0.5 * (this._basicValue + 10 * this.entity.allStats.level.get() +
+			return 100 * 0.5 * (this._basicValue + 10 * this.entity.allStats.level.get() +
 						  3 * this.entity.allStats.endurance.get());
 		}, -1, [], true);
 

@@ -226,11 +226,11 @@ var Lucy = function(game, x, y, level){
 	};
 
 	this.allSkills[1] = {
-		firstSkill : new SelfHealSkill(this, 1, ["enemy"]),
+		firstSkill : new SelfHealSkill(this, 1),
 
-		secondSkill : new HealSkill(this, 1, ["enemy"]),
+		secondSkill : new HealSkill(this, 1),
 
-		thirdSkill : new ManaSkill(this, 1, ["enemy"]),
+		thirdSkill : new ManaHealSkill(this, 1),
 
 		fourthSkill : new StunSkill(this, 1, ["enemy"])
 	}
@@ -339,9 +339,12 @@ var Barton = function(game, x, y, level){
 		firstSkill: new SlashSkill(this, 1, ["enemy"]),
 
 		secondSkill: new ShieldSkill(this, 1),
+
 		thirdSkill : new HeroicStrikeSkill(this, 1, ["enemy"]),
-		fourthSkill : new DashSkill(this, 1 , ["enemy"]),
-		fifthSkill : new FurySkill(this,1,["enemy"])
+
+		fourthSkill : new DashSkill(this, 1),
+
+		fifthSkill : new FurySkill(this, 1)
 	};
 
 	this.quiverRegen = this.game.time.create(false);
@@ -368,6 +371,8 @@ var Barton = function(game, x, y, level){
 	
 	this.menu = new HeroMenu(this);
 
+	this.furious = false;
+
 	this.quiverRegen.start();
 }
 
@@ -379,6 +384,13 @@ Barton.prototype.update = function(){
 
 	if (this.alive){
 		this.allStats.fury.subtract(0.02 / 60, 1);
+
+		if (this.furious){
+			this.tint = H_RED;
+		}
+		else{
+			this.tint = H_WHITE;
+		}
 	}
 }
 

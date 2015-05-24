@@ -76,6 +76,7 @@ var Skill = function(user, level, costFunction, cooldown, element,
 	                                               // this.onRelease can't.
 
 	this.onCharge = new Phaser.Signal();
+	this.whileCharging = new Phaser.Signal();
 	this.onChargeComplete = new Phaser.Signal();
 	this.onRelease = new Phaser.Signal();
 
@@ -179,6 +180,9 @@ Skill.prototype.charge = function(){
 			this.user.can.action = false;
 			this.user.current.action = this;
 		}
+		else{
+			this.whileCharging.dispatch(this);
+		}
 
 		if ((this.chargeTime._link != STAT_NO_MAXSTAT) &&
 			 this.chargeTime.get(1) == 1){
@@ -201,6 +205,7 @@ Skill.prototype.charge = function(){
 	}
 	else{
 		this.chargeTime.set(0);
+		//this.breakSkill();
 
 		
 		this.chargeCompleted = false;
@@ -382,6 +387,8 @@ Skill.prototype.destroy = function(){
 	this.onUncheckedRelease = null;
 	this.onCharge.dispose();
 	this.onCharge = null;
+	this.whileCharging.dispose();
+	this.whileCharging = null;
 	this.onChargeComplete.dispose();
 	this.onChargeComplete = null;
 	this.onRelease.dispose();
@@ -938,7 +945,7 @@ var PoisonSkill = function(user, level, targetTags){
 
 			this.alpha = 1;
 			
-			this.tint = H_PURPLE;
+			//this.tint = H_PURPLE;
 			this.frame = 0;
 			
 			this.lifespan = 1000 * (15000 / 3 / self.getCooldown()) *
@@ -947,7 +954,12 @@ var PoisonSkill = function(user, level, targetTags){
 
 			this.orientationH = user.orientationH;
 			
-			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+			if (user.orientationH >= 0){
+				this.animations.add("animation", [32, 33, 34, 35, 36, 37, 38, 39], 15);
+			}
+			else{
+				this.animations.add("animation", [0, 1, 2, 3, 4, 5, 6, 7], 15);
+			}
 			
 			this.animations.play("animation", null, true);
 			
@@ -1588,7 +1600,9 @@ var SlashSkill = function(user, level, targetTags){
 				obstacle.body.velocity.x -= 100 * (1 + 2 * factor);
 			}
 
-			user.allStats.special.add(10 * (1 + factor));
+			if (!user.furious){
+				user.allStats.special.add(10 * (1 + factor));
+			}
 
 			this.damageFunction(obstacle);
 		}
@@ -1656,12 +1670,20 @@ SlashSkill.prototype.constructor = SlashSkill;
 
 var HeroicStrikeSkill = function(user, level, targetTags){
 	function costFunction(applyCost){
-		if (this.user.allStats.special.canSubtract(10)){
+		if (this.user.allStats.special.canSubtract(10) ||
+			this.user.furious){
 
-			this.user.allStats.special.subtract(10);
+			if (applyCost){
+				this.user.allStats.special.subtract(10);
+			}
+
 			return true;
 		}
 		else{
+			if (this.user.current.action == this){
+				this.breakSkill();
+			}
+
 			return false;
 		}
 	}
@@ -1777,8 +1799,6 @@ var HeroicStrikeSkill = function(user, level, targetTags){
 				obstacle.body.velocity.x -= 100 * (1 + 2 * factor);
 			}
 
-			user.allStats.special.add(10 * (1 + factor));
-
 			this.damageFunction(obstacle);
 		}
 
@@ -1843,13 +1863,13 @@ var HeroicStrikeSkill = function(user, level, targetTags){
 HeroicStrikeSkill.prototype = Object.create(Skill.prototype);
 HeroicStrikeSkill.prototype.constructor = HeroicStrikeSkill;
 
-var DashSkill = function(user, level, targetTags){
+var DashSkill = function(user, level){
 	function costFunction(applyCost){
 		return true;
 	}
 
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
-			   Elements.PHYSIC, targetTags);
+			   Elements.PHYSIC);
 
 	var speed = (1 + this.user.allStats.agility.get()) / 300;
 	
@@ -1887,66 +1907,84 @@ var DashSkill = function(user, level, targetTags){
 		else{
 			this.user.orientLeft();
 		}
+		
+		this.onBreak.addOnce(function(){
+			this.user.body.maxVelocity.y = this.user.SPEED;
+		}, this);
+
+		this.user.body.maxVelocity.y = 0.1 * this.user.SPEED;
 	}, this);
 
 	this.launchFunction = function(factor){
-		var self = this;
-		var user = this.user;
-
 		var velocity = 500;
+
+		this.onBreak.removeAll();
 
 		this.dashTimer = this.game.time.create(true);
 
-		if(user.orientationH == -1){
+		if(this.user.orientationH == -1){
 			velocity *= -1;
 		}
 
-		this.dashTimer.repeat(1, 20, function(){
-			user.body.velocity.x = velocity;
-		});
+		this.user.body.maxVelocity.x = velocity;
 
-		this.dashTimer.start();
-		user.body.velocity.x = 0;
-
-		this.onBreak.removeAll();
-		
-		this.onBreak.addOnce(function(){
-			this.user.can.move = true;
-			this.user.can.orient = true;
+		this.dashTimer.repeat(1, 10, function(){
+			this.user.body.velocity.x = velocity;
 		}, this);
 
-		user.orientRight = Hero.prototype.orientRight;
-		user.orientLeft = Hero.prototype.orientLeft;
-
-		user.can.orient = false;
-
-		var animation = null;
-
-		if (user.orientationH >= 0){
-			animation = user.animations.play("swordRight", 12 * (speed + 1));
-		}
-		else{
-			animation = user.animations.play("swordLeft", 12 * (speed + 1));
-		}
+		this.user.body.velocity.y = 0;
 		
-		animation.onComplete.add(function(){
+		this.dashTimer.onComplete.addOnce(function(){
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
 			this.user.can.orient = true;
 
 			this.onBreak.removeAll();
+
+			this.user.body.allowGravity = true;
+			this.user.body.maxVelocity.x = this.user.SPEED;
+			this.user.body.maxVelocity.y = this.user.SPEED;
 		}, this);
+
+		this.dashTimer.start();
+
+		this.onBreak.removeAll();
+		
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+
+			this.user.body.allowGravity = true;
+			this.user.body.maxVelocity.x = this.user.SPEED;
+			this.user.body.maxVelocity.y = this.user.SPEED;
+		}, this);
+
+		this.user.orientRight = Hero.prototype.orientRight;
+		this.user.orientLeft = Hero.prototype.orientLeft;
+
+		this.user.can.orient = false;
+
+		var animation = null;
+
+		if (user.orientationH >= 0){
+			animation = this.user.animations.play("swordRight");
+		}
+		else{
+			animation = this.user.animations.play("swordLeft");
+		}
 	}
 
-	this.setChargeTime(this.user.allStats.attackSpeed.get());
+	this.setChargeTime(this.user.allStats.attackSpeed.get() / 2);
 	
 	this.updateChargeTime = function(){
-		Skill.prototype.updateChargeTime.call(this, this.user.allStats.attackSpeed.get());
+		Skill.prototype.updateChargeTime.call(this,
+											  this.user.allStats.attackSpeed.get());
 	}
 
 	this.updateCooldown = function(){
-		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
+		Skill.prototype.updateCooldown.call(this,
+											this.user.allStats.attackSpeed.get());
 	}
 	
 	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
@@ -2506,17 +2544,19 @@ var SpeedUpArrowSkill = function(user, level){
 		}
 
 		this.user.allStats.attackSpeed.factor /= speedFactor;
+
+		var currentUserMode = this.user.currentMode;
 		
-		for(var j in this.user.allSkills[this.user.currentMode]){
-			this.user.allSkills[this.user.currentMode][j].chargeFactor *= speedFactor;
+		for(var j in this.user.allSkills[currentUserMode]){
+			this.user.allSkills[currentUserMode][j].chargeFactor *= speedFactor;
 		}
 
 		this.speedUpTimer = this.game.time.create(true);
 		this.speedUpTimer.add(duration, function(){
 			this.user.allStats.attackSpeed.factor *= speedFactor;
 			
-			for(var j in this.user.allSkills[this.user.currentMode]){
-				this.user.allSkills[this.user.currentMode][j].chargeFactor /= speedFactor;
+			for(var j in this.user.allSkills[currentUserMode]){
+				this.user.allSkills[currentUserMode][j].chargeFactor /= speedFactor;
 			}
 		}, this);
 
@@ -2570,6 +2610,7 @@ var TrapSkill = function(user, level, targetTags){
 
 		function initProjectile(){
 			this.anchor.set(0.5, 1);
+
 
 			this.tint = H_ORANGE;
 
@@ -3025,8 +3066,8 @@ var ShieldSkill = function(user, level){
 			return true;
 		}
 
-		if (this.user.allStats.special.canSubtract(5)){
-
+		if (this.user.allStats.special.canSubtract(5) ||
+			this.user.furious){
 			return true;
 		}
 		else{
@@ -3133,7 +3174,16 @@ ShieldSkill.prototype.constructor = ShieldSkill;
 
 var FurySkill = function(user, level){
 	function costFunction(applyCost){
-		return true
+		if (this.user.allStats.special.canSubtract(50)){
+			if (applyCost){
+				this.user.allStats.special.set(0);
+			}
+
+			return true
+		}
+		else{
+			return false;
+		}
 	}
 
 	Skill.call(this, user, level, costFunction, 20000,
@@ -3142,8 +3192,6 @@ var FurySkill = function(user, level){
 	this.launchFunction = function(factor){
 		var attackFactor = 2;
 		var duration = 3000;
-
-		console.log(user.allStats.attack);
 
 		switch(this.level){
 		case 1:
@@ -3177,31 +3225,37 @@ var FurySkill = function(user, level){
 			
 		default:
 			duration *= 3;
+			break;
 		}
 
 		this.user.allStats.attack.factor *= attackFactor;
 
+		this.user.furious = true;
+
 		this.furyTimer = this.game.time.create(true);
 
-		this.furyTimer.repeat(20,duration/15,function(){
-			if(!user.allStats.special.canSubtract(51))
-				user.allStats.special.subtract(-50);
-
-			
-		});
-
 		this.furyTimer.add(duration, function(){
+			this.user.furious = false;
+			
 			this.user.allStats.attack.factor /= attackFactor;
 		}, this);
 
-		this.furyTimer.onComplete.addOnce(this.onBreak.removeAll, this);
+		this.furyTimer.onComplete.addOnce(function(){
+			this.user.allStats.attack.factor /= attackFactor;
+		}, this);
 
 		this.furyTimer.start();
 
-		
-
 		this.onBreak.addOnce(function(){
-			this.furyTimer.stop(true);
+			this.furyTimer.stop();
+			this.furyTimer.destroy();
+			this.furyTimer = null;
+			
+			if (this.user.furious){
+				this.user.furious = false;
+
+				this.user.allStats.attack.factor /= attackFactor;
+			}
 		}, this);
 
 		this.user.can.action = true;
@@ -3214,10 +3268,8 @@ var FurySkill = function(user, level){
 FurySkill.prototype = Object.create(Skill.prototype);
 FurySkill.prototype.constructor = FurySkill;
 
-var SelfHealSkill = function (user, level, targetTags) {
+var SelfHealSkill = function (user, level) {
     var cooldown = 10000;
-    var heal = 50;
-    var healRange = [0.8,1.3];
 
     function costFunction(applyCost) {
         var cost = 0.5 * this.user.allStats.special.getMax();
@@ -3234,14 +3286,45 @@ var SelfHealSkill = function (user, level, targetTags) {
 		}
     }
 
-    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
-			   targetTags);
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY);
+	
+	this.onCharge.add(function(){
+		this.user.animations.play("spellChargeBoth");
+
+		this.user.can.move = false;
+		this.user.can.orient = false;
+		this.user.can.jump = false;
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+			this.user.can.jump = true;
+		}, this);
+	}, this);
 
     this.launchFunction = function(factor){
-		var user = this.user;
-		var self = this;
-		user.suffer(-heal, healRange, 0.2, this.element);
-		function initProjectile(){
+		if (!this.user.animations.currentAnim.isFinished){
+			this.user.animations.currentAnim.onComplete.addOnce(
+				function(){
+					this.launchFunction.call(this, factor);
+				}, this);
+			return;
+		}
+
+		var brutHeal = (1 + factor) * this.user.allStats.special.getMax() / 5;
+		var healRange = [0.9, 1.1];
+		var criticalChance = 0.125;
+
+		this.user.heal(brutHeal, healRange, criticalChance);
+
+		this.user.animations.play("spellReleaseBoth")
+			.onComplete.addOnce(function(){
+				this.onBreak.dispatch(this);
+				
+				this.user.can.action = true;
+				this.user.current.action = null;
+			}, this);
+		/*function initProjectile(){
 			this.x = user.x + user.width * 0.5;
 			this.y = user.y + user.height * 0.65;
 
@@ -3278,9 +3361,12 @@ var SelfHealSkill = function (user, level, targetTags) {
 		}
 		
 		createProjectile(this.game, 0, 0, "poison",
-						 initProjectile, updateProjectile, killProjectile);
+						 initProjectile, updateProjectile, killProjectile); */
 		
 	}
+
+	this.setChargeTime(2000);
+
     this.icon = "selfHeal_icon";
 }
 
@@ -3288,10 +3374,8 @@ SelfHealSkill.prototype = Object.create(Skill.prototype);
 SelfHealSkill.prototype.constructor = SelfHealSkill;
 
 
-var HealSkill = function (user, level, targetTags) {
+var HealSkill = function (user, level) {
     var cooldown = 10000;
-    var heal = 50;
-    var healRange = [0.8,1.3];
 
     function costFunction(applyCost) {
         var cost = 0.5 * this.user.allStats.special.getMax();
@@ -3309,10 +3393,52 @@ var HealSkill = function (user, level, targetTags) {
     }
 
     Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
-			   targetTags);
+			   user.tag);
+
+    	this.onCharge.add(function(){
+		this.user.animations.play("spellChargeBoth");
+
+		this.user.can.move = false;
+		this.user.can.orient = false;
+		this.user.can.jump = false;
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+			this.user.can.jump = true;
+		}, this);
+	}, this);
 
     this.launchFunction = function(factor){
-		var user = this.user;
+		if (!this.user.animations.currentAnim.isFinished){
+			this.user.animations.currentAnim.onComplete.addOnce(
+				function(){
+					this.launchFunction.call(this, factor);
+				}, this);
+			return;
+		}
+
+		var brutHeal = (1 + factor) * this.user.allStats.special.getMax() / 5;
+		var healRange = [0.9, 1.1];
+		var criticalChance = 0.125;
+
+		var targetGroup = (this.user.tag == "hero") ? BasicGame.level.allHeroes :
+			BasicGame.level.allEnemies;
+
+		targetGroup.forEachAlive(function(item){
+			if (item._dying == false){
+				item.heal(brutHeal, healRange, criticalChance);
+			}
+		});
+
+		this.user.animations.play("spellReleaseBoth")
+			.onComplete.addOnce(function(){
+				this.onBreak.dispatch(this);
+				
+				this.user.can.action = true;
+				this.user.current.action = null;
+			}, this);
+		/*var user = this.user;
 		var self = this;
 		//Barton.suffer(-heal, healRange, 0.2, this.element);
 		function initProjectile(){
@@ -3352,33 +3478,106 @@ var HealSkill = function (user, level, targetTags) {
 		}
 		
 		createProjectile(this.game, 0, 0, "poison",
-						 initProjectile, updateProjectile, killProjectile);
+						 initProjectile, updateProjectile, killProjectile);*/
 		
 	}
+
+	this.setChargeTime(3000);
+
     this.icon = "heal_icon";
 }
 
 HealSkill.prototype = Object.create(Skill.prototype);
 HealSkill.prototype.constructor = HealSkill;
 
-var ManaSkill = function (user, level, targetTags) {
+var ManaHealSkill = function (user, level) {
     var cooldown = 1000;
     
 
     function costFunction(applyCost) {
-        return true
+		return (this.user.current.action == this ||
+				this.user.allStats.special.get(1) < 1);
     }
 
-    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
-			   targetTags);
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY);
+
+	this.onCharge.add(function(){
+		this.timerHeal = this.game.time.create();
+
+		this.timerHeal.loop(500, function(){
+			var brutHeal = 0.1 * this.user.allStats.special.getMax();
+			var healRange = [1, 1];
+			var criticalChance = 0;
+			var stat = this.user.allStats.special;
+
+			switch(this.level){
+			case 1:
+				break;
+
+			case 2:
+				break;
+
+			case 3:
+				break;
+
+			case 4:
+				break;
+
+			case 5:
+				break;
+
+			default:
+				break;
+			}
+
+			this.user.heal(brutHeal, healRange, criticalChance, stat, BLUE);
+		}, this);
+
+		this.user.can.orient = false;
+		this.user.can.move = false;
+		this.user.can.jump = false;
+
+		this.user.animations.play("spellChargeBoth", 20)
+			.onComplete.addOnce(function(){
+				this.timerHeal.start();
+			}, this);
+
+		this.onBreak.addOnce(function(){
+			this.timerHeal.stop();
+			this.timerHeal.destroy();
+			this.timerHeal = null;
+			
+			this.user.can.orient = true;
+			this.user.can.move = true;
+			this.user.can.jump = true;
+			this.user.can.action = true;
+			this.user.current.action = null;
+		}, this);
+	}, this);
 
     this.launchFunction = function(factor){
-		var user = this.user;
+		if (!this.user.animations.currentAnim.isFinished){
+			this.user.animations.currentAnim.onComplete.addOnce(
+				function(){
+					this.launchFunction.call(this, factor);
+				}, this);
+			return;
+		}
+
+		this.timerHeal.stop();
+
+		this.user.animations.play("spellReleaseBoth", 20)
+			.onComplete.addOnce(function(){
+				this.onBreak.dispatch(this);
+			}, this);
+		/*var user = this.user;
 		var self = this;
 
 		var Mana = 0.3 * this.user.allStats.special.getMax();
 
-		this.user.allStats.special.subtract(-Mana);
+		if (this.user.allStats.special.canSubtract(Mana)) {
+				this.user.allStats.special.subtract(-Mana);
+			}
 		function initProjectile(){
 			this.x = user.x + user.width * 0.5;
 			this.y = user.y + user.height * 0.65;
@@ -3517,14 +3716,18 @@ var ManaSkill = function (user, level, targetTags) {
 		createProjectile(this.game, 0, 0, "poison",
 						 initProjectile2, updateProjectile2, killProjectile);
 		createProjectile(this.game, 0, 0, "poison",
-						 initProjectile3, updateProjectile3, killProjectile);
+						 initProjectile3, updateProjectile3, killProjectile);*/
 		
 	}
+
+	this.setChargeTime(1);
+
     this.icon = "mana_icon";
 }
 
-ManaSkill.prototype = Object.create(Skill.prototype);
-ManaSkill.prototype.constructor = ManaSkill;
+ManaHealSkill.prototype = Object.create(Skill.prototype);
+ManaHealSkill.prototype.constructor = ManaHealSkill;
+
 
 var StunSkill = function(user, level, targetTags){
 	var cooldown = [15000 / 3, 14000 / 3, 13000 / 3,
@@ -3650,7 +3853,6 @@ var StunSkill = function(user, level, targetTags){
 
 StunSkill.prototype = Object.create(Skill.prototype);
 StunSkill.prototype.constructor = StunSkill;
-
 /******************************************************************************/
 /* Common Skills */
 /*****************/
