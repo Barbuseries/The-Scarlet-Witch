@@ -3383,9 +3383,7 @@ var ManaSkill = function (user, level, targetTags) {
 
 		var Mana = 0.3 * this.user.allStats.special.getMax();
 
-		if (this.user.allStats.special.canSubtract(Mana)) {
-				this.user.allStats.special.subtract(-Mana);
-			}
+		this.user.allStats.special.subtract(-Mana);
 		function initProjectile(){
 			this.x = user.x + user.width * 0.5;
 			this.y = user.y + user.height * 0.65;
