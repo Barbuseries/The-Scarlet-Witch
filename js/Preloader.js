@@ -48,6 +48,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("speedUpArrow_icon", skillDir + "speedUpArrow_icon.png");
 	this.load.image("poweredArrow_icon", skillDir + "poweredArrow_icon.png");
 	this.load.image("heroicStrike_icon", skillDir + "heroicStrike_icon.png");
+	this.load.image("mana_icon", skillDir + "mana_icon.png");
 	this.load.image("heal_icon", skillDir + "heal_icon.png");
 	this.load.image("selfHeal_icon", skillDir + "selfHeal_icon.png");
 	this.load.image("dash_icon", skillDir + "dash_icon.png");

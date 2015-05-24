@@ -227,7 +227,10 @@ var Lucy = function(game, x, y, level){
 
 	this.allSkills[1] = {
 		firstSkill : new SelfHealSkill(this, 1, ["enemy"]),
-		secondSkill : new HealSkill(this, 1, ["enemy"])
+
+		secondSkill : new HealSkill(this, 1, ["enemy"]),
+
+		thirdSkill : new ManaSkill(this, 1, ["enemy"])
 	}
 
 	this.allSkills[0].secondSkill.setChargeTime(3000);

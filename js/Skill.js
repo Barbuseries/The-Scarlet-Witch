@@ -3366,6 +3366,173 @@ var HealSkill = function (user, level, targetTags) {
 HealSkill.prototype = Object.create(Skill.prototype);
 HealSkill.prototype.constructor = HealSkill;
 
+var ManaSkill = function (user, level, targetTags) {
+    var cooldown = 1000;
+    
+
+    function costFunction(applyCost) {
+        return true
+    }
+
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+			   targetTags);
+
+    this.launchFunction = function(factor){
+		var user = this.user;
+		var self = this;
+
+		var Mana = 0.3 * this.user.allStats.special.getMax();
+
+		if (this.user.allStats.special.canSubtract(Mana)) {
+				this.user.allStats.special.subtract(-Mana);
+			}
+		function initProjectile(){
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+
+			this.tint = H_BLUE;
+
+			this.scale.x = 2;
+			this.scale.y =2;
+
+			this.anchor.setTo(0.5,1);
+
+			this.frame = 0;
+
+			this.lifespan = 1000;
+			
+			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+			
+			this.animations.play("animation", null, true);
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+		}
+
+		function updateProjectile(){
+			this.scale.x = this.lifespan / 1000;
+			this.scale.y = this.scale.x;
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+		}
+
+		function initProjectile1(){
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+
+			this.tint = H_BLUE;
+
+			this.scale.x = 2;
+			this.scale.y =2;
+
+			this.anchor.setTo(1,0.5);
+
+			this.frame = 0;
+
+			this.lifespan = 1000;
+			
+			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+			
+			this.animations.play("animation", null, true);
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+		}
+
+		function updateProjectile1(){
+			this.scale.x = this.lifespan / 1000;
+			this.scale.y = this.scale.x;
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+		}
+
+		function initProjectile2(){
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+
+			this.tint = H_BLUE;
+
+			this.scale.x = 2;
+			this.scale.y =2;
+
+			this.anchor.setTo(0,0.5);
+
+			this.frame = 0;
+
+			this.lifespan = 1000;
+			
+			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+			
+			this.animations.play("animation", null, true);
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+		}
+
+		function updateProjectile2(){
+			this.scale.x = this.lifespan / 1000;
+			this.scale.y = this.scale.x;
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+		}
+
+		function initProjectile3(){
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+
+			this.tint = H_BLUE;
+
+			this.scale.x = 2;
+			this.scale.y =2;
+
+			this.anchor.setTo(0.5,0);
+
+			this.frame = 0;
+
+			this.lifespan = 1000;
+			
+			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+			
+			this.animations.play("animation", null, true);
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+		}
+
+		function updateProjectile3(){
+			this.scale.x = this.lifespan / 1000;
+			this.scale.y = this.scale.x;
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+		}
+		function killProjectile(){
+			return true;
+		}
+		
+		createProjectile(this.game, 0, 0, "poison",
+						 initProjectile, updateProjectile, killProjectile);
+		createProjectile(this.game, 0, 0, "poison",
+						 initProjectile1, updateProjectile1, killProjectile);
+		createProjectile(this.game, 0, 0, "poison",
+						 initProjectile2, updateProjectile2, killProjectile);
+		createProjectile(this.game, 0, 0, "poison",
+						 initProjectile3, updateProjectile3, killProjectile);
+		
+	}
+    this.icon = "mana_icon";
+}
+
+ManaSkill.prototype = Object.create(Skill.prototype);
+ManaSkill.prototype.constructor = ManaSkill;
+
 /******************************************************************************/
 /* Common Skills */
 /*****************/
