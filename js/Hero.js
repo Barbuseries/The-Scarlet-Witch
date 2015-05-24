@@ -230,7 +230,9 @@ var Lucy = function(game, x, y, level){
 
 		secondSkill : new HealSkill(this, 1, ["enemy"]),
 
-		thirdSkill : new ManaSkill(this, 1, ["enemy"])
+		thirdSkill : new ManaSkill(this, 1, ["enemy"]),
+
+		fourthSkill : new StunSkill(this, 1, ["enemy"])
 	}
 
 	this.allSkills[0].secondSkill.setChargeTime(3000);
