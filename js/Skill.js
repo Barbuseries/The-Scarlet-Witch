@@ -1661,7 +1661,14 @@ SlashSkill.prototype.constructor = SlashSkill;
 
 var HeroicStrikeSkill = function(user, level, targetTags){
 	function costFunction(applyCost){
-		return true;
+		if (this.user.allStats.special.canSubtract(10)){
+
+			this.user.allStats.special.subtract(10);
+			return true;
+		}
+		else{
+			return false;
+		}
 	}
 
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
@@ -3176,18 +3183,16 @@ var FurySkill = function(user, level){
 		}
 
 		this.user.allStats.attack.factor *= attackFactor;
-		
-		for(var j in this.user.allSkills[this.user.currentMode]){
-			this.user.allSkills[this.user.currentMode][j].chargeFactor *= attackFactor;
-		}
 
 		this.furyTimer = this.game.time.create(true);
+
+		this.furyTimer.repeat(20,duration/15,function(){
+			if(!user.allStats.special.canSubtract(51))
+				user.allStats.special.subtract(-50);
+		});
+
 		this.furyTimer.add(duration, function(){
 			this.user.allStats.attack.factor /= attackFactor;
-			
-			for(var j in this.user.allSkills[this.user.currentMode]){
-				this.user.allSkills[this.user.currentMode][j].chargeFactor *= attackFactor;
-			}
 		}, this);
 
 		this.furyTimer.onComplete.addOnce(this.onBreak.removeAll, this);
