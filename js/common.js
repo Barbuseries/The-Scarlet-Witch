@@ -33,6 +33,13 @@ function validIndex(index, array){
         (index >= array.length) ? 0 : 1;
 }
 
+function swapInArray(array, i, j){
+	var temp = array[i];
+
+	array[i] = array[j];
+	array[j] = temp;
+}
+
 function booleanable(value){
     return ((typeof(value) == "number") ||
             (typeof(value) == "boolean"));
@@ -83,7 +90,7 @@ function createBasicMenuOption(menu, y, string, onSelectFunction, context){
 }
 
 function createBasicMenuOptionText(menu, y, string){
-	var style = { font: "30px Arial", fill: WHITE};
+	var style = { font: "20px Arial", fill: WHITE};
 	
 	var newText = menu.game.add.text(menu.width / 2, y,
 									 string, style);
@@ -298,4 +305,42 @@ var arrowElementChange = function(obstacle){
 
 		this.element = obstacle.element;
 	}
+}
+
+
+var basicUpdateSkillChargeTime = function(factor){
+	if (typeof(factor) === "undefined"){
+		factor = 1;
+	}
+
+	this.updateChargeTime = function(){
+		Skill.prototype.updateChargeTime.call(this, factor *
+											  this.user.allStats.attackSpeed.get());
+	}
+
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
+
+	this.onDestroy.addOnce(function(){
+		if (this.user.allStats.attackSpeed.onUpdate != null){
+			this.user.allStats.attackSpeed.remove(this.updateChargeTime);
+		}
+	}, this);
+}
+
+var basicUpdateSkillCooldown = function(factor){
+	if (typeof(factor) === "undefined"){
+		factor = 1;
+	}
+	
+	this.updateCooldown = function(){
+		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
+	}
+
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
+
+	this.onDestroy.addOnce(function(){
+		if (this.user.allStats.attackSpeed.onUpdate != null){
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
+		}
+	}, this);
 }

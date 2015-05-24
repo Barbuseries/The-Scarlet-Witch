@@ -3,7 +3,7 @@ BasicGame.allLevels.Level_1 = function(game){
 	
 	Level.call(this, "Level_1", "Level_1_Tiles", "sky");
 
-	this.nextLevel = "MainMenu";
+	this.nextLevel = "Level_2";
 }
 
 BasicGame.allLevels.Level_1.prototype = Object.create(Level.prototype);
@@ -21,7 +21,7 @@ BasicGame.allLevels.Level_1.prototype.preload = function(){
 
 		this.timerToTitle.add(1000, function(){
 			if (victory){
-				this.save();
+				this.saveAndNextLevel();
 
 				/*this.saveMenu.onEndClose.add(function(){
 					this.returnToTitle();

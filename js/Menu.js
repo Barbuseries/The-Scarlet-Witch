@@ -853,7 +853,8 @@ var VolumeMenu = function(game, manager){
 		}
 	}, this.musicVolume);
 
-	this.musicBar = new Bar(game, manager, 250, 130 - 5, this.width - 350, 10,
+	this.musicBar = new Bar(game, manager, 270, 130 - 5,
+							this.width - 350, 10,
 							"ground", "ground2",
 							this.musicVolume, true);
 	
@@ -889,7 +890,8 @@ var VolumeMenu = function(game, manager){
 		}
 	}, this.sfxVolume);
 
-	this.sfxBar = new Bar(game, manager, 250, 200 - 5, this.width - 350, 10,
+	this.sfxBar = new Bar(game, manager, 270, 200 - 5,
+						  this.width - 350, 10,
 						  "ground", "ground2",
 						  this.sfxVolume, true);
 	
@@ -975,10 +977,10 @@ var LoadSaveMenu = function(game, manager, toSave){
 	this.toSave = toSave;
 
 	var title = (toSave) ? "Sauvegarder" : "Charger";
-
+	
 	Menu.call(this, game, manager, title,
-			  game.camera.width * 0.33 / 2, game.camera.height * 0.33 / 2,
-			  game.camera.width * 2 / 3, game.camera.height * 2 / 3,
+			  game.camera.width * 0.125 / 2, game.camera.height * 0.125 / 2,
+			  game.camera.width * 7 / 8, game.camera.height * 7 / 8,
 			  "ground2", "icons");
 
 	this.title.fontWeight = "bold";
@@ -992,72 +994,160 @@ var LoadSaveMenu = function(game, manager, toSave){
 	this.showTitle = true;
 	this.cursor.frame = 5;
 
+	this.fixedToCamera = true;
+
 	this.onStartToggle.add(bindMenu, this);
 
-	for(var i = 0; i < BasicGame.allGameSaves.length; i++){
-		var self = this;
-		var saveName = "save_" + i.toString();
+	var saveOffset = 90;
+	var allSaves = BasicGame.allGameSaves;
 
-		this[saveName] = new Option(this.game.add.group());
-
-		this[saveName].display.add(createBasicMenuOptionText(this,
-															 130 + i * 75,
-															 BasicGame.allGameSaves[i].level.key));
-
-		this[saveName].onOver.add(function(){
-			this.display.getChildAt(0).scale.setTo(1.5);
-			this.display.getChildAt(1).scale.setTo(1.05);
-			this.display.getChildAt(0).stroke = RED;
-
-			this.display.alpha = 1;
-
-			self.game.world.bringToTop(this.display);
-		}, this[saveName]);
-
-		this[saveName].onOut.add(function(){
-			this.display.getChildAt(0).scale.setTo(1);
-			this.display.getChildAt(1).scale.setTo(1);
-			this.display.getChildAt(0).fill = WHITE;
-			this.display.getChildAt(0).stroke = BLACK;
-
-			this.display.alpha = 0.5;
-		}, this[saveName]);
-
-		this[saveName].onSelect.add(function(){
-			var indexSave = this._indexSave;
-							
-			self.close();
-			
-			BasicGame.allGameSaves[indexSave].load(BasicGame.game);
-		}, this[saveName]);
+	function createSaveMiniature(save){
+		var newOption = new Option(this.game.add.group());
 		
-		this[saveName].display.getChildAt(0).x = 50;
-		this[saveName].display.getChildAt(0).anchor.x = 0;
+		newOption.display.add(createBasicMenuOptionText(this,
+														130 + save.index * saveOffset,
+														save.level.key));
 
-		this[saveName]._indexSave = i;
+		newOption.onOver.add(function(){
+			newOption.display.getChildAt(0).scale.setTo(1.5);
+			newOption.display.getChildAt(1).scale.setTo(1.05);
+			newOption.display.getChildAt(0).stroke = RED;
 
-		this[saveName].display.add(
-			BasicGame.allGameSaves[i].createMiniature(this.game, 250, 100 + 75 * i));
+			newOption.display.alpha = 1;
 
-		this[saveName].display.alpha = 0.5;
+			this.game.world.bringToTop(newOption.display);
+		}, this);
 		
-		this.addOption(this[saveName]);
+		newOption.onOut.add(function(){
+			newOption.display.getChildAt(0).scale.setTo(1);
+			newOption.display.getChildAt(1).scale.setTo(1);
+			newOption.display.getChildAt(0).fill = WHITE;
+			newOption.display.getChildAt(0).stroke = BLACK;
+
+			newOption.display.alpha = 0.5;
+		}, this);
+
+		newOption.onSelect.add(function(){
+			if (!toSave){
+				BasicGame.gameSave.copy(save);
+
+				this.onEndClose.addOnce(function(){
+					if (BasicGame.game.state.current == "MainMenu"){
+						BasicGame.game.state.states.MainMenu.startGame(null, false);
+					}
+					else{
+						BasicGame.gameSave.load(BasicGame.game);
+					}
+				});
+
+				this.close();
+			}
+			else{
+				newOption.display.getChildAt(1).destroy();
+
+				BasicGame.gameSave.save();
+
+				save.copy(BasicGame.gameSave);
+
+				save.hardSave();
+				
+				newOption.display.add(save.createMiniature(this.game,
+														   350,
+														   100 + saveOffset * save.index));
+				newOption.display.getChildAt(0).text = save.level.key;
+			}
+		}, this);
+
+		newOption.display.getChildAt(0).x = 50;
+		newOption.display.getChildAt(0).anchor.x = 0;
+
+		newOption.display.add(save.createMiniature(this.game, 350,
+												   100 + saveOffset * save.index));
+
+		newOption.display.alpha = 0.5;
+		newOption.display.scale.setTo(0.9);
+		
+		this.addOption(newOption);
+
+		return newOption;
 	}
 
-	this.updateCursorPosition = function(){
+	for(var i = 0; i < allSaves.length; i++){
+		var saveName = "save_" + i.toString();
+
+		if (allSaves[i] != null){
+			this[saveName] = createSaveMiniature.call(this, allSaves[i]);
+		}
+		else{
+			this[saveName] = createBasicMenuOption(this, 100 + saveOffset * i, "Vide");
+			
+			this[saveName].onOver.add(function(){
+				if (toSave){
+					this.display.alpha = 1;
+				}
+			}, this[saveName]);
+
+			this[saveName].onOut.add(function(){
+				this.display.alpha = 0.5;
+			}, this[saveName]);
+
+			if (toSave){
+				this[saveName]._index = i;
+				this[saveName]._name = saveName;
+
+				var self = this;
+
+				this[saveName].onSelect.addOnce(function(){
+					var indexSave = this._index;
+
+					allSaves[indexSave] = new GameSave(indexSave);
+					
+					allSaves[indexSave].copy(BasicGame.gameSave);
+
+					this.destroy();
+
+					self[this._name] = createSaveMiniature.call(self,
+																allSaves[indexSave]);
+					self[this._name].onSelect.dispatch();
+
+					swapInArray(self.allOptions, self.allOptions.length - 1,
+								indexSave);
+
+ 					self.allOptions.pop();
+
+					self.goNext();
+					self.goPrevious();
+				}, this[saveName]);
+			}
+
+			this[saveName].display.alpha = 0.5;
+		}
+	}
+	
+	this.backOption = createBasicMenuOption(this, 90 + saveOffset * 5, "Retour",
+											function(){
+												this.close();
+											}, this);
+
+	this.updateCursorPosition = function(toto){
 		var currentOption = this.getCurrentOption();
 
 		if (currentOption != null){
-			this.cursor.x = currentOption.display.getChildAt(0).x +
-				this.offsetCursorX;
-			this.cursor.y = currentOption.display.getChildAt(0).y +
-				this.offsetCursorY;
-			
-			this.cursor.x -= currentOption.display.getChildAt(0).width *
-				currentOption.display.getChildAt(0).anchor.x;
-			
-			this.cursor.y += currentOption.display.getChildAt(0).height *
-				(0.5 - currentOption.display.getChildAt(0).anchor.y);
+			if (currentOption.display instanceof Phaser.Group){
+				this.cursor.x = currentOption.display.getChildAt(0).x +
+					this.offsetCursorX;
+				this.cursor.y = currentOption.display.getChildAt(0).y * currentOption.display.scale.y +
+					this.offsetCursorY;
+				
+				this.cursor.x -= currentOption.display.getChildAt(0).width *
+					currentOption.display.getChildAt(0).anchor.x;
+				
+				this.cursor.y += currentOption.display.getChildAt(0).height *
+					(0.5 - currentOption.display.getChildAt(0).anchor.y);
+			}
+			else{
+				Menu.prototype.updateCursorPosition.call(this);
+			}
 		}
 	}
 	

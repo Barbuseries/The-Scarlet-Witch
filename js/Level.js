@@ -66,8 +66,6 @@ Level.prototype.constructor = Level;*/
 Level.prototype.preload = function(){
 	BasicGame.level = this;
 
-	console.log(BasicGame.gameSave);
-
 	this.game.world.alpha = 1;
 	
 	BasicGame.sfx = {};
@@ -76,6 +74,7 @@ Level.prototype.preload = function(){
 	BasicGame.sfx.EXPLOSION_0 = this.game.add.audio("explosion_0");
 	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;
 
+	BasicGame.gameSave.level.key = this;
 	BasicGame.allPlayers.p1.controller.setTargetByTag(BasicGame.gameSave, "save");
 
 	this.onGameOver = new Phaser.Signal();
@@ -566,6 +565,11 @@ Level.prototype.goToState = function(state){
 	}
 
 	this.allTweens.closing.background.onComplete.addOnce(function(){
+		/*if (this.loadSaveMenu != null){
+			this.loadSaveMenu.destroy();
+			this.loadSaveMenu = null;
+		}*/
+
 		if (this.saveMenu != null){
 			this.saveMenu.destroy();
 			this.saveMenu = null;
@@ -599,46 +603,29 @@ Level.prototype.reload = function(){
 	this.goToState(this.state.current);
 }
 
+Level.prototype.goToNextLevel = function(){
+	this.goToState(this.nextLevel);
+}
+
 Level.prototype.save = function(){
-	var choice = 1;
+	BasicGame.gameSave.save();
 
-	function save(){
-		if (choice){
-			console.log("Sauvegardé ! (Mais pas HARD !)");
+	this.saveMenu = new LoadSaveMenu(this.game, BasicGame.allPlayers.p1.controller,
+									 true);
+	this.saveMenu.toggle();
+}
 
-			BasicGame.gameSave.save();
+Level.prototype.saveAndNextLevel = function(){
+	BasicGame.gameSave.level.key = this.nextLevel;
+	BasicGame.gameSave.level.checkpoint = this.nextLevelCheckpoint;
 
-			console.log(BasicGame.gameSave);
-			
-			this.reload();
-		}
-		else{
-			console.log("Pas Sauvegardé !");
+	BasicGame.gameSave.save();
 
-			this.returnToTitle();
-		}
-	}
-	
-	function confirm(){
-		if (choice){
-			this.saveMenu.title.text = "Êtes-vous sûr ?";
-			
-			choice = !choice;
-		}
-		else{
-			this.saveMenu.title.text = "Sauvegarder ?";
-			
-			choice = !choice;
-		}
-	}
-
-	this.saveMenu = new ConfirmationMenu(BasicGame.allPlayers.p1.controller,
-										 save, this);
-
-	this.saveMenu.title.text = "Sauvegarder ?";
-	
-	this.saveMenu.noOption.onSelect.removeAll();
-	this.saveMenu.noOption.onSelect.add(confirm, this);
+	this.saveMenu = new LoadSaveMenu(this.game, BasicGame.allPlayers.p1.controller,
+									 true);
+	this.saveMenu.onEndClose.addOnce(function(){
+		this.goToNextLevel();
+	}, this);
 
 	this.saveMenu.toggle();
 }

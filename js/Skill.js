@@ -18,7 +18,7 @@ var Disabilities = {
 };
 
 var Skill = function(user, level, costFunction, cooldown, element,
-					 targetTags){
+					 targetTags, unlockAt){
 	if (typeof(user) != "object") user = null;
 
 	if (typeof(level) != "number") level = 0;
@@ -38,6 +38,10 @@ var Skill = function(user, level, costFunction, cooldown, element,
 		targetTags = [];
 	}
 
+	if (typeof(unlockAt) === "undefined"){
+		unlockAt = user.allStats.level.get();
+	}
+
 	this.game = (user != null) ? user.game : null;
 	
 	this.user = user;
@@ -46,8 +50,20 @@ var Skill = function(user, level, costFunction, cooldown, element,
 	
 	this.element = element;
 	this.targetTags = targetTags;
+	
+	this.unlockAt = unlockAt;
 
-	this.canBeUsed = true;
+	this.onUnlock = new Phaser.Signal();
+	this.unlocked = false;
+
+	if (this.unlockAt > this.user.allStats.level.get()){
+		this.user.allStats.level.onUpdate.add(this._checkUnlock, this);
+	}
+	else{
+		this.unlocked = true;
+	}
+
+	this.canBeUsed = this.unlocked;
 
 	this.allCooldowns = cooldown;
 	this.cooldownTween = null;
@@ -76,7 +92,6 @@ var Skill = function(user, level, costFunction, cooldown, element,
 	                                               // this.onRelease can't.
 
 	this.onCharge = new Phaser.Signal();
-	this.whileCharging = new Phaser.Signal();
 	this.onChargeComplete = new Phaser.Signal();
 	this.onRelease = new Phaser.Signal();
 
@@ -180,9 +195,6 @@ Skill.prototype.charge = function(){
 			this.user.can.action = false;
 			this.user.current.action = this;
 		}
-		else{
-			this.whileCharging.dispatch(this);
-		}
 
 		if ((this.chargeTime._link != STAT_NO_MAXSTAT) &&
 			 this.chargeTime.get(1) == 1){
@@ -205,7 +217,6 @@ Skill.prototype.charge = function(){
 	}
 	else{
 		this.chargeTime.set(0);
-		//this.breakSkill();
 
 		
 		this.chargeCompleted = false;
@@ -298,6 +309,16 @@ Skill.prototype.updateChargeTime = function(chargeTime){
 	this.setChargeTime(chargeTime);
 }
 
+Skill.prototype._checkUnlock = function(){
+	if (this.unlockAt <= this.user.allStats.level.get()){
+		this.unlocked = true;
+
+		this.canBeUsed = true;
+
+		this.onUnlock.dispatch(this);
+	}
+}
+
 
 Skill.prototype._checkBreak = function(oldBreakArmor, newBreakArmor){
 	if (newBreakArmor == 0){
@@ -350,9 +371,9 @@ Skill.prototype.breakSkill = function(){
 	if (this.user.current.action == this){
 		this.user.can.action = true;
 		this.user.current.action = null;
-	}
 
-	this.onBreak.dispatch(this);
+		this.onBreak.dispatch(this);
+	}
 }
 
 Skill.prototype.destroy = function(){
@@ -387,8 +408,6 @@ Skill.prototype.destroy = function(){
 	this.onUncheckedRelease = null;
 	this.onCharge.dispose();
 	this.onCharge = null;
-	this.whileCharging.dispose();
-	this.whileCharging = null;
 	this.onChargeComplete.dispose();
 	this.onChargeComplete = null;
 	this.onRelease.dispose();
@@ -399,6 +418,8 @@ Skill.prototype.destroy = function(){
 	this.onUpdate = null;
 	this.onFailedUse.dispose();
 	this.onFailedUse = null;
+	this.onUnlock.dispose();
+	this.onUnlock = null;
 	
 	this.icon = null;
 }
@@ -522,7 +543,7 @@ function createProjectile(game, x, y, spriteName, initFunction,
 /*****************/
 /* Common Skills */
 /******************************************************************************/
-var FireBallSkill = function(user, level, targetTags){
+var FireBallSkill = function(user, level, targetTags, unlockAt){
 	var cooldown = user.allStats.attackSpeed.get();
 
 	function costFunction(applyCost){
@@ -539,7 +560,7 @@ var FireBallSkill = function(user, level, targetTags){
 	}
 
 	Skill.call(this, user, level, costFunction, cooldown, Elements.FIRE,
-			   targetTags);
+			   targetTags, unlockAt);
 
 	this.launchFunction = function(factor){
 		var user = this.user;
@@ -696,7 +717,7 @@ FireBallSkill.prototype = Object.create(Skill.prototype);
 FireBallSkill.prototype.constructor = FireBallSkill;
 
 
-var IceBallSkill = function(user, level, targetTags){
+var IceBallSkill = function(user, level, targetTags, unlockAt){
 	var cooldown = [15000 / 3, 14000 / 3, 13000 / 3,
 					12000/3, 11000 / 3];
 
@@ -717,7 +738,7 @@ var IceBallSkill = function(user, level, targetTags){
 	}
 	
 	Skill.call(this, user, level, costFunction, cooldown, Elements.ICE,
-			   targetTags);
+			   targetTags, unlockAt);
 
 	this.launchFunction = function(factor){
 		var user = this.user;
@@ -910,7 +931,7 @@ var IceBallSkill = function(user, level, targetTags){
 IceBallSkill.prototype = Object.create(Skill.prototype);
 IceBallSkill.prototype.constructor = IceBallSkill;
 
-var PoisonSkill = function(user, level, targetTags){
+var PoisonSkill = function(user, level, targetTags, unlockAt){
 	var cooldown = [15000 / 3, 14000 / 3, 13000 / 3,
 					12000/3, 11000 / 3];
 
@@ -931,7 +952,7 @@ var PoisonSkill = function(user, level, targetTags){
 	}
 	
 	Skill.call(this, user, level, costFunction, cooldown, Elements.POISON,
-			   targetTags);
+			   targetTags, unlockAt);
 
 	this.launchFunction = function(factor){
 		var user = this.user;
@@ -1081,7 +1102,7 @@ var PoisonSkill = function(user, level, targetTags){
 PoisonSkill.prototype = Object.create(Skill.prototype);
 PoisonSkill.prototype.constructor = PoisonSkill;
 
-var DeathSkill = function (user, level, targetTags) {
+var DeathSkill = function (user, level, targetTags, unlockAt) {
     var cooldown = 1500;
 
     function costFunction(applyCost) {
@@ -1100,7 +1121,7 @@ var DeathSkill = function (user, level, targetTags) {
     }
 
     Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
-			   targetTags);
+			   targetTags, unlockAt);
 
 	var self = this;
 	var user = this.user;
@@ -1279,7 +1300,7 @@ DeathSkill.prototype = Object.create(Skill.prototype);
 DeathSkill.prototype.constructor = ThunderSkill;
 
 
-var ThunderSkill = function (user, level, targetTags) {
+var ThunderSkill = function (user, level, targetTags, unlockAt) {
     var cooldown = [30000 / 3, 28000 / 3, 26000 / 3, 24000 / 3, 20000 / 3];
 	
     function costFunction(applyCost) {
@@ -1299,7 +1320,7 @@ var ThunderSkill = function (user, level, targetTags) {
     }
     
     Skill.call(this, user, level, costFunction, cooldown, Elements.THUNDER,
-            targetTags);
+               targetTags, unlockAt);
 
     this.launchFunction = function (factor) {
         var user = this.user;
@@ -1485,13 +1506,13 @@ ThunderSkill.prototype = Object.create(Skill.prototype);
 ThunderSkill.prototype.constructor = ThunderSkill;
 
 
-var SlashSkill = function(user, level, targetTags){
+var SlashSkill = function(user, level, targetTags, unlockAt){
 	function costFunction(applyCost){
 		return true;
 	}
 
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
-			   Elements.PHYSIC, targetTags);
+			   Elements.PHYSIC, targetTags, unlockAt);
 
 	var speed = (1 + this.user.allStats.agility.get()) / 100;
 	
@@ -1600,9 +1621,7 @@ var SlashSkill = function(user, level, targetTags){
 				obstacle.body.velocity.x -= 100 * (1 + 2 * factor);
 			}
 
-			if (!user.furious){
-				user.allStats.special.add(10 * (1 + factor));
-			}
+			user.allStats.special.add(10 * (1 + factor));
 
 			this.damageFunction(obstacle);
 		}
@@ -1644,23 +1663,9 @@ var SlashSkill = function(user, level, targetTags){
 
 	this.setChargeTime(this.user.allStats.attackSpeed.get());
 	
-	this.updateChargeTime = function(){
-		Skill.prototype.updateChargeTime.call(this, this.user.allStats.attackSpeed.get());
-	}
+	basicUpdateSkillCooldown.call(this);
 
-	this.updateCooldown = function(){
-		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
-	}
-	
-	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
-	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
-
-	this.onDestroy.addOnce(function(){
-		if (this.user.allStats.attackSpeed.onUpdate != null){
-			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
-			this.user.allStats.attackSpeed.onUpdate.remove(this.updateChargeTime);
-		}
-	}, this);
+	basicUpdateSkillChargeTime.call(this);
 
 	this.icon = 'slash_icon';
 };
@@ -1668,342 +1673,8 @@ var SlashSkill = function(user, level, targetTags){
 SlashSkill.prototype = Object.create(Skill.prototype);
 SlashSkill.prototype.constructor = SlashSkill;
 
-var HeroicStrikeSkill = function(user, level, targetTags){
-	function costFunction(applyCost){
-		if (this.user.allStats.special.canSubtract(10) ||
-			this.user.furious){
 
-			if (applyCost){
-				this.user.allStats.special.subtract(10);
-			}
-
-			return true;
-		}
-		else{
-			if (this.user.current.action == this){
-				this.breakSkill();
-			}
-
-			return false;
-		}
-	}
-
-	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
-			   Elements.PHYSIC, targetTags);
-
-	var speed = (1 + this.user.allStats.agility.get()) / 300;
-	
-	this.onCharge.add(function(){
-		if (this.user.orientationH >= 0){
-			this.user.frame = 195;
-		}
-		else{
-			this.user.frame = 169;
-		}
-
-		this.onBreak.addOnce(function(){
-			this.user.can.move = true;
-		}, this);
-
-		this.user.can.move = false;
-		
-		this.user.orientRight = function(){
-			this.orientationH = 1;
-			
-			this.frame = 195;
-		}
-		
-		this.user.orientLeft = function(){
-			this.orientationH = -1;
-			
-			this.frame = 169;
-		}
-
-		this.user.animations.currentAnim.stop();
-
-		if (this.user.orientationH >= 0){
-			this.user.orientRight();
-		}
-		else{
-			this.user.orientLeft();
-		}
-	}, this);
-
-	this.launchFunction = function(factor){
-		var self = this;
-		var user = this.user;
-
-		function initProjectile(){
-			this.x = user.x;
-			this.y = user.y + 3 * user.height / 5;
-
-			this.game.physics.enable(this, Phaser.Physics.ARCADE);
-			this.body.allowGravity = false;
-			
-			this.body.velocity.x = -50 * (1 + factor);
-
-			if (user.orientationH >= 0){
-				this.x += user.width;
-				this.body.velocity.x *= -1;
-			}
-			
-			this.anchor.setTo(0.5);
-			this.scale.setTo(3 + factor, 1.5);
-			
-			if (user.orientationH >= 0){
-				this.animations.add("animation", [3, 2, 1, 0], 15);
-			}
-			else{
-				this.animations.add("animation", [4, 5, 6, 7], 15);
-			}
-			
-			this.alpha = 1;
-			this.angle = 0;
-
-			this.tint = H_RED;
-
-
-			this.targetTags = self.targetTags;
-			this.element = self.element;
-			
-			this.orientationH = user.orientationH;
-			this.alreadyHit = [];
-
-			this.animations.play("animation", null, false, true);
-		}
-
-		function updateProjectile(){
-			this.y = user.y + 3 * user.height / 5;
-		}
-
-		function damageFunction(obstacle){
-			var damage = self.user.allStats.attack.get() * 
-				(1 + factor + user.allStats.fury.get(1));
-			var damageRange = [0.9, 1.1];
-			var criticalRate = self.user.allStats.criticalRate.get();
-			
-			obstacle.suffer(damage, damageRange, criticalRate, this.element);
-		}
-
-		function collideFunction(obstacle){
-			if (this.alreadyHit.indexOf(obstacle) != -1){
-				return;
-			}
-
-			this.alreadyHit.push(obstacle);
-
-			if (this.orientationH >= 0){
-				obstacle.body.velocity.x += 100 * (1 + 2 * factor);
-			}
-			else{
-				obstacle.body.velocity.x -= 100 * (1 + 2 * factor);
-			}
-
-			this.damageFunction(obstacle);
-		}
-
-		this.onBreak.removeAll();
-		
-		this.onBreak.addOnce(function(){
-			this.user.can.move = true;
-			this.user.can.orient = true;
-		}, this);
-
-		user.orientRight = Hero.prototype.orientRight;
-		user.orientLeft = Hero.prototype.orientLeft;
-
-		user.can.orient = false;
-
-		createProjectile(this.game, 0, 0, "slash",
-						 initProjectile, updateProjectile, undefined,
-						 collideFunction, undefined, damageFunction);
-
-		var animation = null;
-
-		if (user.orientationH >= 0){
-			animation = user.animations.play("swordRight", 12 * (speed + 1));
-		}
-		else{
-			animation = user.animations.play("swordLeft", 12 * (speed + 1));
-		}
-		
-		animation.onComplete.add(function(){
-			this.user.can.move = true;
-			this.user.can.action = true;
-			this.user.current.action = null;
-			this.user.can.orient = true;
-
-			this.onBreak.removeAll();
-		}, this);
-	}
-
-	this.setChargeTime(this.user.allStats.attackSpeed.get());
-	
-	this.updateChargeTime = function(){
-		Skill.prototype.updateChargeTime.call(this, this.user.allStats.attackSpeed.get());
-	}
-
-	this.updateCooldown = function(){
-		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
-	}
-	
-	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
-	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
-
-	this.onDestroy.addOnce(function(){
-		if (this.user.allStats.attackSpeed.onUpdate != null){
-			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
-			this.user.allStats.attackSpeed.onUpdate.remove(this.updateChargeTime);
-		}
-	}, this);
-
-	this.icon = 'heroicStrike_icon';
-};
-
-HeroicStrikeSkill.prototype = Object.create(Skill.prototype);
-HeroicStrikeSkill.prototype.constructor = HeroicStrikeSkill;
-
-var DashSkill = function(user, level){
-	function costFunction(applyCost){
-		return true;
-	}
-
-	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
-			   Elements.PHYSIC);
-
-	var speed = (1 + this.user.allStats.agility.get()) / 300;
-	
-	this.onCharge.add(function(){
-		if (this.user.orientationH >= 0){
-			this.user.frame = 195;
-		}
-		else{
-			this.user.frame = 169;
-		}
-
-		this.onBreak.addOnce(function(){
-			this.user.can.move = true;
-		}, this);
-
-		this.user.can.move = false;
-		
-		this.user.orientRight = function(){
-			this.orientationH = 1;
-			
-			this.frame = 195;
-		}
-		
-		this.user.orientLeft = function(){
-			this.orientationH = -1;
-			
-			this.frame = 169;
-		}
-
-		this.user.animations.currentAnim.stop();
-
-		if (this.user.orientationH >= 0){
-			this.user.orientRight();
-		}
-		else{
-			this.user.orientLeft();
-		}
-		
-		this.onBreak.addOnce(function(){
-			this.user.body.maxVelocity.y = this.user.SPEED;
-		}, this);
-
-		this.user.body.maxVelocity.y = 0.1 * this.user.SPEED;
-	}, this);
-
-	this.launchFunction = function(factor){
-		var velocity = 500;
-
-		this.onBreak.removeAll();
-
-		this.dashTimer = this.game.time.create(true);
-
-		if(this.user.orientationH == -1){
-			velocity *= -1;
-		}
-
-		this.user.body.maxVelocity.x = velocity;
-
-		this.dashTimer.repeat(1, 10, function(){
-			this.user.body.velocity.x = velocity;
-		}, this);
-
-		this.user.body.velocity.y = 0;
-		
-		this.dashTimer.onComplete.addOnce(function(){
-			this.user.can.move = true;
-			this.user.can.action = true;
-			this.user.current.action = null;
-			this.user.can.orient = true;
-
-			this.onBreak.removeAll();
-
-			this.user.body.allowGravity = true;
-			this.user.body.maxVelocity.x = this.user.SPEED;
-			this.user.body.maxVelocity.y = this.user.SPEED;
-		}, this);
-
-		this.dashTimer.start();
-
-		this.onBreak.removeAll();
-		
-		this.onBreak.addOnce(function(){
-			this.user.can.move = true;
-			this.user.can.orient = true;
-
-			this.user.body.allowGravity = true;
-			this.user.body.maxVelocity.x = this.user.SPEED;
-			this.user.body.maxVelocity.y = this.user.SPEED;
-		}, this);
-
-		this.user.orientRight = Hero.prototype.orientRight;
-		this.user.orientLeft = Hero.prototype.orientLeft;
-
-		this.user.can.orient = false;
-
-		var animation = null;
-
-		if (user.orientationH >= 0){
-			animation = this.user.animations.play("swordRight");
-		}
-		else{
-			animation = this.user.animations.play("swordLeft");
-		}
-	}
-
-	this.setChargeTime(this.user.allStats.attackSpeed.get() / 2);
-	
-	this.updateChargeTime = function(){
-		Skill.prototype.updateChargeTime.call(this,
-											  this.user.allStats.attackSpeed.get());
-	}
-
-	this.updateCooldown = function(){
-		Skill.prototype.updateCooldown.call(this,
-											this.user.allStats.attackSpeed.get());
-	}
-	
-	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
-	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
-
-	this.onDestroy.addOnce(function(){
-		if (this.user.allStats.attackSpeed.onUpdate != null){
-			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
-			this.user.allStats.attackSpeed.onUpdate.remove(this.updateChargeTime);
-		}
-	}, this);
-
-	this.icon = 'dash_icon';
-};
-
-DashSkill.prototype = Object.create(Skill.prototype);
-DashSkill.prototype.constructor = DashSkill;
-
-var ArrowSkill = function(user, level, targetTags){
+var ArrowSkill = function(user, level, targetTags, unlockAt){
 	function costFunction(applyCost){
 		if (this.user.allStats.special.canSubtract(1)){
 			if (applyCost){
@@ -2018,7 +1689,7 @@ var ArrowSkill = function(user, level, targetTags){
 	}
 
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
-			   Elements.PHYSIC, targetTags);
+			   Elements.PHYSIC, targetTags, unlockAt);
 
 	var self = this;
 
@@ -2083,17 +1754,20 @@ var ArrowSkill = function(user, level, targetTags){
 
 		this.onBreak.addOnce(function(){
 			this.user.can.move = true;
+
+			this.user.orientLeft = Object.getPrototypeOf(this.user).orientLeft;
+			this.user.orientRight = Object.getPrototypeOf(this.user).orientRight;
 		}, this)
 
 		user.can.move = false;
 	}, this);
 
-	this.launchFunction = function(factor){
+	this.launchFunction = function(factor, waiting){
 		if (!this.user.animations.currentAnim.isFinished){
-			this.user.animations.currentAnim.onComplete.addOnce(
-				function(){
-					this.launchFunction.call(this, factor);
-				}, this);
+				this.user.animations.currentAnim.onComplete.addOnce(
+					function(){
+						this.launchFunction.call(this, factor);
+					}, this);
 			return;
 		}
 		
@@ -2195,12 +1869,14 @@ var ArrowSkill = function(user, level, targetTags){
 
 		this.onBreak.removeAll();
 
-		user.orientLeft = Hero.prototype.orientLeft;
-		user.orientRight = Hero.prototype.orientRight;
+		user.orientLeft = Object.getPrototypeOf(user).orientLeft;
+		user.orientRight = Object.getPrototypeOf(user).orientRight;
 
 		this.onBreak.addOnce(function(){
 			this.user.can.move = true;
 			this.user.can.orient = true;
+
+			this.user.animations.currentAnim.stop();
 		}, this);
 
 		user.can.orient = false;
@@ -2230,13 +1906,18 @@ var ArrowSkill = function(user, level, targetTags){
 	}
 
 	this.setChargeTime(2 * this.user.allStats.attackSpeed.get());
+
+	basicUpdateSkillCooldown.call(this);
+	
+	basicUpdateSkillChargeTime.call(this, 2),
+
 	this.icon = "arrow_icon";
 }
 
 ArrowSkill.prototype = Object.create(Skill.prototype);
 ArrowSkill.prototype.constructor = ArrowSkill;
 
-var MultArrowSkill = function(user, level, targetTags){
+var MultArrowSkill = function(user, level, targetTags, unlockAt){
 	function costFunction(applyCost){
 		if (this.user.allStats.quiver.canSubtract(3)){
 			if (applyCost){
@@ -2251,7 +1932,7 @@ var MultArrowSkill = function(user, level, targetTags){
 	}
 
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
-			   Elements.PHYSIC, targetTags);
+			   Elements.PHYSIC, targetTags, unlockAt);
 
 	var self = this;
 
@@ -2423,8 +2104,8 @@ var MultArrowSkill = function(user, level, targetTags){
 				this.body.allowGravity;
 		}
 
-		user.orientLeft = Hero.prototype.orientLeft;
-		user.orientRight = Hero.prototype.orientRight;
+		user.orientLeft = Object.getPrototypeOf(user).orientLeft;
+		user.orientRight = Object.getPrototypeOf(user).orientRight;
 
 		this.onBreak.removeAll();
 
@@ -2481,6 +2162,11 @@ var MultArrowSkill = function(user, level, targetTags){
 	}
 	
 	this.setChargeTime(2 * this.user.allStats.attackSpeed.get());
+
+	basicUpdateSkillCooldown.call(this);
+
+	basicUpdateSkillChargeTime.call(this, 2);
+
 	this.icon = "multArrow_icon";
 }
 
@@ -2488,7 +2174,7 @@ MultArrowSkill.prototype = Object.create(Skill.prototype);
 MultArrowSkill.prototype.constructor = MultArrowSkill;
 
 
-var SpeedUpArrowSkill = function(user, level){
+var SpeedUpArrowSkill = function(user, level, unlockAt){
 	function costFunction(applyCost){
 		if (this.user.allStats.quiver.canSubtract(3)){
 			if (applyCost){
@@ -2503,7 +2189,7 @@ var SpeedUpArrowSkill = function(user, level){
 	}
 
 	Skill.call(this, user, level, costFunction, 20000,
-			   Elements.ALMIGHTY);
+			   Elements.ALMIGHTY, undefined, unlockAt);
 
 	this.launchFunction = function(factor){
 		var speedFactor = 1.5;
@@ -2555,6 +2241,10 @@ var SpeedUpArrowSkill = function(user, level){
 		this.speedUpTimer.add(duration, function(){
 			this.user.allStats.attackSpeed.factor *= speedFactor;
 			
+			var attackSpeed = this.user.allStats.attackSpeed;
+			
+			attackSpeed.set(attackSpeed.get() / attackSpeed.factor);
+			
 			for(var j in this.user.allSkills[currentUserMode]){
 				this.user.allSkills[currentUserMode][j].chargeFactor /= speedFactor;
 			}
@@ -2579,7 +2269,7 @@ SpeedUpArrowSkill.prototype = Object.create(Skill.prototype);
 SpeedUpArrowSkill.prototype.constructor = SpeedUpArrowSkill;
 
 
-var TrapSkill = function(user, level, targetTags){
+var TrapSkill = function(user, level, targetTags, unlockAt){
 	function costFunction(applyCost){
 		if (this.user.allStats.quiver.canSubtract(2)){
 			if (applyCost){
@@ -2594,7 +2284,7 @@ var TrapSkill = function(user, level, targetTags){
 	}
 
 	Skill.call(this, user, level, costFunction, 10000,
-			   Elements.EARTH, targetTags);
+			   Elements.EARTH, targetTags, unlockAt);
 
 	this.onCharge.add(function(){
 		this.onBreak.addOnce(function(){
@@ -2610,7 +2300,6 @@ var TrapSkill = function(user, level, targetTags){
 
 		function initProjectile(){
 			this.anchor.set(0.5, 1);
-
 
 			this.tint = H_ORANGE;
 
@@ -2789,7 +2478,10 @@ var TrapSkill = function(user, level, targetTags){
 	}
 
 
-	this.setChargeTime(2000);
+	this.setChargeTime(user.allStats.attackSpeed.get() * 3);
+
+	basicUpdateSkillChargeTime.call(this, 3);
+
 	this.icon = "trap_icon";
 }
 
@@ -2797,7 +2489,7 @@ TrapSkill.prototype = Object.create(Skill.prototype);
 TrapSkill.prototype.constructor = TrapSkill;
 
 
-var PoweredArrowSkill = function(user, level, targetTags){
+var PoweredArrowSkill = function(user, level, targetTags, unlockAt){
 	function costFunction(applyCost){
 		if (this.user.allStats.quiver.canSubtract(5)){
 			if (applyCost){
@@ -2812,7 +2504,7 @@ var PoweredArrowSkill = function(user, level, targetTags){
 	}
 
 	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
-			   Elements.PHYSIC, targetTags);
+			   Elements.PHYSIC, targetTags, unlockAt);
 
 	var self = this;
 
@@ -2894,7 +2586,7 @@ var PoweredArrowSkill = function(user, level, targetTags){
 
 			this.anchor.set(0, 0.5);
 
-			this.scale.setTo(2 + factor);
+			this.scale.setTo(1 + factor);
 			
 			this.x = user.x;
 			this.y = user.y + user.width / 2;
@@ -2989,8 +2681,8 @@ var PoweredArrowSkill = function(user, level, targetTags){
 				this.body.allowGravity;
 		}
 
-		user.orientLeft = Hero.prototype.orientLeft;
-		user.orientRight = Hero.prototype.orientRight;
+		user.orientLeft = Object.getPrototypeOf(user).orientLeft;
+		user.orientRight = Object.getPrototypeOf(user).orientRight;
 
 		this.onBreak.removeAll();
 
@@ -3054,20 +2746,25 @@ var PoweredArrowSkill = function(user, level, targetTags){
 	}
 
 	this.setChargeTime(5 * this.user.allStats.attackSpeed.get());
+	
+	basicUpdateSkillCooldown.call(this);
+
+	basicUpdateSkillChargeTime.call(this, 5);
+
 	this.icon = "poweredArrow_icon";
 }
 
 PoweredArrowSkill.prototype = Object.create(Skill.prototype);
 PoweredArrowSkill.prototype.constructor = PoweredArrowSkill;
 
-var ShieldSkill = function(user, level){
+var ShieldSkill = function(user, level, unlockAt){
 	function costFunction(applyCost){
 		if (this.chargeTime.get()){
 			return true;
 		}
 
-		if (this.user.allStats.special.canSubtract(5) ||
-			this.user.furious){
+		if (this.user.allStats.special.canSubtract(5)){
+
 			return true;
 		}
 		else{
@@ -3075,7 +2772,8 @@ var ShieldSkill = function(user, level){
 		}
 	}
 
-	Skill.call(this, user, level, costFunction, 0, Elements.ALMIGHTY);
+	Skill.call(this, user, level, costFunction, 0, Elements.ALMIGHTY,
+			   undefined, unlockAt);
 
 	this.onUncheckedCharge.add(function(){
 		if (!this.user.alive ||
@@ -3162,6 +2860,15 @@ var ShieldSkill = function(user, level){
 
 		this.user.can.action = true;
 		this.user.current.action = null;
+
+		this.user.animations.currentAnim.stop();
+
+		if (this.user.orientationH >= 0){
+			this.user.frame = 143;
+		}
+		else{
+			this.user.frame = 117;
+		}
 	}
 
 	
@@ -3172,7 +2879,7 @@ var ShieldSkill = function(user, level){
 ShieldSkill.prototype = Object.create(Skill.prototype);
 ShieldSkill.prototype.constructor = ShieldSkill;
 
-var FurySkill = function(user, level){
+var FurySkill = function(user, level, unlockAt){
 	function costFunction(applyCost){
 		if (this.user.allStats.special.canSubtract(50)){
 			if (applyCost){
@@ -3187,7 +2894,7 @@ var FurySkill = function(user, level){
 	}
 
 	Skill.call(this, user, level, costFunction, 20000,
-			   Elements.ALMIGHTY);
+			   Elements.ALMIGHTY, undefined, unlockAt);
 
 	this.launchFunction = function(factor){
 		var attackFactor = 2;
@@ -3268,7 +2975,7 @@ var FurySkill = function(user, level){
 FurySkill.prototype = Object.create(Skill.prototype);
 FurySkill.prototype.constructor = FurySkill;
 
-var SelfHealSkill = function (user, level) {
+var SelfHealSkill = function (user, level, unlockAt) {
     var cooldown = 10000;
 
     function costFunction(applyCost) {
@@ -3286,7 +2993,8 @@ var SelfHealSkill = function (user, level) {
 		}
     }
 
-    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY);
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+			  undefined, unlockAt);
 	
 	this.onCharge.add(function(){
 		this.user.animations.play("spellChargeBoth");
@@ -3374,7 +3082,7 @@ SelfHealSkill.prototype = Object.create(Skill.prototype);
 SelfHealSkill.prototype.constructor = SelfHealSkill;
 
 
-var HealSkill = function (user, level) {
+var HealSkill = function (user, level, unlockAt) {
     var cooldown = 10000;
 
     function costFunction(applyCost) {
@@ -3393,7 +3101,7 @@ var HealSkill = function (user, level) {
     }
 
     Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
-			   user.tag);
+			   user.tag, unlockAt);
 
     	this.onCharge.add(function(){
 		this.user.animations.play("spellChargeBoth");
@@ -3490,7 +3198,7 @@ var HealSkill = function (user, level) {
 HealSkill.prototype = Object.create(Skill.prototype);
 HealSkill.prototype.constructor = HealSkill;
 
-var ManaHealSkill = function (user, level) {
+var ManaHealSkill = function (user, level, unlockAt) {
     var cooldown = 1000;
     
 
@@ -3499,7 +3207,8 @@ var ManaHealSkill = function (user, level) {
 				this.user.allStats.special.get(1) < 1);
     }
 
-    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY);
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+			  undefined, unlockAt);
 
 	this.onCharge.add(function(){
 		this.timerHeal = this.game.time.create();
@@ -3729,7 +3438,7 @@ ManaHealSkill.prototype = Object.create(Skill.prototype);
 ManaHealSkill.prototype.constructor = ManaHealSkill;
 
 
-var StunSkill = function(user, level, targetTags){
+var StunSkill = function(user, level, targetTags, unlockAt){
 	var cooldown = [15000 / 3, 14000 / 3, 13000 / 3,
 					12000/3, 11000 / 3];
 
@@ -3750,7 +3459,7 @@ var StunSkill = function(user, level, targetTags){
 	}
 	
 	Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
-			   targetTags);
+			   targetTags, unlockAt);
 
 	this.launchFunction = function(factor){
 		var user = this.user;
@@ -3853,6 +3562,333 @@ var StunSkill = function(user, level, targetTags){
 
 StunSkill.prototype = Object.create(Skill.prototype);
 StunSkill.prototype.constructor = StunSkill;
+
+var HeroicStrikeSkill = function(user, level, targetTags, unlockAt){
+	function costFunction(applyCost){
+		if (this.user.allStats.special.canSubtract(10) ||
+			this.user.furious){
+
+			if (applyCost){
+				this.user.allStats.special.subtract(10);
+			}
+
+			return true;
+		}
+		else{
+			if (this.user.current.action == this){
+				this.breakSkill();
+			}
+
+			return false;
+		}
+	}
+
+	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
+			   Elements.PHYSIC, targetTags, unlockAt);
+
+	var speed = (1 + this.user.allStats.agility.get()) / 300;
+	
+	this.onCharge.add(function(){
+		if (this.user.orientationH >= 0){
+			this.user.frame = 195;
+		}
+		else{
+			this.user.frame = 169;
+		}
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
+
+		this.user.can.move = false;
+		
+		this.user.orientRight = function(){
+			this.orientationH = 1;
+			
+			this.frame = 195;
+		}
+		
+		this.user.orientLeft = function(){
+			this.orientationH = -1;
+			
+			this.frame = 169;
+		}
+
+		this.user.animations.currentAnim.stop();
+
+		if (this.user.orientationH >= 0){
+			this.user.orientRight();
+		}
+		else{
+			this.user.orientLeft();
+		}
+	}, this);
+
+	this.launchFunction = function(factor){
+		var self = this;
+		var user = this.user;
+
+		function initProjectile(){
+			this.x = user.x;
+			this.y = user.y + 3 * user.height / 5;
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+			this.body.allowGravity = false;
+			
+			this.body.velocity.x = -50 * (1 + factor);
+
+			if (user.orientationH >= 0){
+				this.x += user.width;
+				this.body.velocity.x *= -1;
+			}
+			
+			this.anchor.setTo(0.5);
+			this.scale.setTo(3 + factor, 1.5);
+			
+			if (user.orientationH >= 0){
+				this.animations.add("animation", [3, 2, 1, 0], 15);
+			}
+			else{
+				this.animations.add("animation", [4, 5, 6, 7], 15);
+			}
+			
+			this.alpha = 1;
+			this.angle = 0;
+
+			this.tint = H_RED;
+
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+			
+			this.orientationH = user.orientationH;
+			this.alreadyHit = [];
+
+			this.animations.play("animation", null, false, true);
+		}
+
+		function updateProjectile(){
+			this.y = user.y + 3 * user.height / 5;
+		}
+
+		function damageFunction(obstacle){
+			var damage = self.user.allStats.attack.get() * 
+				(1 + factor + user.allStats.fury.get(1));
+			var damageRange = [0.9, 1.1];
+			var criticalRate = self.user.allStats.criticalRate.get();
+			
+			obstacle.suffer(damage, damageRange, criticalRate, this.element);
+		}
+
+		function collideFunction(obstacle){
+			if (this.alreadyHit.indexOf(obstacle) != -1){
+				return;
+			}
+
+			this.alreadyHit.push(obstacle);
+
+			if (this.orientationH >= 0){
+				obstacle.body.velocity.x += 100 * (1 + 2 * factor);
+			}
+			else{
+				obstacle.body.velocity.x -= 100 * (1 + 2 * factor);
+			}
+
+			this.damageFunction(obstacle);
+		}
+
+		this.onBreak.removeAll();
+		
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+		}, this);
+
+		user.orientRight = Object.getPrototypeOf(this.user).orientRight;
+		user.orientLeft = Object.getPrototypeOf(this.user).orientLeft;
+
+		user.can.orient = false;
+
+		createProjectile(this.game, 0, 0, "slash",
+						 initProjectile, updateProjectile, undefined,
+						 collideFunction, undefined, damageFunction);
+
+		var animation = null;
+
+		if (user.orientationH >= 0){
+			animation = user.animations.play("swordRight", 12 * (speed + 1));
+		}
+		else{
+			animation = user.animations.play("swordLeft", 12 * (speed + 1));
+		}
+		
+		animation.onComplete.add(function(){
+			this.user.can.move = true;
+			this.user.can.action = true;
+			this.user.current.action = null;
+			this.user.can.orient = true;
+
+			this.onBreak.removeAll();
+		}, this);
+	}
+
+	this.setChargeTime(this.user.allStats.attackSpeed.get());
+	
+	this.updateChargeTime = function(){
+		Skill.prototype.updateChargeTime.call(this, this.user.allStats.attackSpeed.get());
+	}
+
+	this.updateCooldown = function(){
+		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
+	}
+	
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
+
+	this.onDestroy.addOnce(function(){
+		if (this.user.allStats.attackSpeed.onUpdate != null){
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateChargeTime);
+		}
+	}, this);
+
+	this.icon = 'heroicStrike_icon';
+};
+
+HeroicStrikeSkill.prototype = Object.create(Skill.prototype);
+HeroicStrikeSkill.prototype.constructor = HeroicStrikeSkill;
+
+var DashSkill = function(user, level, unlockAt){
+	function costFunction(applyCost){
+		return true;
+	}
+
+	Skill.call(this, user, level, costFunction, user.allStats.attackSpeed.get(),
+			   Elements.PHYSIC, undefined, unlockAt);
+
+	var speed = (1 + this.user.allStats.agility.get()) / 300;
+	
+	this.onCharge.add(function(){
+		if (this.user.orientationH >= 0){
+			this.user.frame = 195;
+		}
+		else{
+			this.user.frame = 169;
+		}
+
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+		}, this);
+
+		this.user.can.move = false;
+		
+		this.user.orientRight = function(){
+			this.orientationH = 1;
+			
+			this.frame = 195;
+		}
+		
+		this.user.orientLeft = function(){
+			this.orientationH = -1;
+			
+			this.frame = 169;
+		}
+
+		this.user.animations.currentAnim.stop();
+
+		if (this.user.orientationH >= 0){
+			this.user.orientRight();
+		}
+		else{
+			this.user.orientLeft();
+		}
+	}, this);
+
+	this.launchFunction = function(factor){
+		var velocity = 3 * this.user.SPEED;
+
+		this.onBreak.removeAll();
+
+		this.dashTimer = this.game.time.create(true);
+
+		if(this.user.orientationH == -1){
+			velocity *= -1;
+		}
+
+		this.user.body.maxVelocity.x = velocity;
+
+		this.dashTimer.repeat(1, 10, function(){
+			this.user.body.velocity.x = velocity;
+		}, this);
+
+		this.user.body.velocity.y = 0;
+		
+		this.dashTimer.onComplete.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.action = true;
+			this.user.current.action = null;
+			this.user.can.orient = true;
+
+			this.onBreak.removeAll();
+
+			this.user.body.allowGravity = true;
+			this.user.body.maxVelocity.x = this.user.SPEED;
+		}, this);
+
+		this.dashTimer.start();
+
+		this.onBreak.removeAll();
+		
+		this.onBreak.addOnce(function(){
+			this.user.can.move = true;
+			this.user.can.orient = true;
+
+			this.user.body.allowGravity = true;
+			this.user.body.maxVelocity.x = this.user.SPEED;
+		}, this);
+
+		this.user.orientRight = Object.getPrototypeOf(this.user).orientRight;
+		this.user.orientLeft = Object.getPrototypeOf(this.user).orientLeft;
+
+		this.user.can.orient = false;
+
+		var animation = null;
+
+		if (user.orientationH >= 0){
+			animation = this.user.animations.play("swordRight");
+		}
+		else{
+			animation = this.user.animations.play("swordLeft");
+		}
+	}
+
+	this.setChargeTime(this.user.allStats.attackSpeed.get() / 2);
+	
+	this.updateChargeTime = function(){
+		Skill.prototype.updateChargeTime.call(this,
+											  this.user.allStats.attackSpeed.get());
+	}
+
+	this.updateCooldown = function(){
+		Skill.prototype.updateCooldown.call(this,
+											this.user.allStats.attackSpeed.get());
+	}
+	
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);
+	this.user.allStats.attackSpeed.onUpdate.add(this.updateChargeTime, this);
+
+	this.onDestroy.addOnce(function(){
+		if (this.user.allStats.attackSpeed.onUpdate != null){
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateCooldown);
+			this.user.allStats.attackSpeed.onUpdate.remove(this.updateChargeTime);
+		}
+	}, this);
+
+	this.icon = 'dash_icon';
+};
+
+DashSkill.prototype = Object.create(Skill.prototype);
+DashSkill.prototype.constructor = DashSkill;
 /******************************************************************************/
 /* Common Skills */
 /*****************/

@@ -8,7 +8,7 @@ BasicGame.MainMenu.prototype.create = function(){
 
 	BasicGame.allGameSaves = [];
 
-	for(var i = 0; i < 4; i++){
+	for(var i = 0; i <= 4; i++){
 		var save = localStorage.getItem("save_" + i.toString());
 		
 		if (save != null){
@@ -17,10 +17,13 @@ BasicGame.MainMenu.prototype.create = function(){
 			parsedSave.__proto__ = GameSave.prototype;
 
 			BasicGame.allGameSaves.push(parsedSave);
-
-			console.log(parsedSave);
+		}
+		else{
+			BasicGame.allGameSaves.push(null);
 		}
 	}
+
+	BasicGame.gameSave = new GameSave(-1);
 
 	this.game.world.alpha = 1;
 
@@ -146,7 +149,6 @@ BasicGame.MainMenu.prototype.create = function(){
 	this.newGameOption = createBasicMenuOption(this.menu, 300, "Nouvelle Partie",
 											   function(){
 												   console.log("New !");
-												   BasicGame.gameSave = new GameSave(BasicGame.allGameSaves.length);
 												   BasicGame.gameSave.level.key = "Level_1";
 												   this.startGame();
 											   }, this);
@@ -213,9 +215,15 @@ BasicGame.MainMenu.prototype.update = function(){
 	}
 }
 
-BasicGame.MainMenu.prototype.startGame = function(pointer){
+BasicGame.MainMenu.prototype.startGame = function(pointerm, fromStart){
 	this.allTweens.closing.lucy.onComplete.addOnce(function(){
-		this.state.start("Level_1");
+		if (typeof(fromStart) == "undefined" ||
+			fromStart){
+			this.state.start("Level_1");
+		}
+		else{
+			BasicGame.gameSave.load(this.game);
+		}
 	}, this);
 
 	this.cleanUp();

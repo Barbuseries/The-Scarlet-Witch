@@ -65,14 +65,9 @@ GameSave.prototype.save = function(){
 		}
 	}
 
-	if (BasicGame.level.completed){
-		this.level.key = BasicGame.level.mapName;
-		this.level.checkpoint = BasicGame.level.checkpoint;
-	}
-	else{
-		this.level.key = BasicGame.level;
-		this.level.checkpoint = BasicGame.level.checkpoint;
-	}
+	
+	/*this.level.key = BasicGame.level.mapName;
+	this.level.checkpoint = BasicGame.level.checkpoint;*/
 }
 
 
@@ -149,6 +144,28 @@ GameSave.prototype.retrieve = function(){
 	
 }
 
+GameSave.prototype.copy = function(save){
+	for(var i in save){
+		if (typeof(save[i] === "object")){
+			for(var j in save[i]){
+				if (typeof(save[i][j]) === "object"){
+					for(var k in save[i][j]){
+						this[i][j][k] = save[i][j][k];
+					}
+				}
+				else{
+					this[i][j] = save[i][j];
+				}
+			}
+		}
+		else{
+			if (i != "index"){
+				this[i] = save[i];
+			}
+		}
+	}
+}
+
 GameSave.prototype.createMiniature = function(game, x, y){
 	var miniature = game.add.group();
 
@@ -158,7 +175,7 @@ GameSave.prototype.createMiniature = function(game, x, y){
 		heroes[i].visible = false;
 
 		heroes[i].statusUi.fixedToCamera = false;
-		heroes[i].statusUi.x = x + 300 * i;
+		heroes[i].statusUi.x = x + 400 * i;
 		heroes[i].statusUi.y = y;
 		
 		miniature.add(heroes[i]);
@@ -169,8 +186,6 @@ GameSave.prototype.createMiniature = function(game, x, y){
 }
 
 GameSave.prototype.hardSave = function(){
-	BasicGame.allGameSaves.push(this);
-
 	localStorage.setItem("save_" + this.index.toString(), JSON.stringify(this));
 
 	console.log("HARD SAVED !");

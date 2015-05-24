@@ -382,6 +382,7 @@ Mob.prototype.regen = function(duration, tick, chanceToRegen, brutRegen, regenRa
 	}
 }
 
+
 Mob.prototype.cast = function(skill, control, factor){
 	if (typeof(skill) != "string"){
 		return;
@@ -556,7 +557,7 @@ var createArcher = function(game, x, y, spriteSheet, level){
 		this.allStats.health.setBasic(40);
 		this.allStats.health.set(1, 1);
 		this.allStats.health.setGrowth(function(){
-			return 100 * 0.5 * (this._basicValue + 10 * this.entity.allStats.level.get() +
+			return 0.5 * (this._basicValue + 10 * this.entity.allStats.level.get() +
 						  3 * this.entity.allStats.endurance.get());
 		}, -1, [], true);
 
