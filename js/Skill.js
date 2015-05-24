@@ -3246,6 +3246,44 @@ var SelfHealSkill = function (user, level, targetTags) {
 		var user = this.user;
 		var self = this;
 		user.suffer(-heal, healRange, 0.2, this.element);
+		function initProjectile(){
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+
+			this.tint = H_GREEN;
+
+			this.scale.x = 2;
+			this.scale.y =2;
+
+			this.anchor.setTo(0.5,1);
+
+			this.frame = 0;
+
+			this.lifespan = 1000;
+			
+			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+			
+			this.animations.play("animation", null, true);
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+		}
+
+		function updateProjectile(){
+			this.scale.x = this.lifespan / 1000;
+			this.scale.y = this.scale.x;
+			this.x = user.x + user.width * 0.5;
+			this.y = user.y + user.height * 0.65;
+		}
+
+		function killProjectile(){
+			return true;
+		}
+		
+		createProjectile(this.game, 0, 0, "poison",
+						 initProjectile, updateProjectile, killProjectile);
 		
 	}
     this.icon = "selfHeal_icon";
@@ -3281,7 +3319,45 @@ var HealSkill = function (user, level, targetTags) {
     this.launchFunction = function(factor){
 		var user = this.user;
 		var self = this;
-		//this.game.hero.Barton.suffer(-heal, healRange, 0.2, this.element);
+		//Barton.suffer(-heal, healRange, 0.2, this.element);
+		function initProjectile(){
+			//this.x = Barton.x + Barton.width * 0.5;
+			//this.y = Barton.y + Barton.height * 0.65;
+
+			this.tint = H_GREEN;
+			
+			this.scale.x = 2;
+			this.scale.y =2;
+
+			this.anchor.setTo(0.5,1);
+
+			this.frame = 0;
+
+			this.lifespan = 1000;
+			
+			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+			
+			this.animations.play("animation", null, true);
+
+			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+
+			this.targetTags = self.targetTags;
+			this.element = self.element;
+		}
+
+		function updateProjectile(){
+			this.scale.x = this.lifespan / 1000;
+			this.scale.y = this.scale.x;
+			//this.x = Barton.x + Barton.width * 0.5;
+			//this.y = Barton.y + Barton.height * 0.65;
+		}
+
+		function killProjectile(){
+			return true;
+		}
+		
+		createProjectile(this.game, 0, 0, "poison",
+						 initProjectile, updateProjectile, killProjectile);
 		
 	}
     this.icon = "heal_icon";

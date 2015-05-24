@@ -39,6 +39,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("fireball_0", skillDir + "fireball_1.png", 64, 16);
 	this.load.image("fireball_icon", skillDir + "fireball_icon.png");
 	this.load.spritesheet("iceball_0", skillDir + "iceball_0.png", 64, 64);
+	this.load.spritesheet("poison", skillDir + "poison.png", 64, 64);
 	this.load.image("iceball_icon", skillDir + "iceball_icon.png");
 	this.load.spritesheet("thunder_0", skillDir + "thunder_0.png", 256, 64);
 	this.load.image("thunder_icon", skillDir + "thunder_icon.png");
@@ -47,6 +48,8 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("speedUpArrow_icon", skillDir + "speedUpArrow_icon.png");
 	this.load.image("poweredArrow_icon", skillDir + "poweredArrow_icon.png");
 	this.load.image("heroicStrike_icon", skillDir + "heroicStrike_icon.png");
+	this.load.image("heal_icon", skillDir + "heal_icon.png");
+	this.load.image("selfHeal_icon", skillDir + "selfHeal_icon.png");
 	this.load.image("dash_icon", skillDir + "dash_icon.png");
 	this.load.image("fury_icon", skillDir + "fury_icon.png");
 	this.load.image("spikes_0", skillDir + "spikes_0.png");
