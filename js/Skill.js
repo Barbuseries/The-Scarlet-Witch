@@ -3148,6 +3148,8 @@ var FurySkill = function(user, level){
 		var attackFactor = 2;
 		var duration = 3000;
 
+		console.log(user.allStats.attack);
+
 		switch(this.level){
 		case 1:
 			attackFactor *= 1.5;
@@ -3189,6 +3191,8 @@ var FurySkill = function(user, level){
 		this.furyTimer.repeat(20,duration/15,function(){
 			if(!user.allStats.special.canSubtract(51))
 				user.allStats.special.subtract(-50);
+
+			
 		});
 
 		this.furyTimer.add(duration, function(){
@@ -3198,6 +3202,8 @@ var FurySkill = function(user, level){
 		this.furyTimer.onComplete.addOnce(this.onBreak.removeAll, this);
 
 		this.furyTimer.start();
+
+		
 
 		this.onBreak.addOnce(function(){
 			this.furyTimer.stop(true);
@@ -3212,6 +3218,78 @@ var FurySkill = function(user, level){
 
 FurySkill.prototype = Object.create(Skill.prototype);
 FurySkill.prototype.constructor = FurySkill;
+
+var SelfHealSkill = function (user, level, targetTags) {
+    var cooldown = 10000;
+    var heal = 50;
+    var healRange = [0.8,1.3];
+
+    function costFunction(applyCost) {
+        var cost = 0.5 * this.user.allStats.special.getMax();
+		
+		if (this.user.allStats.special.canSubtract(cost)) {
+			if (applyCost){
+				this.user.allStats.special.subtract(cost);
+			}
+				
+			return true;
+		}
+		else {
+			return false;
+		}
+    }
+
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+			   targetTags);
+
+    this.launchFunction = function(factor){
+		var user = this.user;
+		var self = this;
+		user.suffer(-heal, healRange, 0.2, this.element);
+		
+	}
+    this.icon = "selfHeal_icon";
+}
+
+SelfHealSkill.prototype = Object.create(Skill.prototype);
+SelfHealSkill.prototype.constructor = SelfHealSkill;
+
+
+var HealSkill = function (user, level, targetTags) {
+    var cooldown = 10000;
+    var heal = 50;
+    var healRange = [0.8,1.3];
+
+    function costFunction(applyCost) {
+        var cost = 0.5 * this.user.allStats.special.getMax();
+		
+		if (this.user.allStats.special.canSubtract(cost)) {
+			if (applyCost){
+				this.user.allStats.special.subtract(cost);
+			}
+				
+			return true;
+		}
+		else {
+			return false;
+		}
+    }
+
+    Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
+			   targetTags);
+
+    this.launchFunction = function(factor){
+		var user = this.user;
+		var self = this;
+		//this.game.hero.Barton.suffer(-heal, healRange, 0.2, this.element);
+		
+	}
+    this.icon = "heal_icon";
+}
+
+HealSkill.prototype = Object.create(Skill.prototype);
+HealSkill.prototype.constructor = HealSkill;
+
 /******************************************************************************/
 /* Common Skills */
 /*****************/
