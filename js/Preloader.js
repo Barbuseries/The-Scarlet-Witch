@@ -76,11 +76,13 @@ BasicGame.Preloader.prototype.preload =  function(){
 		this.load.tilemap(i, levelTilemap, null,
 						  Phaser.Tilemap.TILED_JSON);
 		
-		try{
-			this.load.image(i + "_Tiles", tilesDir + "Tiles_32x32.png");
+		/*try{
+			this.load.image(i + "_Tiles", tilesDir + i +"_Tiles_32x32.png");
 		}
-		catch(err){}
+		catch(err){}*/
 	}
+
+	this.load.image("Level_1_Tiles", tilesDir + "Tiles_32x32.png");
 
 	// Heroes
 	var charactersDir = assetsDir + "Characters/";

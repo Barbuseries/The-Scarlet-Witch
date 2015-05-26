@@ -3,7 +3,7 @@ BasicGame.allLevels.Level_1 = function(game){
 	
 	Level.call(this, "Level_1", "Level_1_Tiles", "sky");
 
-	this.nextLevel = "MainMenu";
+	this.nextLevel = "Level_2";
 }
 
 BasicGame.allLevels.Level_1.prototype = Object.create(Level.prototype);
@@ -92,12 +92,6 @@ BasicGame.allLevels.Level_1.prototype.update = function (){
 		this.lucy.allStats.health.add(0.01, 1);*/
 
 		//this.lucy.allStats.experience.add(100);
-
-		var nearest = mob1.getNearestTarget();
-
-		if (nearest != mob1.target){
-			mob1.follow(nearest);
-		}
 
 		if (mob1.target != null){
 			if (Math.abs(mob1.target.x - mob1.x) < 500){

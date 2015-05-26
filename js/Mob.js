@@ -146,6 +146,12 @@ Mob.prototype.update = function(){
 		this.body.drag.setTo(this.DRAG, 0);
 	}
 
+	var nearest = this.getNearestTarget();
+
+	if (nearest != this.target){
+		this.follow(nearest);
+	}
+
 	Npc.prototype.update.call(this);
 }
 

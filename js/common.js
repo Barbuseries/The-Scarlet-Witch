@@ -229,6 +229,10 @@ var createFromTiledObject = function(element, group) {
 			return createArcher(group.game, element.x, element.y,
 								element.properties.sprite, 1);
 		},
+
+		boss: function(group, element){
+			return createMob(group.name, element.x, element.y, element.properties.sprite, 1);
+		},
 		
 		item: function(group, element){
 			return null;

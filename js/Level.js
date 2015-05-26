@@ -599,6 +599,10 @@ Level.prototype.reload = function(){
 	this.goToState(this.state.current);
 }
 
+Level.prototype.goToNextLevel = function(){
+	this.goToState(this.nextLevel);
+}
+
 Level.prototype.save = function(){
 	var choice = 1;
 
@@ -610,7 +614,7 @@ Level.prototype.save = function(){
 
 			console.log(BasicGame.gameSave);
 			
-			this.reload();
+			this.goToNextLevel();
 		}
 		else{
 			console.log("Pas Sauvegardé !");
