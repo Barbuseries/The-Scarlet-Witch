@@ -30,7 +30,9 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 
 	this.allTimers = {
 		follow: null,
+		spell: null,
 		skillCharge: null,
+		chooseSkill: null,
 		stun: null,
 		slow: null,
 		dot: null,
@@ -57,6 +59,8 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 										  0, 0, 100);
 	this.allStats.attackSpeed = new Stat(this, "Attack Speed", STAT_NO_MAXSTAT, 1000,
 										 1000, 0, true);
+
+	this.experienceGiven = 5 * this.allStats.level.get();
 
 	this.allStats.level.onUpdate.add(this.allStats.health.grow,
 									 this.allStats.health);
@@ -104,7 +108,7 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 
 	this.healthBar = new MonoGauge(this.game,
 								   0, 0,
-								   this.width, 2,
+								   this.width, 5,
 								   this.allStats.health, H_RED, H_WHITE,
 								   "", "");
 	this.healthBar.width /= this.scale.x;
@@ -120,6 +124,7 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 		this.healthBar.x = (this.width - this.healthBar.fill.width) / 2;
 		this.healthBar.x /= this.scale.x;
 	}, this);
+
 	this.addChild(this.healthBar);
 
 	this.SPEED = 250;
@@ -135,6 +140,8 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.pathFinder = null;
 
 	this._textDamageDir = 1;
+
+	this.onDeath.add(this.giveExp, this);
 }
 
 Mob.prototype = Object.create(Npc.prototype);
@@ -159,7 +166,8 @@ Mob.prototype.jump = function(factor){
         factor = 1;
     }
 	
-	if (this.jumpCount > 0){
+	if (this.jumpCount > 0 &&
+		this.body.velocity.y <= 0){
 		this.body.velocity.y = -this.JUMP_POWER * factor;
 
 		this.jumpCount--;
@@ -395,16 +403,29 @@ Mob.prototype.cast = function(skill, control, factor){
 
 	var skill = this.allSkills[this.currentMode][skill + "Skill"];
 
-	
 	if (skill instanceof Skill){
 		if (skill.chargeTime.getMax() > 0){
 			if (typeof(factor) != "undefined"){
-				if (skill.chargeTime.get(1) >= factor){
-					skill.release();
+				if (this.allTimers.skillCharge == null){
+					this.allTimers.skillCharge = this.game.time.create(true);
 
-					return;
+					this.allTimers.skillCharge.repeat(17, factor *
+													  skill.chargeTime.getMax() /
+													  skill.chargeFactor / 17,
+													  skill.charge, skill);
+
+					this.allTimers.skillCharge.onComplete.addOnce(skill.release,
+																  skill);
+					this.allTimers.skillCharge.onComplete.addOnce(function(){
+						this.allTimers.skillCharge.stop();
+						this.allTimers.skillCharge.destroy();
+						this.allTimers.skillCharge = null;
+					}, this);
+					
+					this.allTimers.skillCharge.start();
 				}
 				
+				return;
 			}
 		}
 		
@@ -462,6 +483,185 @@ Mob.prototype.releaseFifth = function(){
 	this.release("fifth");
 }
 
+Mob.prototype._chooseSkills = function(){
+	if (this.allTimers.spell != null){
+		this.allTimers.spell.stop(true);
+		this.allTimers.spell.destroy();
+		this.allTimers.spell = null;
+	}
+
+	if (Math.random() > 0.75){
+		this.swapMode();
+	}
+	
+	var acceptableSkills = [];
+	var choosenSkills = [];
+	
+	for(var i in this.allSkills[this.currentMode]){
+		var skill = this.allSkills[this.currentMode][i];
+		
+		if (skill.unlocked &&
+			skill.costFunction(0)){
+			acceptableSkills.push(i);
+		}
+	}
+
+	if (acceptableSkills.length > 0){
+		var skillListLength = Math.floor(Math.random() * acceptableSkills.length);
+	
+		for(var i = 0; i <= skillListLength; i++) {
+			choosenSkills[i] = acceptableSkills.splice(Math.floor(Math.random() * acceptableSkills.length), 1)[0];
+		}
+		
+	}
+
+	this._selectedSkills = choosenSkills;
+
+	acceptableSkills = [];
+	choosenSkills = [];
+
+
+	this.allTimers.spell = this.game.time.create(true);
+
+	if (this._selectedSkills.length > 0){
+		this.allTimers.spell.repeat(this._selectedSkills.length, 2000,
+									this._useSkill, this);
+
+		this.allTimers.spell.start();
+	}
+
+}
+
+Mob.prototype._useSkill = function(){
+	if (this._selectedSkills.length == 0){
+		return;
+	}
+
+	this.unFollow();
+
+	var skill = this.allSkills[this.currentMode][this._selectedSkills[0]];
+
+	if (skill.costFunction(0)){
+		var skillName = this._selectedSkills.pop();
+
+		skillName = skillName.replace("Skill", "");
+
+		if (skill.targetTags.indexOf("hero") != -1){
+			var target = this.getNearestTarget("hero");
+
+			if (target != null){
+				this.follow(target);
+
+				this.onFollow.add(function(){
+					var distanceSquared = distanceSquaredFrom.call(this, target);
+
+					if (skill.chargeTime.get() == 0){
+						if (distanceSquared <= (100 * 100)){
+							this.cast(skillName, null, 0.5);
+						}
+					}
+					else if (distanceSquared > (100 * 100)) {
+						this.release(skillName);
+					}
+
+					if (!target.alive ||
+						target._dying){
+						this.unFollow();
+					}
+				}, this);
+			}
+		}
+		else if (skill.targetTags.indexOf("enemy") != -1){
+			var target = this.getNearestTarget("enemy");
+
+			if (target != null){
+				this.follow(target);
+
+				this.onFollow.add(function(){
+					var distanceSquared = distanceSquaredFrom.call(this, target);
+
+					if (skill.chargeTime.get() == 0){
+						if (distanceSquared <= (500 * 500)){
+							this.cast(skillName, null, 0.5);
+						}
+					}
+					else if (distanceSquared > (500 * 500)) {
+						this.release(skillName);
+					}
+
+					if (!target.alive ||
+						target._dying){
+						this.unFollow();
+					}
+				}, this);
+			}
+		}
+	}
+}
+
+Mob.prototype.swapMode = function(){
+	
+}
+
+Mob.prototype.giveExp = function(){
+	var expText = createTextDamage(this.game, this.x + this.width / 2,
+								   this.y + this.height / 2,
+								   this.experienceGiven, PINK);
+	
+	expText.body.allowGravity = false;
+
+	expText.body.velocity.x = 0;
+	expText.body.velocity.y = - 50;
+
+	expText.lifespan = 2000;
+
+	for(var i in expText.body.checkCollision){
+		expText.body.checkCollision[i] = false;
+	}
+	
+	BasicGame.level.allHeroes.forEachAlive(function(item){
+		item.gainExperience(this.experienceGiven);
+	}, this);
+}
+
+Mob.prototype.startIA = function(){
+	if (!this.IAActive){
+		Npc.prototype.startIA.call(this);
+	
+		this.allTimers.chooseSkill = this.game.time.create(false);
+		this.allTimers.chooseSkill.loop(5000, this._chooseSkills, this);
+		this.allTimers.chooseSkill.start();
+
+		this._chooseSkills();
+	}
+}
+
+Mob.prototype.stopIA = function(){
+	Npc.prototype.stopIA.call(this);
+
+	if (this.current.action instanceof Skill){
+		this.current.action.breakSkill();
+	}
+
+	if (this.allTimers.spell != null){
+		this.allTimers.spell.stop();
+		this.allTimers.spell.destroy();
+		this.allTimers.spell = null;
+	}
+	
+	if (this.allTimers.skillCharge != null){
+		this.allTimers.skillCharge.stop();
+		this.allTimers.skillCharge.destroy();
+		this.allTimers.skillCharge = null;
+	}
+
+	if (this.allTimers.chooseSkill != null){
+		this.allTimers.chooseSkill.stop();
+		this.allTimers.chooseSkill.destroy();
+		this.allTimers.chooseSkill = null;
+	}
+}
+
 Mob.prototype._deleteTimers = function(){
 	for(var i in this.allTimers){
 		if (this.allTimers[i] != null){
@@ -473,6 +673,7 @@ Mob.prototype._deleteTimers = function(){
 }
 
 Mob.prototype.die = function(){
+	this.stopIA();
 	this._deleteTimers();
 
 	Npc.prototype.die.call(this);
@@ -485,6 +686,7 @@ Mob.prototype.kill = function(){
 }
 
 Mob.prototype.destroy = function(){
+	this.stopIA();
 	this._deleteTimers();
 	
 	for(var i in this.allStats){
@@ -591,6 +793,9 @@ var createArcher = function(game, x, y, spriteSheet, level){
 			return this._basicValue - 4 * this.entity.allStats.level.get() -
 				2 * this.entity.allStats.agility.get();
 		}, -1, [], true);
+
+		this.allStats.special.addMax(100);
+		this.allStats.special.set(1, 1);
 
 		this.allSkills[0] = {
 			firstSkill: new ArrowSkill(this, 1,

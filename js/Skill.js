@@ -278,7 +278,6 @@ Skill.prototype.setCooldown = function(cooldown){
 
 	if (this.cooldownTween != null){
 		this.cooldownTween.stop();
-		//this.refreshSkill();
 		this.cooldownTween = null;
 	}
 	
@@ -1711,10 +1710,10 @@ var ArrowSkill = function(user, level, targetTags, unlockAt){
 			if (user.orientationH != direction){
 				user.orientationH *= -1;
 				
-				user.animations.currentAnim.stop();
-				
 				self.onBreak.addOnce(function(){
 					this.user.can.orient = true;
+
+					this.user.animations.currentAnim.stop();
 				}, self);
 
 				user.can.orient = false;
@@ -1758,6 +1757,8 @@ var ArrowSkill = function(user, level, targetTags, unlockAt){
 			this.user.orientLeft = Object.getPrototypeOf(this.user).orientLeft;
 			this.user.orientRight = Object.getPrototypeOf(this.user).orientRight;
 		}, this)
+
+		this.user.animations.currentAnim.onComplete.removeAll();
 
 		user.can.move = false;
 	}, this);
@@ -2979,6 +2980,10 @@ var SelfHealSkill = function (user, level, unlockAt) {
     var cooldown = 10000;
 
     function costFunction(applyCost) {
+		if (this.user.allStats.health.get(1) == 1){
+			return false;
+		}
+
         var cost = 0.5 * this.user.allStats.special.getMax();
 		
 		if (this.user.allStats.special.canSubtract(cost)) {
@@ -3086,6 +3091,22 @@ var HealSkill = function (user, level, unlockAt) {
     var cooldown = 10000;
 
     function costFunction(applyCost) {
+		var atLeastOne = false;
+		var group = (this.user.tag == "hero") ? BasicGame.level.allHeroes :
+			BasicGame.level.allEnemies;
+
+		group.forEach(function(item){
+			if (item.allStats.health.get() < 1){
+				atLeastOne = true;
+				
+				return;
+			}
+		});
+
+		if (!atLeastOne){
+			return false;
+		}
+
         var cost = 0.5 * this.user.allStats.special.getMax();
 		
 		if (this.user.allStats.special.canSubtract(cost)) {

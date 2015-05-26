@@ -40,6 +40,11 @@ function swapInArray(array, i, j){
 	array[j] = temp;
 }
 
+function distanceSquaredFrom(item){
+	return (item.x - this.x) * (item.x - this.x) +
+		(item.y - this.y) * (item.y - this.y);
+}
+
 function booleanable(value){
     return ((typeof(value) == "number") ||
             (typeof(value) == "boolean"));

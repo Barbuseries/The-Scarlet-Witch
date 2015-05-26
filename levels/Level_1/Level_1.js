@@ -22,10 +22,6 @@ BasicGame.allLevels.Level_1.prototype.preload = function(){
 		this.timerToTitle.add(1000, function(){
 			if (victory){
 				this.saveAndNextLevel();
-
-				/*this.saveMenu.onEndClose.add(function(){
-					this.returnToTitle();
-				}, this);*/
 			}
 			else{
 				this.gameOver();
@@ -54,9 +50,6 @@ BasicGame.allLevels.Level_1.prototype.preload = function(){
 	}, this);
 }
 
-var mob1;
-var mob2;
-
 BasicGame.allLevels.Level_1.prototype.create = function(){
 	Level.prototype.create.call(this);
 
@@ -67,7 +60,9 @@ BasicGame.allLevels.Level_1.prototype.create = function(){
 
 	this.initPlayers();
 
-	mob1 = this.allEnemies.getChildAt(0);
+	this.startIA();
+
+	/*mob1 = this.allEnemies.getChildAt(0);
 	mob2 = this.allEnemies.getChildAt(1);
 
 	mob1.allStats.special.setMax(1000);
@@ -81,17 +76,17 @@ BasicGame.allLevels.Level_1.prototype.create = function(){
 		})
 	}, this);
 
-	mob1.allSkills[0].firstSkill = new ArrowSkill(mob1, 1, ["platform", "hero"]);
+	mob1.allSkills[0].firstSkill = new ArrowSkill(mob1, 1, ["platform", "hero"]);*/
 }
 
 BasicGame.allLevels.Level_1.prototype.update = function (){
     Level.prototype.update.call(this);
 
-	if (!this.completed && !this.gameOvered){
-		/*this.lucy.allStats.special.add(0.01 / 60, 1);
-		this.lucy.allStats.health.add(0.01, 1);*/
+	/*if (!this.completed && !this.gameOvered){
+		this.lucy.allStats.special.add(0.01 / 60, 1);
+		this.lucy.allStats.health.add(0.01, 1);
 
-		//this.lucy.allStats.experience.add(100);
+		this.lucy.allStats.experience.add(100);
 
 		var nearest = mob1.getNearestTarget();
 
@@ -121,5 +116,5 @@ BasicGame.allLevels.Level_1.prototype.update = function (){
 		if (nearest != mob2.target){
 			mob2.follow(nearest);
 		}
-	}
+	}*/
 }
