@@ -78,15 +78,26 @@ GameSave.prototype.reload = function(){
 
 	for(var i in BasicGame.allPlayers){
 		var player = BasicGame.allPlayers[i];
-		var checkpoint = BasicGame.level.allCheckpoints.getChildAt(this.level.checkpoint);
+		var self = this;
+		var checkpoint = getFromGroupIf(BasicGame.level.allCheckpoints, function(){
+			return this.index == self.level.checkpoint;
+		})
 
 		if (player.hero != null){
 			player.hero.destroy();
 			player.setHero(null);
 		}
 
-		heroes[j].x = checkpoint[this.players[i].hero].x;
-		heroes[j].y = checkpoint[this.players[i].hero].y;
+		if (checkpoint != null){
+			heroes[j].x = checkpoint[this.players[i].hero].x + checkpoint.x;
+			heroes[j].y = checkpoint[this.players[i].hero].y + checkpoint.y;
+			
+			checkpoint.tint = H_RED;
+		}
+		else{
+			heroes[j].x = 0;
+			heroes[j].y = 0;
+		}
 
 		player.setHero(heroes[j]);
 

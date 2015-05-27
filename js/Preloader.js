@@ -28,6 +28,7 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("blood", particlesDir + "blood.png");
 	this.load.image("circle", miscDir + "circle.png");
 	this.load.spritesheet("icons", miscDir + "icons.png", 16, 16);
+	this.load.image("checkpoint_0", miscDir + "checkpoint_0.png", 32, 64);
 
 	// Skills
 	var skillDir = assetsDir + "Skills/";

@@ -27,13 +27,14 @@
 		<script type="text/javascript" src="js/Level.js"></script>
 		<script type="text/javascript" src="js/GameSave.js"></script>
 		<script type="text/javascript" src="js/Bar.js"></script>
+		<script type="text/javascript" src="js/Checkpoint.js"></script>
 		
 		<script type="text/javascript" src="js/Boot.js"></script>
 		<script type="text/javascript" src="js/Preloader.js"></script>
 		<script type="text/javascript" src="js/MainMenu.js"></script>
 
         <script type="text/javascript" src="levels/Level_1/Level_1.js"></script>
-       	<script type="text/javascript" src="levels/Level_2/Level_2.js"></script>
+		<script type="text/javascript" src="levels/Level_2/Level_2.js"></script>
 		<script type="text/javascript" src="levels/Level_3/Level_3.js"></script>
 		<link rel="stylesheet" href="TheScarletWitch.css" type="text/css" media="screen" />
         <title>The Scarlet Witch</title>
@@ -43,7 +44,8 @@
         <script type="text/javascript">
             window.onload = function() {
 				
-				var game = new Phaser.Game(1364, 647, Phaser.AUTO, 'gameContainer');
+				var game = new Phaser.Game(1364, 647, Phaser.AUTO,
+										   'gameContainer');
 			
 				game.state.add('Boot', BasicGame.Boot);
 				game.state.add('Preloader', BasicGame.Preloader);

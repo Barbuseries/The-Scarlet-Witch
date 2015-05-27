@@ -33,6 +33,7 @@ var ControlManager = function(game, type, target, pad){
 	this.allControls = {};
 	
 	this.enabled = true;
+	this.connected = false;
 
 	this._cached = {
 		target: [],
@@ -400,7 +401,7 @@ ControlManager.prototype.getByTag = function(allTags, allNeeded){
 
 			if (control.allTags.indexOf(allTags) != -1){
 				returnControls.push(control);
-			}	
+			}
 		}
 	}
 
@@ -980,14 +981,14 @@ Control.prototype.change = function(keyboardCode, gamepadCode, signal, cache){
 }
 
 Control.prototype.executeKeyboard = function(){
-	if (this.manager.type == CONTROL_KEYBOARD ||
+	if ((this.manager.connected && this.manager.type == CONTROL_KEYBOARD) ||
 		this.transcendental){
 		this.execute(CONTROL_KEYBOARD);
 	}
 }
 
 Control.prototype.executeGamepad = function(){
-	if (this.manager.type == CONTROL_GAMEPAD ||
+	if ((this.manager.connected && this.manager.type == CONTROL_GAMEPAD) ||
 		this.transcendental){
 		this.execute(CONTROL_GAMEPAD);
 	}
@@ -1203,7 +1204,7 @@ PadControl.prototype.change = function(axis, min, max, signal, cache){
 }
 
 PadControl.prototype.execute = function(){
-	if ((this.manager.type != CONTROL_GAMEPAD) &&
+	if ((!this.manager.connected || this.manager.type != CONTROL_GAMEPAD) &&
 		(!this.transcendental)){
 		return;
 	}

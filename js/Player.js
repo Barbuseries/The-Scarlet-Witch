@@ -16,12 +16,33 @@ Player.prototype.getHero = function(){
 	return this.hero;
 }
 
+Player.prototype.connectKeyboard = function(){
+	if (!this.humanAfterAll){
+		if (this.controller.type != CONTROL_KEYBOARD){
+			this.controller.swap();
+		}
+
+		this.connect();
+	}
+}
+
+Player.prototype.connectGamepad = function(){
+	if (!this.humanAfterAll){
+		if (this.controller.type != CONTROL_GAMEPAD){
+			this.controller.swap();
+		}
+
+		this.connect();
+	}
+}
+
 Player.prototype.connect = function(){
 	if (!this.humanAfterAll){
 		this.humanAfterAll = true;
 		
 		this.setHero(this.getHero());
 
+		this.controller.connected = true;
 		this.controller.enable(["action", "movement", "system"]);
 	}
 }

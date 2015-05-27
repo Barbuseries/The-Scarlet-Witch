@@ -340,9 +340,10 @@ Level.prototype.update = function(){
 		this.game.physics.arcade.collide(BasicGame.emitters[i], this.game.platforms);
 	}
 
-	this.game.physics.arcade.collide(this.allHeroes, this.allEnemies);
+	//this.game.physics.arcade.collide(this.allHeroes, this.allEnemies);
 
 	// Collisions (Mob)
+	this.game.physics.arcade.overlap(this.allCheckpoints, this.game.platforms);
 	this.game.physics.arcade.overlap(this.allHeroes, this.game.platforms);
 	this.game.physics.arcade.overlap(this.allEnemies, this.game.platforms);
 	
@@ -452,32 +453,21 @@ Level.prototype.create = function(){
 
 	this.createMobs();
 	//this.createItems();
-	//this.createCheckpoints();
-
-	var checkpoint = this.game.add.sprite(0, 0, "");
-
-	checkpoint.barton = {
-		x: 1000,
-		
-		y: 800
-	};
-	
-	checkpoint.lucy = {
-		x: 600,
-		
-		y: 800
-	};
-
-	this.allCheckpoints.addChild(checkpoint);
+	this.createCheckpoints();
 
 	BasicGame.gameSave.reload();
 
+	this.game.world.bringToTop(this.allCheckpoints);
 	this.game.world.bringToTop(this.allHeroes);
 	this.game.world.bringToTop(this.allEnemies);
 	
 	for(var i in BasicGame.pool){
 		this.game.world.bringToTop(BasicGame.pool[i]);
 	}
+
+	this.allHeroes.forEach(function(item){
+		this.game.world.bringToTop(item.statusUi);
+	}, this);
 }
 
 Level.prototype.initPlayers = function(){

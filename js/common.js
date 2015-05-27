@@ -231,7 +231,7 @@ var getFromGroupIf = function(group, callback){
 var collideProcessCheckpoint = function(hero, checkpoint){
 	if (checkpoint.index > BasicGame.gameSave.level.checkpoint){
 		var oldCheckpoint = getFromGroupIf(checkpoint.parent, function(){
-			this.index == BasicGame.gameSave.level.checkpoint;
+			return this.index == BasicGame.gameSave.level.checkpoint;
 		});
 
 		if (oldCheckpoint != null){
@@ -239,8 +239,9 @@ var collideProcessCheckpoint = function(hero, checkpoint){
 		}
 
 		BasicGame.gameSave.level.checkpoint = checkpoint.index;
+		BasicGame.gameSave.save();
 		
-		checkpoint.tint = H_BLUE;
+		checkpoint.tint = H_RED;
 	}
 
 	return false;
@@ -249,7 +250,13 @@ var collideProcessCheckpoint = function(hero, checkpoint){
 var findObjectsByType = function(type, map, layer){
 	var result = [];
 
-	map.objects[layer].forEach(function(element) {
+	var mLayer = map.objects[layer];
+	
+	if (typeof(mLayer) === "undefined"){
+		return [];
+	}
+
+	mLayer.forEach(function(element) {
 		if (element.properties.type === type) {
 			// Phaser uses top left, Tiled bottom left so we have to adjust the y position
 			// also keep in mind that the cup images are a bit smaller than the tile which is 16x16
@@ -287,7 +294,15 @@ var createFromTiledObject = function(element, group) {
 	}
 	
 	var spriteName = element.properties.sprite;
-	var constructor = spriteName.substring(0, spriteName.indexOf("_"));
+
+	var constructor = null;
+	
+	try{
+		constructor = spriteName.substring(0, spriteName.indexOf("_"));
+	}catch(err){
+		constructor = element.properties.type;
+	}
+	
 
 	var object = allConstructors[constructor](group, element);
 

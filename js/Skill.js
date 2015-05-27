@@ -552,9 +552,9 @@ var FireBallSkill = function(user, level, targetTags, unlockAt){
 	var cooldown = user.allStats.attackSpeed.get();
 
 	function costFunction(applyCost){
-		if (this.user.allStats.special.canSubtract(5)){
+		if (this.user.allStats.special.canSubtract(0.1, 1)){
 			if (applyCost){
-				this.user.allStats.special.subtract(5);
+				this.user.allStats.special.subtract(0.1, 1);
 			}
 			
 			return true;
@@ -3052,6 +3052,9 @@ var SelfHealSkill = function (user, level, unlockAt) {
 				
 				this.user.can.action = true;
 				this.user.current.action = null;
+				this.user.can.move = true;
+				this.user.can.orient = true;
+				this.user.can.jump = true;
 			}, this);
 		/*function initProjectile(){
 			this.x = user.x + user.width * 0.5;
@@ -3114,7 +3117,7 @@ var HealSkill = function (user, level, unlockAt) {
 			BasicGame.level.allEnemies;
 
 		group.forEach(function(item){
-			if (item.allStats.health.get() < 1){
+			if (item.allStats.health.get(1) < 1){
 				atLeastOne = true;
 				
 				return;
@@ -3184,6 +3187,9 @@ var HealSkill = function (user, level, unlockAt) {
 				
 				this.user.can.action = true;
 				this.user.current.action = null;
+				this.user.can.move = true;
+				this.user.can.orient = true;
+				this.user.can.jump = true;
 			}, this);
 		/*var user = this.user;
 		var self = this;
@@ -3240,7 +3246,7 @@ HealSkill.prototype = Object.create(Skill.prototype);
 HealSkill.prototype.constructor = HealSkill;
 
 var ManaHealSkill = function (user, level, unlockAt) {
-    var cooldown = 1000;
+    var cooldown = 10000;
     
 
     function costFunction(applyCost) {
@@ -3319,6 +3325,12 @@ var ManaHealSkill = function (user, level, unlockAt) {
 		this.user.animations.play("spellReleaseBoth", 20)
 			.onComplete.addOnce(function(){
 				this.onBreak.dispatch(this);
+
+				this.user.can.orient = true;
+				this.user.can.move = true;
+				this.user.can.jump = true;
+				this.user.can.action = true;
+				this.user.current.action = null;
 			}, this);
 		/*var user = this.user;
 		var self = this;

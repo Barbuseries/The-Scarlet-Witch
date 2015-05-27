@@ -121,9 +121,11 @@ Npc.prototype.goLeft = function(control, factor){
 		return;
 	}
 
-	if (typeof(factor) === "undefined"){
+	if (typeof(factor) != "number"){
         factor = 1;
     }
+	
+	this.body.maxVelocity.x = this.SPEED * factor;
 
 	this.orientationH = -1;
 
@@ -151,9 +153,11 @@ Npc.prototype.goRight = function(control, factor){
 		return;
 	}
 
-    if (typeof(factor) === "undefined"){
+    if (typeof(factor) != "number"){
         factor = 1;
     }
+
+	this.body.maxVelocity.x = this.SPEED * factor;
 
 	this.orientationH = 1;
 

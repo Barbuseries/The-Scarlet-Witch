@@ -210,8 +210,8 @@ var Lucy = function(game, x, y, level){
 
 
 	this.allStats.attackSpeed.setGrowth(function(){
-		return this._basicValue - 3 * this.entity.allStats.level.get() -
-			5 * this.entity.allStats.agility.get();
+		return this._basicValue - 2 * this.entity.allStats.level.get() -
+			3 * this.entity.allStats.agility.get();
 	}, -1, [], true);
 
 	this.statusUi = new Status_UI(this.game, this, 0, 0);
@@ -248,7 +248,24 @@ var Lucy = function(game, x, y, level){
 	this.allSkills[0].fourthSkill.setChargeTime(5000);
 	this.allSkills[0].fifthSkill.setChargeTime(5000);
 
+	this.manaRegen = this.game.time.create(false);
+	this.manaRegen.loop(this.allStats.attackSpeed.get() * 2, function(){
+		this.special.add(0.01, 1);
+	}, this.allStats);
+
+	this.allStats.attackSpeed.onUpdate.add(function(stat, oldValue, newValue){
+		if (oldValue != newValue){
+			this.manaRegen.removeAll();
+
+			this.manaRegen.loop(this.allStats.attackSpeed.get() * 2, function(){
+				this.special.add(0.01, 1);
+			}, this.allStats);
+		}
+	}, this);
+
 	this.menu = new HeroMenu(this);
+
+	this.manaRegen.start();
 }
 
 Lucy.prototype = Object.create(Hero.prototype);
@@ -262,6 +279,17 @@ Lucy.prototype.update = function(){
 			this.followNearest("hero", Infinity);
 		}
 	}
+}
+
+Lucy.prototype.destroy = function(){
+	if (this.manaRegen != null){
+		this.manaRegen.stop();
+		this.manaRegen.destroy();
+
+		this.manaRegen = null;
+	}
+	
+	Hero.prototype.destroy.call(this);
 }
 
 var Barton = function(game, x, y, level){
@@ -320,8 +348,8 @@ var Barton = function(game, x, y, level){
 	}, -1, [], true);
 
 	this.allStats.attackSpeed.setGrowth(function(){
-		return this._basicValue - 3 * this.entity.allStats.level.get() -
-			5 * this.entity.allStats.agility.get();
+		return this._basicValue - 2 * this.entity.allStats.level.get() -
+			3 * this.entity.allStats.agility.get();
 	}, -1, [], true);
 
 	this.statusUi = new Status_UI(this.game, this, 0, 0, true);
@@ -402,6 +430,13 @@ Barton.prototype.update = function(){
 
 	if (this.alive){
 		this.allStats.fury.subtract(0.02 / 60, 1);
+
+		if (this.furious){
+			this.tint = H_RED;
+		}
+		else{
+			this.tint = H_WHITE;
+		}
 	}
 }
 
@@ -456,12 +491,3 @@ if (this.currentMode == 0){
 		}
 	}
 */
-
-/*Hero.prototype.update = function(){
-	if (this.body.onFloor()){
-		this.jumpCount = this.MAXJUMP;
-		this.body.drag.setTo(this.DRAG, 0);
-	}
-
-	Npc.prototype.update.call(this);
-}*/

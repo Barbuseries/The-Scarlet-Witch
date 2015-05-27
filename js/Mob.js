@@ -48,11 +48,11 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.allStats.defense = new Stat(this, "Defense", STAT_NO_MAXSTAT, 0, 0, 0, 100);
 
 	this.allStats.mainStat = new Stat(this, "Main Stat", STAT_NO_MAXSTAT, 0, 0,
-									  0, 100);
+									  0, 200);
 	this.allStats.endurance = new Stat(this, "Endurance", STAT_NO_MAXSTAT, 0, 0,
-									   0, 100);
+									   0, 200);
 	this.allStats.agility = new Stat(this, "Agility", STAT_NO_MAXSTAT, 0, 0,
-									 0, 100);
+									 0, 200);
 
 	this.allStats.dodge = new Stat(this, "Dodge", STAT_NO_MAXSTAT, 0, 0, 0, 100);
 	this.allStats.criticalRate = new Stat(this, "Critical Rate", STAT_NO_MAXSTAT, 0,
@@ -130,7 +130,7 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.SPEED = 250;
 	this.ACCELERATION = 200;
 	this.JUMP_POWER = 200;
-	this.DRAG = 1000;
+	this.DRAG = 1750;
 	this.MAXJUMP = 1;
 	this.jumpCount = this.MAXJUMP;
 
@@ -195,7 +195,7 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 	if (actualDamage < 0){
 		color = GREEN;
 	}
-	else{
+	else if (element != Elements.ALMIGHTY){
 		var finalDefense = this.allStats.defense.get() / 100;
 
 		finalDefense = (finalDefense > 1) ? 1 : finalDefense;
