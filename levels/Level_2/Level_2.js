@@ -13,7 +13,15 @@ BasicGame.allLevels.Level_2.prototype.preload = function(){
 	Level.prototype.preload.call(this);
 	
 	this.checkCompleteFunction = function(){
-		return this.allEnemies.getFirstAlive() == null;
+		var result = false;
+
+		this.allHeroes.forEachAlive(function(item){
+			if (item.x > 2000){
+				result = true;
+			}
+		});
+
+		return result;
 	}
 
 	function returnToTitle(victory){
@@ -21,7 +29,7 @@ BasicGame.allLevels.Level_2.prototype.preload = function(){
 
 		this.timerToTitle.add(1000, function(){
 			if (victory){
-				this.save();
+				this.saveAndNextLevel();
 
 				/*this.saveMenu.onEndClose.add(function(){
 					this.returnToTitle();
@@ -67,7 +75,10 @@ BasicGame.allLevels.Level_2.prototype.create = function(){
 
 	this.initPlayers();
 }
+<<<<<<< HEAD
 
 /*BasicGame.allLevels.Level_2.prototype.update = function (){
     Level.prototype.update.call(this);
 }*/
+=======
+>>>>>>> 4cd2fa0de6d6fb5f401631b52a05c07d83d0da97

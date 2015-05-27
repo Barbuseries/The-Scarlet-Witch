@@ -177,9 +177,9 @@ var Lucy = function(game, x, y, level){
 		return this._basicValue + 5 * this.entity.allStats.level.get() +
 			5 * this.entity.allStats.mainStat.get();
 	}, -1, [], true);
+
 	this.allStats.mainStat.onUpdate.add(this.allStats.special.grow,
 										this.allStats.special);
-
 
 	this.allStats.attack.setBasic(2);
 	this.allStats.attack.set(1, 1);
@@ -223,16 +223,26 @@ var Lucy = function(game, x, y, level){
 	// Skills.
 	this.allSkills[0] = {
 		firstSkill: new FireBallSkill(this, 1,
-									   ["platform", "enemy"]),
+									   ["platform", "enemy"], 1),
 
-		secondSkill: new IceBallSkill(this, 1, ["enemy"]),
+		secondSkill: new IceBallSkill(this, 1, ["enemy"], 5),
 		
-		thirdSkill: new ThunderSkill(this, 1, ["enemy"]),
+		thirdSkill: new ThunderSkill(this, 1, ["enemy"], 10),
 		
-		fourthSkill: new PoisonSkill(this, 1, ["enemy"]),
+		fourthSkill: new PoisonSkill(this, 1, ["enemy"], 15),
 		
-		fifthSkill: new DeathSkill(this, 1, ["enemy"])
+		fifthSkill: new DeathSkill(this, 1, ["enemy"], 20)
 	};
+
+	this.allSkills[1] = {
+		firstSkill : new SelfHealSkill(this, 1, 1),
+
+		secondSkill : new HealSkill(this, 1, 7),
+
+		thirdSkill : new ManaHealSkill(this, 1, 12),
+
+		fourthSkill : new StunSkill(this, 1, ["enemy"], 17)
+	}
 
 	this.allSkills[0].secondSkill.setChargeTime(3000);
 	this.allSkills[0].thirdSkill.setChargeTime(5000);
@@ -270,6 +280,13 @@ var Barton = function(game, x, y, level){
 	this.allStats.fury = new Stat(this, "Fury", STAT_NO_LINK, 0, 100, 0, 100);
 	
 	this.allStats.quiver = new Stat(this, "Quiver", STAT_NO_LINK, 10);
+
+	this.allStats.quiver.setGrowth(function(){
+		return this._basicValue + Math.floor(this.entity.allStats.agility.get() / 20);
+	}, -1, [], true);
+
+	this.allStats.agility.onUpdate.add(this.allStats.quiver.grow,
+									   this.allStats.quiver);
 	
 	this.allStats.attack.setBasic(5);
 	this.allStats.attack.set(1, 1);
@@ -299,8 +316,8 @@ var Barton = function(game, x, y, level){
 	}, -1, [], true);
 
 	this.allStats.attackSpeed.setGrowth(function(){
-		return this._basicValue - 4 * this.entity.allStats.level.get() -
-			2 * this.entity.allStats.agility.get();
+		return this._basicValue - 3 * this.entity.allStats.level.get() -
+			5 * this.entity.allStats.agility.get();
 	}, -1, [], true);
 
 	this.statusUi = new Status_UI(this.game, this, 0, 0, true);
@@ -321,24 +338,29 @@ var Barton = function(game, x, y, level){
 
 	this.allSkills[1] = {
 		firstSkill: new ArrowSkill(this, 1,
-								   ["platform", "enemy"]),
+								   ["platform", "enemy"], 1),
 
 		secondSkill: new MultArrowSkill(this, 1,
-										["platform", "enemy"]),
+										["platform", "enemy"], 5),
 
-		thirdSkill: new SpeedUpArrowSkill(this, 5),
+		thirdSkill: new SpeedUpArrowSkill(this, 5, 10),
 
-		fourthSkill: new TrapSkill(this, 1, ["enemy"]),
+		fourthSkill: new TrapSkill(this, 1, ["enemy"], 15),
 
 		fifthSkill: new PoweredArrowSkill(this, 1,
-										  ["enemy"])
+										  ["enemy"], 20)
 	};
 	
 	this.allSkills[0] = {
-		firstSkill: new SlashSkill(this, 1, ["enemy"]),
+		firstSkill: new SlashSkill(this, 1, ["enemy"], 1),
 
-		secondSkill: new ShieldSkill(this, 1),
-		thirdSkill : new HeroicStrikeSkill(this, 1, ["enemy"])
+		secondSkill: new ShieldSkill(this, 1, 3),
+
+		thirdSkill : new HeroicStrikeSkill(this, 1, ["enemy"], 7),
+
+		fourthSkill : new DashSkill(this, 1, 12),
+
+		fifthSkill : new FurySkill(this, 1, 25)
 	};
 
 	this.quiverRegen = this.game.time.create(false);
@@ -349,7 +371,7 @@ var Barton = function(game, x, y, level){
 	this.allStats.attackSpeed.onUpdate.add(function(stat, oldValue, newValue){
 		if (oldValue != newValue){
 			this.quiverRegen.removeAll();
-			
+
 			this.quiverRegen.loop(this.allStats.attackSpeed.get() * 6, function(){
 				this.quiver.add(1);
 			}, this.allStats);
@@ -384,6 +406,17 @@ Barton.prototype.swapMode = function(){
 
 	this.allStats.special = (this.currentMode) ? this.allStats.quiver :
 		this.allStats.fury;
+}
+
+Barton.prototype.destroy = function(){
+	if (this.quiverRegen != null){
+		this.quiverRegen.stop();
+		this.quiverRegen.destroy();
+
+		this.quiverRegen = null;
+	}
+	
+	Hero.prototype.destroy.call(this);
 }
 /******************************************************************************/
 /* Hero */

@@ -46,7 +46,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.image("multArrow_icon", skillDir + "multArrow_icon.png");
 	this.load.image("speedUpArrow_icon", skillDir + "speedUpArrow_icon.png");
 	this.load.image("poweredArrow_icon", skillDir + "poweredArrow_icon.png");
-	this.load.image("heroicStrike_icon", skillDir + "heroicStrike_icon.png");
 	this.load.image("spikes_0", skillDir + "spikes_0.png");
 	this.load.spritesheet("quake_0", skillDir + "quake_0.png", 256, 128);
 	this.load.image("trap_icon", skillDir + 'trap_icon.png');
@@ -57,6 +56,17 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("explosion_0", skillDir + "explosion_0.png", 64, 64);
 	this.load.spritesheet("explosion_1", skillDir + "explosion_1.png", 64, 64);
 	this.load.image("shield_icon", skillDir + "shield_icon.png", 64, 64);
+	this.load.image("mana_icon", skillDir + "mana_icon.png");
+	this.load.image("heal_icon", skillDir + "heal_icon.png");
+	this.load.image("selfHeal_icon", skillDir + "selfHeal_icon.png");
+	this.load.image("dash_icon", skillDir + "dash_icon.png");
+	this.load.image("fury_icon", skillDir + "fury_icon.png");
+	this.load.image("heroicStrike_icon", skillDir + "heroicStrike_icon.png");
+	this.load.image("stun_icon", skillDir + "stun_icon.png");
+	this.load.image("lshield_icon", skillDir + "lshield_icon.png");
+	this.load.spritesheet("poison", skillDir + "poison.png", 64, 64);
+
+	this.load.image("skillLocked_icon", skillDir + "skillLocked_icon.png", 64, 64);
 
 	// Ammo
 	var ammoDir = miscDir + "Ammo/";
@@ -75,11 +85,14 @@ BasicGame.Preloader.prototype.preload =  function(){
 
 		this.load.tilemap(i, levelTilemap, null,
 						  Phaser.Tilemap.TILED_JSON);
+<<<<<<< HEAD
 		
 		/*try{
 			this.load.image(i + "_Tiles", tilesDir + i +"_Tiles_32x32.png");
 		}
 		catch(err){}*/
+=======
+>>>>>>> 4cd2fa0de6d6fb5f401631b52a05c07d83d0da97
 	}
 
 	this.load.image("Level_1_Tiles", tilesDir + "Tiles_32x32.png");
@@ -93,11 +106,6 @@ BasicGame.Preloader.prototype.preload =  function(){
 	this.load.spritesheet("barton", heroesDir + "barton_full.png", 64, 64);
 	this.load.spritesheet("archer_1", ennemiesDir + "archer_1.png", 64, 64);
 	this.load.spritesheet("mob_1", ennemiesDir + "mob_1.png", 64, 64);
-	this.load.spritesheet("boss_1", ennemiesDir + "boss_1.png", 64, 64);
-
-	// Checkpoints
-
-	this.load.spritesheet("checkpoint", tilesDir + "separate png/tile_50.png", 32, 32);
 
 
 	// Audio

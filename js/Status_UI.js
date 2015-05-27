@@ -157,7 +157,7 @@ Status_UI.prototype.update = function(){
 	for(var i in this.allStatusSkills[this.hero.currentMode]){
 		var skill = this.hero.allSkills[this.hero.currentMode][i];
 		
-		if (!skill.costFunction(0)){
+		if (skill.unlocked && !skill.costFunction(0)){
 			this.allStatusSkills[this.hero.currentMode][i].iconSprite.tint = H_GREY;
 			this.allStatusSkills[this.hero.currentMode][i].iconSprite.alpha = 0.2;
 		}
@@ -167,6 +167,7 @@ Status_UI.prototype.update = function(){
 		}
 	}
 }
+
 /******************************************************************************/
 /* Status_UI */
 /*************/
@@ -180,7 +181,17 @@ var StatusSkill = function(skill, x, y){
 	this.backgroundSprite = this.game.add.sprite(32, 32, "template_icon");
 	this.backgroundSprite.anchor.setTo(0.5);
 
-	this.iconSprite = this.game.add.sprite(32, 32, skill.icon);
+	if (skill.unlocked){
+		this.iconSprite = this.game.add.sprite(32, 32, skill.icon);
+	}
+	else{
+		this.iconSprite = this.game.add.sprite(32, 32, "skillLocked_icon");
+
+		skill.onUnlock.addOnce(function(){
+			this.iconSprite.loadTexture(skill.icon);
+		}, this);
+	}
+
 	this.iconSprite.anchor.setTo(0.5);
 
 	skill.createChargeBar(0, 64 + 5,

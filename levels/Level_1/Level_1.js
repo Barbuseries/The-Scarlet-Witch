@@ -21,7 +21,7 @@ BasicGame.allLevels.Level_1.prototype.preload = function(){
 
 		this.timerToTitle.add(1000, function(){
 			if (victory){
-				this.save();
+				this.saveAndNextLevel();
 
 				/*this.saveMenu.onEndClose.add(function(){
 					this.returnToTitle();

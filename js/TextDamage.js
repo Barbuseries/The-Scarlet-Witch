@@ -6,7 +6,7 @@ var TextDamage = function (game, x, y){
 
 	this.game.physics.enable(this, Phaser.Physics.ARCADE);
 	
-	this.anchor.setTo(0.5, 0.5);
+	this.anchor.setTo(0.5);
 
 	this.body.bounce.y = 0.5;
 	this.body.velocity.y = -300;
