@@ -214,6 +214,38 @@ var collideProcessProjectile = function(projectile, obstacle){
 	}
 }
 
+var getFromGroupIf = function(group, callback){
+	var child = null;
+
+	group.forEach(function(item){
+		if (callback.call(item)){
+			child = item;
+		}
+		
+		return;
+	});
+
+	return child;
+}
+
+var collideProcessCheckpoint = function(hero, checkpoint){
+	if (checkpoint.index > BasicGame.gameSave.level.checkpoint){
+		var oldCheckpoint = getFromGroupIf(checkpoint.parent, function(){
+			this.index == BasicGame.gameSave.level.checkpoint;
+		});
+
+		if (oldCheckpoint != null){
+			oldCheckpoint.tint = H_WHITE;
+		}
+
+		BasicGame.gameSave.level.checkpoint = checkpoint.index;
+		
+		checkpoint.tint = H_BLUE;
+	}
+
+	return false;
+}
+
 var findObjectsByType = function(type, map, layer){
 	var result = [];
 
@@ -239,15 +271,18 @@ var createFromTiledObject = function(element, group) {
 
 		archer: function(group, element){
 			return createArcher(group.game, element.x, element.y,
-								element.properties.sprite, 1);
-		},
-
-		boss: function(group, element){
-			return createMob(group.name, element.x, element.y, element.properties.sprite, 1);
+								element.properties.sprite,
+								BasicGame.gameSave.heroes.barton.level);
 		},
 		
 		item: function(group, element){
 			return null;
+		},
+		
+		checkpoint: function(group, element){
+			return new Checkpoint(group.game, element.x, element.y,
+								  element.barton, element.lucy,
+								  element.sprite, element.index);
 		}
 	}
 	

@@ -60,7 +60,7 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this.allStats.attackSpeed = new Stat(this, "Attack Speed", STAT_NO_MAXSTAT, 1000,
 										 1000, 0, true);
 
-	this.experienceGiven = 5 * this.allStats.level.get();
+	this.experienceGiven = 10 * this.allStats.level.get();
 
 	this.allStats.level.onUpdate.add(this.allStats.health.grow,
 									 this.allStats.health);
@@ -151,12 +151,6 @@ Mob.prototype.update = function(){
 	if (this.body.onFloor()){
 		this.jumpCount = this.MAXJUMP;
 		this.body.drag.setTo(this.DRAG, 0);
-	}
-
-	var nearest = this.getNearestTarget();
-
-	if (nearest != this.target){
-		this.follow(nearest);
 	}
 
 	Npc.prototype.update.call(this);
@@ -420,9 +414,9 @@ Mob.prototype.cast = function(skill, control, factor){
 													  skill.chargeFactor / 17,
 													  skill.charge, skill);
 
-					this.allTimers.skillCharge.onComplete.addOnce(skill.release,
-																  skill);
 					this.allTimers.skillCharge.onComplete.addOnce(function(){
+						skill.release();
+
 						this.allTimers.skillCharge.stop();
 						this.allTimers.skillCharge.destroy();
 						this.allTimers.skillCharge = null;
@@ -562,11 +556,11 @@ Mob.prototype._useSkill = function(){
 					var distanceSquared = distanceSquaredFrom.call(this, target);
 
 					if (skill.chargeTime.get() == 0){
-						if (distanceSquared <= (100 * 100)){
+						if (distanceSquared <= (skill.range * skill.range)){
 							this.cast(skillName, null, 0.5);
 						}
 					}
-					else if (distanceSquared > (100 * 100)) {
+					else if (distanceSquared > (skill.range * skill.range)) {
 						this.release(skillName);
 					}
 
@@ -587,11 +581,11 @@ Mob.prototype._useSkill = function(){
 					var distanceSquared = distanceSquaredFrom.call(this, target);
 
 					if (skill.chargeTime.get() == 0){
-						if (distanceSquared <= (500 * 500)){
+						if (distanceSquared <= (skill.range * skill.range)){
 							this.cast(skillName, null, 0.5);
 						}
 					}
-					else if (distanceSquared > (500 * 500)) {
+					else if (distanceSquared > (skill.range * skill.range)) {
 						this.release(skillName);
 					}
 

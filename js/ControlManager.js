@@ -8,6 +8,9 @@ var CONTROL_GAMEPAD = 1;
    type : (number) CONTROL_KEYBOARD => enable key binding.
                    CONTROL_GAMEPAD => enable button binding and joystick handling.
 
+   /!\ Note : A control can be used in both cases if it's property
+              "transcendental" is set to true. 
+
    target : (object) the object whose methods will be called.
             By default, all controls share the same target as the ControlManager,
 			but you can specify it for each control.
@@ -21,6 +24,7 @@ var ControlManager = function(game, type, target, pad){
 	game.input.gamepad.start();
 	
 	this.pad = game.input.gamepad[pad];
+	this.pad.addCallbacks(this, {onDisconnect: this.swap});
 
 	this.keyboard = game.input.keyboard;
 
@@ -57,6 +61,7 @@ ControlManager.prototype.update = function(){
    controlName : (string) name of the control (controlManager.allControls.controlName
                  will refer to the control)
                  => inputName = "leftInput" => this.allControls.leftInput refers to it.
+				 => -1 : use functionName as the control's name.
 				 If a control of the ControlManager has the same name, it will be
 				 replaced.
 
@@ -90,6 +95,13 @@ ControlManager.prototype.update = function(){
    target : (object) object whose method will be called for this specific control.
             => -1 : if controlName is already a control of the ControlManager,
 			will copy the target.
+
+   fps : (number) Fired Per Second.
+                  0 : no effect.
+				  > 0 : how many times the function will be exucted (at most)
+				        per second.
+						=> 30 : executed (at most) 30 times per second
+						        (every 2 frames).
 */
 ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 												gamepadCode,
@@ -115,6 +127,8 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 	function setAfterCheck(){
 		manager.bindControl(controlName, -1, gamepadCode, functionName, signal,
 							allTags, target, fps);
+
+		this.pad.addCallbacks(this, {onConnect: null});
 	}
 	
 	if (!this.pad.connected){
@@ -188,11 +202,13 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 	function setAfterCheck(){
 		manager.bindPadControl(padControlName, axis, min, max, functionName, signal,
 							   allTags, target, fps);
+
+		this.pad.addCallbacks(this, {onConnect: null});
 	}
 
 	if (!this.pad.connected){
 		this.pad.addCallbacks(this, {onConnect: setAfterCheck});
-		return;
+		return this;
 	}
 
 	if (typeof(this.allControls[padControlName]) != "undefined"){
@@ -554,6 +570,12 @@ ControlManager.prototype.swap = function(cache){
 	}
 
 	this.type = 1 * ! this.type;
+
+	if (this.type == CONTROL_GAMEPAD){
+		if (!this.pad.connected){
+			this.type = CONTROL_KEYBOARD;
+		}
+	}
 }
 /******************************************************************************/
 /* ControlManager */
@@ -562,7 +584,6 @@ ControlManager.prototype.swap = function(cache){
 /**********************/
 /* Control Squeletton */
 /******************************************************************************/
-
 var ControlSqueletton = function(manager, functionName, signal, allTags, target,
 								 fps){
 	if (typeof(manager) != "object") return;
@@ -585,6 +606,9 @@ var ControlSqueletton = function(manager, functionName, signal, allTags, target,
 	this._fps = 0;
 
 	this.enabled = true;
+
+	this.transcendental = false;
+	     
 	this._cached = {
 		target: [],
 		enabled: [],
@@ -956,13 +980,15 @@ Control.prototype.change = function(keyboardCode, gamepadCode, signal, cache){
 }
 
 Control.prototype.executeKeyboard = function(){
-	if (this.manager.type == CONTROL_KEYBOARD){
+	if (this.manager.type == CONTROL_KEYBOARD ||
+		this.transcendental){
 		this.execute(CONTROL_KEYBOARD);
 	}
 }
 
 Control.prototype.executeGamepad = function(){
-	if (this.manager.type == CONTROL_GAMEPAD){
+	if (this.manager.type == CONTROL_GAMEPAD ||
+		this.transcendental){
 		this.execute(CONTROL_GAMEPAD);
 	}
 }
@@ -1072,7 +1098,6 @@ Control.prototype.destroy = function(){
 
 	ControlSqueletton.prototype.destroy.call(this);
 }
-
 /******************************************************************************/
 /* Control */
 /***********/
@@ -1178,15 +1203,21 @@ PadControl.prototype.change = function(axis, min, max, signal, cache){
 }
 
 PadControl.prototype.execute = function(){
-	if (this.manager.type != CONTROL_GAMEPAD){
+	if ((this.manager.type != CONTROL_GAMEPAD) &&
+		(!this.transcendental)){
 		return;
 	}
+
+	var pad = this.manager.pad;
+
+	if (!pad.connected){
+		return;
+	}
+	
 
 	var actualFunction = this.getFunction();
 
 	var target = (this.target == -1) ? this.manager.target : this.target;
-
-	var pad = this.manager.pad;
 
 
 	if ((pad.axis(this.axis) >= this.min) && (pad.axis(this.axis) <= this.max)){

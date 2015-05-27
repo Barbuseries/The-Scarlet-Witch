@@ -346,7 +346,8 @@ Level.prototype.update = function(){
 	this.game.physics.arcade.overlap(this.allHeroes, this.game.platforms);
 	this.game.physics.arcade.overlap(this.allEnemies, this.game.platforms);
 	
-	this.game.physics.arcade.overlap(this.allHeroes, this.allCheckpoints);
+	this.game.physics.arcade.overlap(this.allHeroes, this.allCheckpoints, null,
+									 collideProcessCheckpoint);
 
 
 	this.allHeroes.forEachAlive(function(item){
@@ -624,20 +625,8 @@ Level.prototype.goToNextLevel = function(){
 }
 
 Level.prototype.save = function(){
-	var choice = 1;
-
-	function save(){
-		if (choice){
-			console.log("Sauvegardé ! (Mais pas HARD !)");
-
-Level.prototype.save = function(){
 	BasicGame.gameSave.save();
-			console.log(BasicGame.gameSave);
-			
-			this.goToNextLevel();
-		}
-		else{
-			console.log("Pas Sauvegardé !");
+
 	this.saveMenu = new LoadSaveMenu(this.game, BasicGame.allPlayers.p1.controller,
 									 true);
 	this.saveMenu.toggle();

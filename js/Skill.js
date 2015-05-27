@@ -107,6 +107,8 @@ var Skill = function(user, level, costFunction, cooldown, element,
 	this.chargeBar = null;
 
 	this.icon = null;
+	
+	this.range = 500;
 
 	this.onDestroy = new Phaser.Signal();
 	
@@ -155,6 +157,8 @@ Skill.prototype.useSkill = function(factor){
 			this.user.current.action = this;
 
 			this.launchFunction.call(this, factor);
+
+			this.onBreak.removeAll();
 		}
 		
 		if (this.cooldown.getMax() > 0){
@@ -370,6 +374,8 @@ Skill.prototype.breakSkill = function(){
 	if (this.user.current.action == this){
 		this.user.can.action = true;
 		this.user.current.action = null;
+
+		this.chargeTime.set(0);
 
 		this.onBreak.dispatch(this);
 	}
@@ -1293,6 +1299,8 @@ var DeathSkill = function (user, level, targetTags, unlockAt) {
     };
 
     this.icon = "death_icon";
+
+	this.range = 250;
 }
 
 DeathSkill.prototype = Object.create(Skill.prototype);
@@ -1667,6 +1675,8 @@ var SlashSkill = function(user, level, targetTags, unlockAt){
 	basicUpdateSkillChargeTime.call(this);
 
 	this.icon = 'slash_icon';
+
+	this.range = 100;
 };
 
 SlashSkill.prototype = Object.create(Skill.prototype);
@@ -1757,8 +1767,6 @@ var ArrowSkill = function(user, level, targetTags, unlockAt){
 			this.user.orientLeft = Object.getPrototypeOf(this.user).orientLeft;
 			this.user.orientRight = Object.getPrototypeOf(this.user).orientRight;
 		}, this)
-
-		this.user.animations.currentAnim.onComplete.removeAll();
 
 		user.can.move = false;
 	}, this);
@@ -2264,6 +2272,8 @@ var SpeedUpArrowSkill = function(user, level, unlockAt){
 	}
 
 	this.icon = "speedUpArrow_icon";
+	
+	this.range = Infinity;
 }
 
 SpeedUpArrowSkill.prototype = Object.create(Skill.prototype);
@@ -2484,6 +2494,8 @@ var TrapSkill = function(user, level, targetTags, unlockAt){
 	basicUpdateSkillChargeTime.call(this, 3);
 
 	this.icon = "trap_icon";
+	
+	this.range = 0;
 }
 
 TrapSkill.prototype = Object.create(Skill.prototype);
@@ -2753,6 +2765,8 @@ var PoweredArrowSkill = function(user, level, targetTags, unlockAt){
 	basicUpdateSkillChargeTime.call(this, 5);
 
 	this.icon = "poweredArrow_icon";
+	
+	this.range = 750;
 }
 
 PoweredArrowSkill.prototype = Object.create(Skill.prototype);
@@ -2971,6 +2985,8 @@ var FurySkill = function(user, level, unlockAt){
 	}
 
 	this.icon = "fury_icon";
+
+	this.range = Infinity;
 }
 
 FurySkill.prototype = Object.create(Skill.prototype);
@@ -3081,6 +3097,8 @@ var SelfHealSkill = function (user, level, unlockAt) {
 	this.setChargeTime(2000);
 
     this.icon = "selfHeal_icon";
+
+	this.range = Infinity;
 }
 
 SelfHealSkill.prototype = Object.create(Skill.prototype);
@@ -3214,6 +3232,8 @@ var HealSkill = function (user, level, unlockAt) {
 	this.setChargeTime(3000);
 
     this.icon = "heal_icon";
+	
+	this.range = Infinity;
 }
 
 HealSkill.prototype = Object.create(Skill.prototype);
@@ -3453,6 +3473,8 @@ var ManaHealSkill = function (user, level, unlockAt) {
 	this.setChargeTime(1);
 
     this.icon = "mana_icon";
+
+	this.range = Infinity;
 }
 
 ManaHealSkill.prototype = Object.create(Skill.prototype);
@@ -3694,7 +3716,7 @@ var HeroicStrikeSkill = function(user, level, targetTags, unlockAt){
 
 		function damageFunction(obstacle){
 			var damage = self.user.allStats.attack.get() * 
-				(1 + factor + user.allStats.fury.get(1));
+				(1 + factor + user.allStats.fury.get(1)) * 5;
 			var damageRange = [0.9, 1.1];
 			var criticalRate = self.user.allStats.criticalRate.get();
 			
@@ -3774,6 +3796,8 @@ var HeroicStrikeSkill = function(user, level, targetTags, unlockAt){
 	}, this);
 
 	this.icon = 'heroicStrike_icon';
+
+	this.range = 200;
 };
 
 HeroicStrikeSkill.prototype = Object.create(Skill.prototype);
@@ -3906,6 +3930,8 @@ var DashSkill = function(user, level, unlockAt){
 	}, this);
 
 	this.icon = 'dash_icon';
+
+	this.range = Infinity;
 };
 
 DashSkill.prototype = Object.create(Skill.prototype);

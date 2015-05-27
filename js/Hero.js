@@ -48,15 +48,6 @@ var Hero = function(game, x, y, name, level){
 Hero.prototype = Object.create(Mob.prototype);
 Hero.prototype.constructor = Hero;
 
-Hero.prototype.update = function(){
-	if (this.body.onFloor()){
-		this.jumpCount = this.MAXJUMP;
-		this.body.drag.setTo(this.DRAG, 0);
-	}
-
-	Npc.prototype.update.call(this);
-}
-
 Hero.prototype.jump = function(control, factor){
 	if (this._dying ||
 	   !this.can.jump){
@@ -268,7 +259,7 @@ Lucy.prototype.update = function(){
 
 	if (this.IAActive){
 		if (this.target == null){
-			this.followNearest("hero");
+			this.followNearest("hero", Infinity);
 		}
 	}
 }
@@ -465,3 +456,12 @@ if (this.currentMode == 0){
 		}
 	}
 */
+
+/*Hero.prototype.update = function(){
+	if (this.body.onFloor()){
+		this.jumpCount = this.MAXJUMP;
+		this.body.drag.setTo(this.DRAG, 0);
+	}
+
+	Npc.prototype.update.call(this);
+}*/

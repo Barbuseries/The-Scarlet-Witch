@@ -334,15 +334,20 @@ Npc.prototype.follow = function(target, tickRecompute){
 	this.allTimers.follow.start();
 }
 
-Npc.prototype.getNearestTarget = function(tag){
+Npc.prototype.getNearestTarget = function(tag, distanceSquared){
 	if (typeof(tag) === "undefined"){
 		tag = (this.tag == "enemy") ? "hero" : "enemy";
 	}
 
+	if (typeof(distanceSquared) === "undefined"){
+		distanceSquared = 1000 * 1000;
+	}
+
+
 	var target = null;
 
 	if (tag == "hero"){
-		var min = 1000 * 1000; // this.fieldView squared;
+		var min = distanceSquared;
 
 		BasicGame.level.allHeroes.forEachAlive(function(item){
 			if (item != this){
@@ -358,7 +363,7 @@ Npc.prototype.getNearestTarget = function(tag){
 		}, this);
 	}
 	else if (tag == "enemy"){
-		var min = 1000 * 1000; // this.fieldView squared;
+		var min = distanceSquared;
 
 		BasicGame.level.allEnemies.forEachAlive(function(item){
 			if (item != this){
@@ -377,7 +382,7 @@ Npc.prototype.getNearestTarget = function(tag){
 	return target;
 }
 
-Npc.prototype.followNearest = function(tag, tickRecompute){
+Npc.prototype.followNearest = function(tag, tickRecompute, distanceSquared){
 	if (typeof(tickRecompute) === "undefined"){
 		tickRecompute = 1000;
 	}
@@ -385,7 +390,7 @@ Npc.prototype.followNearest = function(tag, tickRecompute){
 	function changeTarget(){
 		var target = this.target;
 
-		this.target = this.getNearestTarget(tag);
+		this.target = this.getNearestTarget(tag, distanceSquared);
 	}
 	
 	function followNearestTarget(iter, myTile, targetTile){

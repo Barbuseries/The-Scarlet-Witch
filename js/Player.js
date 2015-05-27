@@ -1,3 +1,6 @@
+/**********/
+/* Player */
+/******************************************************************************/
 var Player = function(game, index){
 	this.controller = new ControlManager(game, CONTROL_KEYBOARD, null, "pad" + index);
 	this.hero = null;
@@ -11,6 +14,16 @@ Player.prototype.swapControls = function(){
 
 Player.prototype.getHero = function(){
 	return this.hero;
+}
+
+Player.prototype.connect = function(){
+	if (!this.humanAfterAll){
+		this.humanAfterAll = true;
+		
+		this.setHero(this.getHero());
+
+		this.controller.enable(["action", "movement", "system"]);
+	}
 }
 
 Player.prototype.setHero = function(hero){
@@ -54,3 +67,6 @@ Player.prototype.setHero = function(hero){
 		this.hero.stopIA();
 	}
 }
+/******************************************************************************/
+/* Player */
+/**********/

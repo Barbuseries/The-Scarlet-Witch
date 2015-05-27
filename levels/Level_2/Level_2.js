@@ -13,15 +13,7 @@ BasicGame.allLevels.Level_2.prototype.preload = function(){
 	Level.prototype.preload.call(this);
 	
 	this.checkCompleteFunction = function(){
-		var result = false;
-
-		this.allHeroes.forEachAlive(function(item){
-			if (item.x > 2000){
-				result = true;
-			}
-		});
-
-		return result;
+		return this.allEnemies.getFirstAlive() == null;
 	}
 
 	function returnToTitle(victory){
@@ -62,9 +54,6 @@ BasicGame.allLevels.Level_2.prototype.preload = function(){
 	}, this);
 }
 
-var mob1;
-var mob2;
-
 BasicGame.allLevels.Level_2.prototype.create = function(){
 	Level.prototype.create.call(this);
 
@@ -74,6 +63,8 @@ BasicGame.allLevels.Level_2.prototype.create = function(){
 	this.initPathFinders();
 
 	this.initPlayers();
+
+	this.startIA();
 }
 
 /*BasicGame.allLevels.Level_2.prototype.update = function (){

@@ -35,8 +35,64 @@ var BasicGame = {
 
 	easyStar: {},
 
+	pauseBackground: null,
+	pauseText: null,
+
 	mute: function(control){
 		control.manager.game.sound.mute = !control.manager.game.sound.mute;
+	},
+	
+	pause: function(control){
+		var game = control.manager.game;
+		var paused = game.paused;
+
+		game.paused = !paused;
+
+		if (!paused){
+			this.pauseBackground = game.add.sprite(game.camera.x, game.camera.y,
+												   "ground2");
+
+			this.pauseText = game.add.text(game.camera.x + game.camera.width / 2,
+										   game.camera.y + game.camera.height / 2,
+										   "| |");
+
+			this.pauseBackground.width = game.camera.width;
+			this.pauseBackground.height = game.camera.height;
+			this.pauseBackground.alpha = 0.9;
+			this.pauseBackground.tint = H_BLACK;
+
+			this.pauseText.fontWeight = "bold";
+			this.pauseText.fill = "white";
+			this.pauseText.stroke = BLACK;
+			this.pauseText.strokeThickness = 10;
+			this.pauseText.fontSize = 64;
+			//this.pauseText.setShadow(5, 1, BLACK, 5);
+			this.pauseText.anchor.setTo(0.5);
+			
+			this.pauseBackground.fixedToCamera = true;
+			this.pauseText.fixedToCamera = true;
+
+			for(var i in BasicGame.allPlayers){
+				BasicGame.allPlayers[i].controller.disable(["action","movement",
+															"system"],
+														   false, true);
+			}
+		}
+		else{
+			if (this.pauseBackground != null){
+				this.pauseBackground.destroy();
+				this.pauseBackground = null;
+
+				this.pauseText.destroy();
+				this.pauseText = null;
+
+				for(var i in BasicGame.allPlayers){
+					BasicGame.allPlayers[i].controller.rollback("enabled", 
+																["action","movement",
+																 "system"]);
+				}
+			}
+		}
 	},
 
 	returnToTitle: function(control){
@@ -198,6 +254,34 @@ BasicGame.Boot.prototype.startPreload = function(){
 		logo.kill();
 	});
 
+	var keyboard = Phaser.Keyboard;
+	var gamepad = Phaser.Gamepad;
+	
+	var commonMaped = {
+		goLeft: gamepad.XBOX360_DPAD_LEFT,
+		goRight: gamepad.XBOX360_DPAD_RIGHT,
+		goDown: gamepad.XBOX360_DPAD_DOWN,
+		goUp: gamepad.XBOX360_DPAD_UP,
+		menu_select: gamepad.XBOX360_A,
+		menu_toggle: gamepad.XBOX360_START,
+		menu_next: gamepad.XBOX360_DPAD_DOWN,
+		menu_previous: gamepad.XBOX360_DPAD_UP,
+		jump: gamepad.XBOX360_A,
+		reduceJump: gamepad.XBOX360_A,
+		castFirst: gamepad.XBOX360_X,
+		castSecond: gamepad.XBOX360_Y,
+		castThird: gamepad.XBOX360_B,
+		castFourth: gamepad.XBOX360_RIGHT_BUMPER,
+		castFifth: gamepad.XBOX360_RIGHT_TRIGGER,
+		releaseFirst: gamepad.XBOX360_X,
+		releaseSecond: gamepad.XBOX360_Y,
+		releaseThird: gamepad.XBOX360_B,
+		releaseFourth: gamepad.XBOX360_RIGHT_BUMPER,
+		releaseFifth: gamepad.XBOX360_RIGHT_TRIGGER,
+		swapMode: gamepad.XBOX360_LEFT_BUMPER,
+		swapHeroes: gamepad.XBOX360_BACK
+	}
+
 	BasicGame.allPlayers.p1 = new Player(this.game, "1");
 	BasicGame.allPlayers.p1.isMain = true;
 	BasicGame.allPlayers.p1.humanAfterAll = true;
@@ -257,8 +341,15 @@ BasicGame.Boot.prototype.startPreload = function(){
 					 "mute", "onDown", "system")*/
 		.bindControl(-1, Phaser.Keyboard.ESC, -1,
 					"returnToTitle", "onDown", "system")
+		.bindControl(-1, Phaser.Keyboard.P, -1,
+					 "pause", "onDown", "SYSTEM", BasicGame)
 		/*.bindControl(-1, Phaser.Keyboard.H, -1,
 					 "hardSave", "onDown", "save")*/;
+
+	for(var i in commonMaped){
+		console.log(i, commonMaped[i]);
+		BasicGame.allPlayers.p1.controller.get(i).change(-1, commonMaped[i]);
+	}
 
 	var optionsSave = localStorage.getItem("options");
 

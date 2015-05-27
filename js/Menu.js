@@ -551,7 +551,6 @@ ConfirmationMenu.prototype.setFunction = function(confFunction, context){
 /***************/
 /* Player Menu */
 /******************************************************************************/
-
 var PlayerMenu = function(player){
 	var game = player.hero.game;
 
@@ -572,6 +571,15 @@ var PlayerMenu = function(player){
 	this.cursor.frame = 5;
 	
 	player.controller.setTargetByTag(this, "menu");
+
+	this.toggle = function(){
+		if ((BasicGame.allPlayers.p1.menu.state ==
+			 Interface.State.CLOSED) &&
+			(BasicGame.allPlayers.p2.menu.state ==
+			 Interface.State.CLOSED)){
+			Menu.prototype.toggle.call(this);
+		}
+	}
 
 	this.onStartToggle.add(bindMenu, this);
 	this.onStartToggle.add(function(){
@@ -608,7 +616,6 @@ var PlayerMenu = function(player){
 
 PlayerMenu.prototype = Object.create(Menu.prototype);
 PlayerMenu.prototype.constructor = PlayerMenu;
-
 /******************************************************************************/
 /* Player Menu */
 /***************/
