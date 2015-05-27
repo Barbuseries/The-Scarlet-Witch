@@ -85,14 +85,11 @@ BasicGame.Preloader.prototype.preload =  function(){
 
 		this.load.tilemap(i, levelTilemap, null,
 						  Phaser.Tilemap.TILED_JSON);
-<<<<<<< HEAD
 		
 		/*try{
 			this.load.image(i + "_Tiles", tilesDir + i +"_Tiles_32x32.png");
 		}
 		catch(err){}*/
-=======
->>>>>>> 4cd2fa0de6d6fb5f401631b52a05c07d83d0da97
 	}
 
 	this.load.image("Level_1_Tiles", tilesDir + "Tiles_32x32.png");

@@ -1,4 +1,4 @@
-fvar BasicGame = {
+var BasicGame = {
 	allGameSaves: [],
 
 	gameSave: null,

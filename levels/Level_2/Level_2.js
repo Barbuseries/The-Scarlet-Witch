@@ -75,10 +75,7 @@ BasicGame.allLevels.Level_2.prototype.create = function(){
 
 	this.initPlayers();
 }
-<<<<<<< HEAD
 
 /*BasicGame.allLevels.Level_2.prototype.update = function (){
     Level.prototype.update.call(this);
 }*/
-=======
->>>>>>> 4cd2fa0de6d6fb5f401631b52a05c07d83d0da97
