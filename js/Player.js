@@ -2,6 +2,7 @@ var Player = function(game, index){
 	this.controller = new ControlManager(game, CONTROL_KEYBOARD, null, "pad" + index);
 	this.hero = null;
 	this.isMain = false;
+	this.humanAfterAll = false;
 }
 
 Player.prototype.swapControls = function(){
@@ -43,4 +44,13 @@ Player.prototype.setHero = function(hero){
 
 	statusUi.updateStatusSkills();
 	statusUi.showStatusSkills();
+
+	if (!this.humanAfterAll){
+		if (BasicGame.level.ready){
+			this.hero.startIA();
+		}
+	}
+	else{
+		this.hero.stopIA();
+	}
 }

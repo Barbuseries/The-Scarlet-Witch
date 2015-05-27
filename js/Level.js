@@ -58,6 +58,8 @@ var Level = function(mapName, platformTileset, backgroundName,
 	};
 	
 	this.toKill = [];
+
+	this.ready = false;
 }
 
 /*Level.prototype = Object.create(Phaser.State.prototype);
@@ -291,6 +293,20 @@ Level.prototype.initPathFinders = function(){
 
 		j++;
 	}
+
+	this.ready = true;
+}
+
+Level.prototype.startIA = function(){
+	this.allEnemies.forEachAlive(function(item){
+		item.startIA();
+	});
+
+	this.allHeroes.forEachAlive(function(item){
+		if (!(item.player.humanAfterAll)){
+			item.startIA();
+		}
+	});
 }
 
 Level.prototype.update = function(){
@@ -442,7 +458,7 @@ Level.prototype.create = function(){
 	checkpoint.barton = {
 		x: 1000,
 		
-		y: 200
+		y: 800
 	};
 	
 	checkpoint.lucy = {

@@ -16,6 +16,7 @@ var Hero = function(game, x, y, name, level){
 	}, this);
 	
 	this.player = null;
+	this.experienceGiven = 0;
 
 	this.allStats.experience = new Stat(this, "Experience", STAT_NO_LINK, 0, 10);
 	/*this.allStats.experience.onUpdate.add(function(stat, oldValue, newValue){
@@ -36,6 +37,12 @@ var Hero = function(game, x, y, name, level){
 	}, -1, [], true);
 
 	this.onSwapMode = new Phaser.Signal();
+
+	if (BasicGame.level != null){
+		this.pathFinder = BasicGame.level.createPathFinder(this.MAXJUMP);
+	}
+
+	this.onDeath.remove(this.giveExp);
 }
 
 Hero.prototype = Object.create(Mob.prototype);
@@ -251,14 +258,20 @@ var Lucy = function(game, x, y, level){
 	this.allSkills[0].fifthSkill.setChargeTime(5000);
 
 	this.menu = new HeroMenu(this);
-
-	if (BasicGame.level != null){
-		this.pathFinder = BasicGame.level.createPathFinder(this.MAXJUMP);
-	}
 }
 
 Lucy.prototype = Object.create(Hero.prototype);
 Lucy.prototype.constructor = Lucy;
+
+Lucy.prototype.update = function(){
+	Mob.prototype.update.call(this);
+
+	if (this.IAActive){
+		if (this.target == null){
+			this.followNearest("hero");
+		}
+	}
+}
 
 var Barton = function(game, x, y, level){
 	Hero.apply(this, [game, x, y, "Barton", level]);

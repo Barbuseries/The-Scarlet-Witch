@@ -100,6 +100,7 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 
 	this.onMovement = new Phaser.Signal();
 	this.onDeath = new Phaser.Signal();
+	this.onFollow = new Phaser.Signal();
 
 	this._dying = false;
 
@@ -261,9 +262,13 @@ Npc.prototype.followPath = function(){
 	if (this.path.length == 0){
 		this.path = null;
 	}
+
+	this.onFollow.dispatch(this);
 }
 
 Npc.prototype.follow = function(target, tickRecompute){
+	this.unFollow();
+
 	if (!(target instanceof Npc)){
 		return;
 	}
@@ -275,13 +280,19 @@ Npc.prototype.follow = function(target, tickRecompute){
 	this.target = target;
 	
 	function followTarget(iter, myTile, targetTile){
+		if (this.target == null){
+			this.unFollow();
+
+			return;
+		}
+
 		if (typeof(iter) === "undefined"){
 			iter = 0;
 		}
 
 		//console.log(iter);
 
-		if (iter > 5){
+		if (iter > 2){
 			return;
 		}
 
@@ -323,39 +334,127 @@ Npc.prototype.follow = function(target, tickRecompute){
 	this.allTimers.follow.start();
 }
 
-Npc.prototype.getNearestTarget = function(){
+Npc.prototype.getNearestTarget = function(tag){
+	if (typeof(tag) === "undefined"){
+		tag = (this.tag == "enemy") ? "hero" : "enemy";
+	}
+
 	var target = null;
 
-	if (this.tag == "enemy"){
+	if (tag == "hero"){
 		var min = 1000 * 1000; // this.fieldView squared;
 
 		BasicGame.level.allHeroes.forEachAlive(function(item){
-			var distanceSquared = (item.x - this.x) * (item.x - this.x) +
-				(item.y - this.y) * (item.y - this.y);
+			if (item != this){
+				var distanceSquared = (item.x - this.x) * (item.x - this.x) +
+					(item.y - this.y) * (item.y - this.y);
 
-			if (distanceSquared < min){
-				target = item;
+				if (distanceSquared < min){
+					target = item;
 
-				min = distanceSquared;
+					min = distanceSquared;
+				}
 			}
 		}, this);
 	}
-	else if (this.tag == "hero"){
+	else if (tag == "enemy"){
 		var min = 1000 * 1000; // this.fieldView squared;
 
 		BasicGame.level.allEnemies.forEachAlive(function(item){
-			var distanceSquared = (item.x - this.x) * (item.x - this.x) +
-				(item.y - this.y) * (item.y - this.y);
+			if (item != this){
+				var distanceSquared = (item.x - this.x) * (item.x - this.x) +
+					(item.y - this.y) * (item.y - this.y);
 
-			if (distanceSquared < min){
-				target = item;
+				if (distanceSquared < min){
+					target = item;
 
-				min = distanceSquared;
+					min = distanceSquared;
+				}
 			}
 		}, this);
 	}
 
 	return target;
+}
+
+Npc.prototype.followNearest = function(tag, tickRecompute){
+	if (typeof(tickRecompute) === "undefined"){
+		tickRecompute = 1000;
+	}
+
+	function changeTarget(){
+		var target = this.target;
+
+		this.target = this.getNearestTarget(tag);
+	}
+	
+	function followNearestTarget(iter, myTile, targetTile){
+		if (this.target == null){
+			return;
+		}
+
+		if (typeof(iter) === "undefined"){
+			iter = 0;
+		}
+
+		//console.log(iter);
+
+		if (iter > 5){
+			return;
+		}
+
+		if ((typeof(myTile) === "undefined") ||
+			(myTile == null) ||
+			(BasicGame.level._grid[myTile.y][myTile.x] < 0)){
+			myTile = getTileWorldXY(0, this.x, this.y + iter * 32);
+		}
+
+		if ((typeof(targetTile) === "undefined") ||
+			(targetTile == null) ||
+			(BasicGame.level._grid[targetTile.y][targetTile.x] < 0)){
+			targetTile = getTileWorldXY(0, this.target.x, this.target.y + iter * 32);
+		}
+
+		if (((myTile == null) || (targetTile == null)) ||
+			((BasicGame.level._grid[myTile.y][myTile.x] < 0) ||
+			 (BasicGame.level._grid[targetTile.y][targetTile.x] < 0))){
+			iter++;
+
+			followNearestTarget.call(this, iter, myTile, targetTile);
+			return;
+		}
+
+		this.findPath(myTile.x, myTile.y, targetTile.x, targetTile.y, function(path){
+			//console.log(iter, path);
+		});
+
+		this.pathFinder.calculate();
+	}
+
+	this.unFollow();
+
+	this.allTimers.follow = this.game.time.create(false);
+	this.allTimers.follow.loop(tickRecompute, changeTarget, this);
+	this.allTimers.follow.loop(tickRecompute, followNearestTarget, this);
+	
+	changeTarget.call(this);
+	followNearestTarget.call(this);
+
+	this.onUpdate.add(this.followPath, this);
+
+	this.allTimers.follow.start();
+}
+
+Npc.prototype.startIA = function(tag){
+	this.followNearest(tag);
+
+	this.IAActive = true;
+}
+
+Npc.prototype.stopIA = function(){
+	this.unFollow();
+
+	this.IAActive = false;
 }
 
 Npc.prototype.unFollow = function(){
@@ -366,8 +465,11 @@ Npc.prototype.unFollow = function(){
 	this.allTimers.follow.stop();
 	this.allTimers.follow.destroy();
 	this.allTimers.follow = null;
+
+	this.onFollow.removeAll();
 	
 	this.onUpdate.remove(this.followPath);
+	this.path = null;
 	//this.target.onMovement.remove(followTarget);
 }
 

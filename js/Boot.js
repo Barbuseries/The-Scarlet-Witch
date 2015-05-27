@@ -1,4 +1,4 @@
-var BasicGame = {
+fvar BasicGame = {
 	allGameSaves: [],
 
 	gameSave: null,
@@ -200,6 +200,7 @@ BasicGame.Boot.prototype.startPreload = function(){
 
 	BasicGame.allPlayers.p1 = new Player(this.game, "1");
 	BasicGame.allPlayers.p1.isMain = true;
+	BasicGame.allPlayers.p1.humanAfterAll = true;
 
 	BasicGame.allPlayers.p2 = new Player(this.game, "2");
 
@@ -256,8 +257,8 @@ BasicGame.Boot.prototype.startPreload = function(){
 					 "mute", "onDown", "system")*/
 		.bindControl(-1, Phaser.Keyboard.ESC, -1,
 					"returnToTitle", "onDown", "system")
-		.bindControl(-1, Phaser.Keyboard.H, -1,
-					 "hardSave", "onDown", "save");
+		/*.bindControl(-1, Phaser.Keyboard.H, -1,
+					 "hardSave", "onDown", "save")*/;
 
 	var optionsSave = localStorage.getItem("options");
 
@@ -271,8 +272,6 @@ BasicGame.Boot.prototype.startPreload = function(){
 	else{
 		BasicGame.optionsSave = JSON.parse(optionsSave);
 		BasicGame.optionsSave.__proto__ = OptionsSave.prototype;
-
-		console.log(BasicGame.optionsSave);
 
 		BasicGame.optionsSave.load();
 	}

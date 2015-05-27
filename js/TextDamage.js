@@ -61,6 +61,12 @@ function createTextDamage(game, x, y, value, color){
 		newTextDamage.y = y;
 	}
 
+	newTextDamage.body.allowGravity = true;
+	
+	for(var i in newTextDamage.body.checkCollision){
+		newTextDamage.body.checkCollision[i] = true;
+	}
+
 	newTextDamage.body.velocity.y = -300;
 	newTextDamage.body.velocity.x = 50;
 
