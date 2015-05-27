@@ -622,7 +622,6 @@ Level.prototype.reload = function(){
 Level.prototype.goToNextLevel = function(){
 	this.goToState(this.nextLevel);
 }
-<<<<<<< HEAD
 
 Level.prototype.save = function(){
 	var choice = 1;
@@ -630,25 +629,19 @@ Level.prototype.save = function(){
 	function save(){
 		if (choice){
 			console.log("Sauvegardé ! (Mais pas HARD !)");
-=======
->>>>>>> 4cd2fa0de6d6fb5f401631b52a05c07d83d0da97
 
 Level.prototype.save = function(){
 	BasicGame.gameSave.save();
-
-<<<<<<< HEAD
 			console.log(BasicGame.gameSave);
 			
 			this.goToNextLevel();
 		}
 		else{
 			console.log("Pas Sauvegardé !");
-=======
 	this.saveMenu = new LoadSaveMenu(this.game, BasicGame.allPlayers.p1.controller,
 									 true);
 	this.saveMenu.toggle();
 }
->>>>>>> 4cd2fa0de6d6fb5f401631b52a05c07d83d0da97
 
 Level.prototype.saveAndNextLevel = function(){
 	BasicGame.gameSave.level.key = this.nextLevel;
