@@ -1,15 +1,15 @@
-BasicGame.allLevels.Level_2 = function(game){
+BasicGame.allLevels.Level_3 = function(game){
 	this.game = game;
 	
-	Level.call(this, "Level_2", "Level_1_Tiles", "sky");
+	Level.call(this, "Level_3", "Level_1_Tiles", "sky");
 
-	this.nextLevel = "Level_3";
+	this.nextLevel = "Level_1";
 }
 
-BasicGame.allLevels.Level_2.prototype = Object.create(Level.prototype);
-BasicGame.allLevels.Level_2.prototype.constructor = BasicGame.allLevels.Level_2;
+BasicGame.allLevels.Level_3.prototype = Object.create(Level.prototype);
+BasicGame.allLevels.Level_3.prototype.constructor = BasicGame.allLevels.Level_2;
 
-BasicGame.allLevels.Level_2.prototype.preload = function(){
+BasicGame.allLevels.Level_3.prototype.preload = function(){
 	Level.prototype.preload.call(this);
 	
 	this.checkCompleteFunction = function(){
@@ -54,7 +54,7 @@ BasicGame.allLevels.Level_2.prototype.preload = function(){
 	}, this);
 }
 
-BasicGame.allLevels.Level_2.prototype.create = function(){
+BasicGame.allLevels.Level_3.prototype.create = function(){
 	Level.prototype.create.call(this);
 
 	this.map.setCollisionBetween(0, 63);
