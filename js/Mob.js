@@ -254,6 +254,10 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 									   .toFixed(0));
 	}
 
+	if (this.current.action instanceof ShieldSkill){
+		BasicGame.sfx.SHIELD_SOUND.play("", 0, BasicGame.volume.sfx);
+	}
+
 	return actualDamage;
 }
 

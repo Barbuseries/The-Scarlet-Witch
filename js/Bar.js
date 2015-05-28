@@ -125,6 +125,8 @@ Bar.prototype.start = function(){
 	this.manager.setTargetByTag(this, "movement", false, true);
 	this.manager.enable("movement", false, true);
 	this.manager.setSignalByTag("down", "movement", false, true);
+	this.manager.rollback("signal", ["movement", "pad"], true);
+	this.manager.setSignalByTag("update", ["movement", "pad"], true, true);
 	this.manager.setFpsByTag(this.fps, "movement", false, true);
 
 	this.active = true;

@@ -73,8 +73,14 @@ Level.prototype.preload = function(){
 	BasicGame.sfx = {};
 	BasicGame.musics = {};
 
-	BasicGame.sfx.EXPLOSION_0 = this.game.add.audio("explosion_0");
-	BasicGame.sfx.EXPLOSION_0.allowMultiple = true;
+	var allSfx = ["explosion_0", "arrow_sound", "deathSkill_sound",
+		"ball_sound", "fury_sound", "heal_sound", "heroicStrike_sound",
+		"mana_sound", "shield_sound", "slash_sound", "thunder_sound"];
+
+	for (var i = 0; i < allSfx.length; i++) {
+		BasicGame.sfx[allSfx[i].toUpperCase()] = this.game.add.audio(allSfx[i]);
+		BasicGame.sfx[allSfx[i].toUpperCase()].allowMultiple = true;
+	};
 
 	BasicGame.gameSave.level.key = this;
 	BasicGame.allPlayers.p1.controller.setTargetByTag(BasicGame.gameSave, "save");
@@ -112,7 +118,9 @@ Level.prototype.preload = function(){
 		for(var i in BasicGame.allPlayers){
 			BasicGame.allPlayers[i].controller.enable();
 		}
-	});
+
+		this.startIA();
+	}, this);
 	
 	
 	for(var i in this.allTweens.opening){
@@ -375,11 +383,11 @@ Level.prototype.update = function(){
 	this.completed = !this.gameOvered && this.checkComplete();
 	
 	if (BasicGame.konamiCode.code == THIS_IS_NOT_THE_KONAMI_CODE){
-		this.allEnemies.forEach(function(item){
+		this.allEnemies.forEachAlive(function(item){
 			item.KONAMICODE();
 		});
 
-		this.allHeroes.forEach(function(item){
+		this.allHeroes.forEachAlive(function(item){
 			item.KONAMICODE();
 		});
 

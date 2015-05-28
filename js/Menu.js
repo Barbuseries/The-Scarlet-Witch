@@ -122,6 +122,10 @@ Menu.prototype.goNext = function(control, factor){
 	
 	var oldIndex = this.indexCurrentOption;
 
+	if (control instanceof PadControl){
+		factor = 1;
+	}
+
 	this.indexCurrentOption += factor;
 
 	if (this.indexCurrentOption >= this.allOptions.length){
@@ -159,6 +163,10 @@ Menu.prototype.goPrevious = function(control, factor){
 	}
 
 	var oldIndex = this.indexCurrentOption;
+
+	if (control instanceof PadControl){
+		factor = 1;
+	}
   
 	this.indexCurrentOption -= factor;
 
@@ -178,6 +186,7 @@ Menu.prototype.goPrevious = function(control, factor){
 		var option = this.getCurrentOption();
 
 		oldOption.onOut.dispatch(option);
+		
 		option.onOver.dispatch(option);
 
 		this.updateCursorPosition();

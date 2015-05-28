@@ -1,4 +1,5 @@
 var THIS_IS_NOT_THE_KONAMI_CODE = "UUDDLRLRBAStSe";
+var GAME_COMPLETED = false;
 
 var BasicGame = {
 	allGameSaves: [],
@@ -257,12 +258,14 @@ BasicGame.Boot.prototype.init = function(){
 BasicGame.Boot.prototype.preload = function(){
 	var miscDir = "assets/Misc/";
 
-	this.load.image("phaserLogo", miscDir + "Phaser-Logo-Small.png");
-    this.load.image('preloaderBarBackground', miscDir + 'campfire_wood.png');
-    this.load.image('preloaderBar', miscDir + 'campfire_fire.png');
-	this.load.image("logo", miscDir + "TheScarletWitch-Logo.png");
-	this.load.image("sky",  "assets/Backgrounds/background0_2.png");
-	this.load.image("ground", miscDir + "platform.png");
+	if (!GAME_COMPLETED){
+		this.load.image("phaserLogo", miscDir + "Phaser-Logo-Small.png");
+		this.load.image('preloaderBarBackground', miscDir + 'campfire_wood.png');
+		this.load.image('preloaderBar', miscDir + 'campfire_fire.png');
+		this.load.image("logo", miscDir + "TheScarletWitch-Logo.png");
+		this.load.image("sky",  "assets/Backgrounds/background0_2.png");
+		this.load.image("ground", miscDir + "platform.png");
+	}
 }
 
 BasicGame.Boot.prototype.create = function(){
@@ -322,12 +325,7 @@ BasicGame.Boot.prototype.nextLogo = function(){
 }
 
 BasicGame.Boot.prototype.goFullscreen = function(){
-	if (this.scale.isFullScreen) {
-        this.scale.stopFullScreen();
-    }
-	else {
-		this.game.scale.startFullScreen(false);
-	}
+	this.game.scale.startFullScreen(false);
 }
 
 BasicGame.Boot.prototype.startPreload = function(){
@@ -367,24 +365,48 @@ BasicGame.Boot.prototype.startPreload = function(){
 		pad_goLeft: {
 			axis: gamepad.XBOX360_STICK_LEFT_X,
 			min: -1,
-			max: -0.1
+			max: -0.5
 		},
 
 		pad_goRight: {
 			axis: gamepad.XBOX360_STICK_LEFT_X,
-			min: 0.1,
+			min: 0.5,
 			max: 1
+		},
+		
+		pad_goUp: {
+			axis: gamepad.XBOX360_STICK_LEFT_Y,
+			min: 0.5,
+			max: 1
+		},
+		
+		pad_goDown: {
+			axis: gamepad.XBOX360_STICK_LEFT_Y,
+			min: -1,
+			max: -0.5
 		},
 
 		pad_orientLeft: {
 			axis: gamepad.XBOX360_STICK_RIGHT_X,
 			min: -1,
-			max: -0.1
+			max: -0.5
 		},
 
 		pad_orientRight: {
 			axis: gamepad.XBOX360_STICK_RIGHT_X,
-			min: 0.1,
+			min: 0.5,
+			max: 1
+		},
+
+		pad_menu_previous: {
+			axis: gamepad.XBOX360_STICK_LEFT_Y,
+			min: -1,
+			max: -0.5
+		},
+
+		pad_menu_next: {
+			axis: gamepad.XBOX360_STICK_LEFT_Y,
+			min: 0.5,
 			max: 1
 		}
 	};
@@ -521,30 +543,35 @@ BasicGame.Boot.prototype.startPreload = function(){
 
 
 	for(var i in BasicGame.allPlayers){
+		var controller = BasicGame.allPlayers[i].controller;
+
 		for(var j in commonMaped){
-			BasicGame.allPlayers[i].controller.get(j).change(-1,
-															 commonMaped[j]);
+			controller.get(j).change(-1, commonMaped[j]);
 		}
 		
 		for(var j in padMaped){
-			var functionName = j.substr(j.indexOf("_") + 1, j.length);
+			var functionName = (j == "pad_menu_next") ? "goNext" :
+				(j == "pad_menu_previous") ? "goPrevious" : 
+				j.substr(j.indexOf("_") + 1, j.length);
+			var tag = (j.indexOf("menu") != -1) ? "menu" : "movement";
+			var fps = 0;
 			
-			BasicGame.allPlayers[i].controller.bindPadControl(j, padMaped[j].axis,
-															  padMaped[j].min,
-															  padMaped[j].max,
-															  functionName,
-															  "update",
-															  "movement");
+			if (tag == "menu"){
+				fps = 6;
+			}
+			
+			controller.bindPadControl(j, padMaped[j].axis, padMaped[j].min,
+									  padMaped[j].max, functionName,
+									  "update", tag, -1, fps);
 		}
 
 		for(var j in konamiMaped){
-			BasicGame.allPlayers[i].controller.bindControl(-1, -1, konamiMaped[j],
-														   j, "onDown", "konami",
-														   BasicGame);
+			controller.bindControl(-1, -1, konamiMaped[j], j, "onDown", "konami",
+								   BasicGame);
 		}
-			
-		BasicGame.allPlayers[i].controller.get("connectKeyboard").transcendental = true;
-		BasicGame.allPlayers[i].controller.get("connectGamepad").transcendental = true;
+		
+		controller.get("connectKeyboard").transcendental = true;
+		controller.get("connectGamepad").transcendental = true;
 	}
 
 	var optionsSave = localStorage.getItem("options");

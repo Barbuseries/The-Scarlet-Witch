@@ -6,6 +6,7 @@ var Player = function(game, index){
 	this.hero = null;
 	this.isMain = false;
 	this.humanAfterAll = false;
+	this.index = index;
 }
 
 Player.prototype.swapControls = function(){
@@ -56,7 +57,10 @@ Player.prototype.setHero = function(hero){
 	}
 
 	this.hero.player = this;
-	this.hero.menu.manager = this.controller;
+	
+	if (this.hero.menu != null){
+		this.hero.menu.manager = this.controller;
+	}
 	
 	if (this.menu != null){
 		this.menu.statusOption.display.text = hero.name;

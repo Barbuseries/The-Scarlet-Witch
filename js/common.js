@@ -120,6 +120,10 @@ function bindMenu(){
 	var leftControl = controller.get("goLeft");
 	var upControl = controller.get("goUp");
 	var downControl = controller.get("goDown");
+	var padLeftControl = controller.get("pad_goLeft");
+	var padRightControl = controller.get("pad_goRight");
+	var padUpControl = controller.get("pad_goUp");
+	var padDownControl = controller.get("pad_goDown");
 
 	if ((typeof(oldMenu) != "undefined") &&
 		(oldMenu != null)){
@@ -140,6 +144,16 @@ function bindMenu(){
 		controller.get("menu_previous").change(leftControl.keyboardCode,
 											   leftControl.gamepadCode, -1,
 											   true);
+		
+		if (controller.pad.connected){
+			controller.get("pad_menu_next").change(padRightControl.axis,
+												   padRightControl.min,
+												   padRightControl.max, -1,
+												   true);
+		controller.get("pad_menu_previous").change(padLeftControl.axis, padLeftControl.min,
+												   padLeftControl.max, -1,
+												   true);
+		}
 	}
 	else{
 		controller.get("menu_next").change(downControl.keyboardCode,
@@ -148,6 +162,17 @@ function bindMenu(){
 		controller.get("menu_previous").change(upControl.keyboardCode,
 											   upControl.gamepadCode, -1,
 											   true);
+
+		if (controller.pad.connected){
+			// Should be the other way around...
+			controller.get("pad_menu_next").change(padUpControl.axis, padUpControl.min,
+												   padUpControl.max, -1,
+												   true);
+			controller.get("pad_menu_previous").change(padDownControl.axis,
+													   padDownControl.min,
+													   padDownControl.max, -1,
+													   true);
+		}
 	}
 
 	this.setFocus(true);
@@ -158,6 +183,8 @@ function bindMenu(){
 		controller.get("menu_toggle").rollback("function");
 		controller.get("menu_next").rollback("code");
 		controller.get("menu_previous").rollback("code");
+		controller.rollback("axis", ["menu", "pad"], true);
+		controller.rollback("axis", ["menu", "pad"], true);
 		controller.get("menu_select").rollback(["signal", "fps"]);
 
 		this.setFocus(false);
@@ -404,7 +431,8 @@ var basicUpdateSkillCooldown = function(factor){
 	}
 	
 	this.updateCooldown = function(){
-		Skill.prototype.updateCooldown.call(this, this.user.allStats.attackSpeed.get());
+		Skill.prototype.updateCooldown.call(this,
+											this.user.allStats.attackSpeed.get());
 	}
 
 	this.user.allStats.attackSpeed.onUpdate.add(this.updateCooldown, this);

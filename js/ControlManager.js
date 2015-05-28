@@ -192,6 +192,8 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 
 /*
   Bind an axis of the Control's manager's pad to a function.
+  
+  By default, a padControl has, at least, "pad" in it's tags.
 */
 ControlManager.prototype.bindPadControl = function(padControlName, axis, min, max,
 												   functionName, signal, allTags,
@@ -257,6 +259,17 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 		targ = target;
 		tags = allTags;
 		fp = fps;
+	}
+
+	if (typeof(tags) instanceof Array){
+		if (tags.indexOf("pad") == -1){
+			tags.push("pad");
+		}
+	}
+	else{
+		if (tags != "pad"){
+			tags = [tags, "pad"];
+		}
 	}
 
 	this.allControls[padControlName] = new PadControl(this, ax, mi, ma, funct,
@@ -1126,11 +1139,11 @@ Control.prototype.destroy = function(){
 /* PadControl */
 /******************************************************************************/
 var PadControl = function(manager, axis, min, max, functionName, signal,
-						  allTags, target){
+						  allTags, target, fps){
 	if (typeof(min) != "number") return;
 	if (typeof(max) != "number") return;
 
-	ControlSqueletton.call(this, manager, functionName, signal, allTags, target);
+	ControlSqueletton.call(this, manager, functionName, signal, allTags, target, fps);
 	
 	this.axis = axis;
 	this.min = min;
@@ -1181,26 +1194,23 @@ PadControl.prototype.rollback = function(type){
 		if (this._cached.axis.length > 0){
 			var axis = this._cached.axis.pop();
 
-			this.axis = axis.axis;
-			this.min = axis.min;
-			this.max = axis.max;
+			this.axis = axis[0];
+			this.min = axis[1];
+			this.max = axis[2];
 		}
 	}
 }
 
 PadControl.prototype.change = function(axis, min, max, signal, cache){
-	if ((typeof(axis) != "object") ||
-		(axis == -1)){
+	if (typeof(axis) != "number"){
 		axis = this.axis;
 	}
 
-	if ((typeof(min) != "number") ||
-		(min == -1)){
+	if (typeof(min) != "number"){
 		min = this.min;
 	}
 
-	if ((typeof(max) != "number") ||
-		(max == -1)){
+	if (typeof(max) != "number"){
 		max = this.max;
 	}
 
@@ -1237,7 +1247,6 @@ PadControl.prototype.execute = function(){
 		return;
 	}
 	
-
 	var actualFunction = this.getFunction();
 
 	if (actualFunction == null){

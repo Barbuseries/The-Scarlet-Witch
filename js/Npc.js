@@ -515,6 +515,18 @@ Npc.prototype.die = function(){
 		this.UNBIASED_OPION.destroy();
 		this.UNBIASED_OPION = null;
 	}
+
+	// To make sure the Npc is really killed (there may be some
+    // conflicts with some animations).
+	var deathTimer = this.game.time.create(true);
+
+	deathTimer.add(4 / 5 * 1000, function(){
+		if (this.alive){
+			this.kill();
+		}
+	}, this);
+
+	deathTimer.start();
 }
 
 Npc.prototype.KONAMICODE = function(){
@@ -522,18 +534,76 @@ Npc.prototype.KONAMICODE = function(){
 							  100, 90, "ground2", "ground2");
 
 	var UNBIASED_OPION = new Sentence(this.game, "IS3N 4 EVA !!", MOOD_FRIGHTENED,
-									   -1, -1, 90);
+									  this.name, 10, -1, 90);
 	UNBIASED_OPION.phaserText.align = "doublecenter";
+	UNBIASED_OPION._RAINBOW_INDEX = 0;
 
 	textBox.addSentence(UNBIASED_OPION);
+	textBox.innerBox.tint = H_GREY;
+	textBox.setMarginH(5, 5, 1);
+	textBox.setMarginV(5, 5, 1);
 
-	textBox.createAnimation("toggle", "right", "top", 1000, 1,
+	textBox.createAnimation("toggle", "right", "up", 1000, 1,
+							Phaser.Easing.Quadratic.Out);
+	textBox.createAnimation("close", "left", "down", 1000, 1,
 							Phaser.Easing.Quadratic.Out);
 
 	textBox.fitWidthToSentence(0, -1, 2, 100);
-	textBox.fitDurationToSentence(0, 1000);
+	textBox.fitDurationToSentence(0, 2000);
 
 	textBox.toggle();
+
+	var PERFECT_TWEEN = this.game.add.tween(UNBIASED_OPION.phaserText)
+		.to({_RAINBOW_INDEX: 10}, 500)
+		.to({_RAINBOW_INDEX: 0}, 500)
+		.to({_RAINBOW_INDEX: 10}, 1000, Phaser.Easing.Linear.None)
+		.to({_RAINBOW_INDEX: 0}, 1000, Phaser.Easing.Linear.None);
+
+	PERFECT_TWEEN.onUpdateCallback(function(){
+		switch(Math.floor(this._RAINBOW_INDEX)){
+		case 0:
+			this.fill = WHITE;
+			break;
+
+		case 1:
+			this.fill = BLACK;
+			break;
+		
+		case 3:
+			this.fill = RED;
+			break;
+		
+		case 4:
+			this.fill = GREEN;
+			break;
+		
+		case 5:
+			this.fill = BLUE;
+			break;
+		
+		case 6:
+			this.fill = YELLOW;
+			break;
+
+		case 7:
+			this.fill = PINK;
+			break;
+			
+		case 8:
+			this.fill = ORANGE;
+			break;
+
+		case 9:
+			this.fill = GREY;
+			break;
+
+		case 10:
+			this.fill = PURPLE;
+			break;
+		}
+	}, UNBIASED_OPION.phaserText);
+
+	PERFECT_TWEEN.start();
 }
 /******************************************************************************/
 /* Npc */

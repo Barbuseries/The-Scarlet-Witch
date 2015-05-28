@@ -22,10 +22,6 @@ BasicGame.allLevels.Level_2.prototype.preload = function(){
 		this.timerToTitle.add(1000, function(){
 			if (victory){
 				this.saveAndNextLevel();
-
-				/*this.saveMenu.onEndClose.add(function(){
-					this.returnToTitle();
-				}, this);*/
 			}
 			else{
 				this.gameOver();
@@ -63,10 +59,4 @@ BasicGame.allLevels.Level_2.prototype.create = function(){
 	this.initPathFinders();
 
 	this.initPlayers();
-
-	this.startIA();
 }
-
-/*BasicGame.allLevels.Level_2.prototype.update = function (){
-    Level.prototype.update.call(this);
-}*/

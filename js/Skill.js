@@ -1147,6 +1147,8 @@ var DeathSkill = function (user, level, targetTags, unlockAt) {
 			this.user.can.move = true;
 			this.user.can.jump = true;
 			this.user.can.orient = true;
+
+			BasicGame.sfx.DEATHSKILL_SOUND.stop();
 		}, this);
 
 		function initProjectile(){
@@ -1200,9 +1202,10 @@ var DeathSkill = function (user, level, targetTags, unlockAt) {
 		}
 
 		function damageFunction(obstacle){
-			var damage = obstacle.allStats.health.getMax();
+			/*var damage = obstacle.allStats.health.getMax();
 
-            obstacle.suffer(damage, [1, 1], 0, this.element);
+            obstacle.suffer(damage, [1, 1], 0, this.element);*/
+			obstacle.die(); // MOUHAHAHAHA *kof* *kof*...
 		}	
 
 		user.animations.play("spellChargeBoth")
@@ -1211,6 +1214,7 @@ var DeathSkill = function (user, level, targetTags, unlockAt) {
 												  initProjectile, updateProjectile,
 												  null, null, collideProcess,
 												  damageFunction);
+				BasicGame.sfx.DEATHSKILL_SOUND.play("", 0, BasicGame.volume.sfx, true);
 
 				this.onBreak.addOnce(this.deathZone.kill, this.deathZone);
 			}, this);
@@ -1228,6 +1232,7 @@ var DeathSkill = function (user, level, targetTags, unlockAt) {
 		this.deathZone.activated = true;
 		this.onBreak.removeAll();
 		BasicGame.level.toKill.push(this.deathZone);
+		BasicGame.sfx.DEATHSKILL_SOUND.stop();
 
 		this.deathZone = null;
         /*function initProjectile() {
@@ -1463,6 +1468,8 @@ var ThunderSkill = function (user, level, targetTags, unlockAt) {
 
 		this.onBreak.addOnce(function(){
 			this.user.can.move = true;
+
+			BasicGame.sfx.THUNDER_SOUND.stop();
 		}, this);
 
         var animation = null;
@@ -1497,10 +1504,14 @@ var ThunderSkill = function (user, level, targetTags, unlockAt) {
 		
 		this.user.can.move = false;
 
+		BasicGame.sfx.THUNDER_SOUND.play("", 0, BasicGame.volume.sfx, true);
+		
 		animation.onComplete.addOnce(function(){
 			this.user.can.move = true;
 			this.user.can.action = true;
 			this.user.current.action = null;
+
+			BasicGame.sfx.THUNDER_SOUND.stop();
 			
 			this.onBreak.removeAll();
 		}, this);
@@ -1659,6 +1670,8 @@ var SlashSkill = function(user, level, targetTags, unlockAt){
 		else{
 			animation = user.animations.play("swordLeft", 12 * (speed + 1));
 		}
+
+		BasicGame.sfx.SLASH_SOUND.play("", 0, BasicGame.volume.sfx);
 		
 		animation.onComplete.add(function(){
 			this.user.can.move = true;
@@ -1826,6 +1839,8 @@ var ArrowSkill = function(user, level, targetTags, unlockAt){
 			this.element = self.element;
 
 			this.transfer.velocity.x = 0.3;
+			
+			BasicGame.sfx.ARROW_SOUND.play("", 0, BasicGame.volume.sfx);
 		}
 
 		function damageFunction(obstacle){
@@ -2067,6 +2082,8 @@ var MultArrowSkill = function(user, level, targetTags, unlockAt){
 			this.element = self.element;
 
 			this.transfer.velocity.x = 0.2;
+
+			BasicGame.sfx.ARROW_SOUND.play("", 0, BasicGame.volume.sfx);
 		}
 
 		function damageFunction(obstacle){
@@ -2645,6 +2662,8 @@ var PoweredArrowSkill = function(user, level, targetTags, unlockAt){
 
 			this.targetTags = self.targetTags;
 			this.element = self.element;
+
+			BasicGame.sfx.ARROW_SOUND.play("", 0, BasicGame.volume.sfx);
 		}
 
 		function damageFunction(obstacle){
@@ -2982,6 +3001,8 @@ var FurySkill = function(user, level, unlockAt){
 
 		this.furyTimer.start();
 
+		BasicGame.sfx.FURY_SOUND.play("", 0, BasicGame.volume.sfx);
+
 		this.onBreak.addOnce(function(){
 			this.furyTimer.stop();
 			this.furyTimer.destroy();
@@ -3034,6 +3055,8 @@ var SelfHealSkill = function (user, level, unlockAt) {
 	this.onCharge.add(function(){
 		this.user.animations.play("spellChargeBoth");
 
+		BasicGame.sfx.HEAL_SOUND.play("", 0, BasicGame.volume.sfx);
+
 		this.user.can.move = false;
 		this.user.can.orient = false;
 		this.user.can.jump = false;
@@ -3042,6 +3065,8 @@ var SelfHealSkill = function (user, level, unlockAt) {
 			this.user.can.move = true;
 			this.user.can.orient = true;
 			this.user.can.jump = true;
+
+			BasicGame.sfx.HEAL_SOUND.stop();
 		}, this);
 	}, this);
 
@@ -3069,6 +3094,8 @@ var SelfHealSkill = function (user, level, unlockAt) {
 				this.user.can.move = true;
 				this.user.can.orient = true;
 				this.user.can.jump = true;
+
+				BasicGame.sfx.HEAL_SOUND.stop();
 			}, this);
 		/*function initProjectile(){
 			this.x = user.x + user.width * 0.5;
@@ -3159,8 +3186,10 @@ var HealSkill = function (user, level, unlockAt) {
     Skill.call(this, user, level, costFunction, cooldown, Elements.ALMIGHTY,
 			   user.tag, unlockAt);
 
-    	this.onCharge.add(function(){
+    this.onCharge.add(function(){
 		this.user.animations.play("spellChargeBoth");
+		
+		BasicGame.sfx.HEAL_SOUND.play("", 0, BasicGame.volume.sfx);
 
 		this.user.can.move = false;
 		this.user.can.orient = false;
@@ -3170,6 +3199,8 @@ var HealSkill = function (user, level, unlockAt) {
 			this.user.can.move = true;
 			this.user.can.orient = true;
 			this.user.can.jump = true;
+
+			BasicGame.sfx.HEAL_SOUND.stop();
 		}, this);
 	}, this);
 
@@ -3204,48 +3235,50 @@ var HealSkill = function (user, level, unlockAt) {
 				this.user.can.move = true;
 				this.user.can.orient = true;
 				this.user.can.jump = true;
+
+				BasicGame.sfx.HEAL_SOUND.stop();
 			}, this);
 		/*var user = this.user;
-		var self = this;
-		//Barton.suffer(-heal, healRange, 0.2, this.element);
-		function initProjectile(){
-			//this.x = Barton.x + Barton.width * 0.5;
-			//this.y = Barton.y + Barton.height * 0.65;
+		  var self = this;
+		  //Barton.suffer(-heal, healRange, 0.2, this.element);
+		  function initProjectile(){
+		  //this.x = Barton.x + Barton.width * 0.5;
+		  //this.y = Barton.y + Barton.height * 0.65;
 
-			this.tint = H_GREEN;
-			
-			this.scale.x = 2;
-			this.scale.y =2;
+		  this.tint = H_GREEN;
+		  
+		  this.scale.x = 2;
+		  this.scale.y =2;
 
-			this.anchor.setTo(0.5,1);
+		  this.anchor.setTo(0.5,1);
 
-			this.frame = 0;
+		  this.frame = 0;
 
-			this.lifespan = 1000;
-			
-			this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
-			
-			this.animations.play("animation", null, true);
+		  this.lifespan = 1000;
+		  
+		  this.animations.add("animation", [0,1,2,3,2,1,3,2,0,2,3]);			
+		  
+		  this.animations.play("animation", null, true);
 
-			this.game.physics.enable(this, Phaser.Physics.ARCADE);
+		  this.game.physics.enable(this, Phaser.Physics.ARCADE);
 
-			this.targetTags = self.targetTags;
-			this.element = self.element;
-		}
+		  this.targetTags = self.targetTags;
+		  this.element = self.element;
+		  }
 
-		function updateProjectile(){
-			this.scale.x = this.lifespan / 1000;
-			this.scale.y = this.scale.x;
-			//this.x = Barton.x + Barton.width * 0.5;
-			//this.y = Barton.y + Barton.height * 0.65;
-		}
+		  function updateProjectile(){
+		  this.scale.x = this.lifespan / 1000;
+		  this.scale.y = this.scale.x;
+		  //this.x = Barton.x + Barton.width * 0.5;
+		  //this.y = Barton.y + Barton.height * 0.65;
+		  }
 
-		function killProjectile(){
-			return true;
-		}
-		
-		createProjectile(this.game, 0, 0, "poison",
-						 initProjectile, updateProjectile, killProjectile);*/
+		  function killProjectile(){
+		  return true;
+		  }
+		  
+		  createProjectile(this.game, 0, 0, "poison",
+		  initProjectile, updateProjectile, killProjectile);*/
 		
 	}
 
@@ -3301,6 +3334,8 @@ var ManaHealSkill = function (user, level, unlockAt) {
 			}
 
 			this.user.heal(brutHeal, healRange, criticalChance, stat, BLUE);
+
+			BasicGame.sfx.MANA_SOUND.play("", 0, BasicGame.volume.sfx);
 		}, this);
 
 		this.user.can.orient = false;
@@ -3335,6 +3370,8 @@ var ManaHealSkill = function (user, level, unlockAt) {
 		}
 
 		this.timerHeal.stop();
+
+		BasicGame.sfx.MANA_SOUND.stop();
 
 		this.user.animations.play("spellReleaseBoth", 20)
 			.onComplete.addOnce(function(){
@@ -3781,6 +3818,8 @@ var HeroicStrikeSkill = function(user, level, targetTags, unlockAt){
 		createProjectile(this.game, 0, 0, "slash",
 						 initProjectile, updateProjectile, undefined,
 						 collideFunction, undefined, damageFunction);
+
+		BasicGame.sfx.HEROICSTRIKE_SOUND.play("", 0, BasicGame.volume.sfx);
 
 		var animation = null;
 
