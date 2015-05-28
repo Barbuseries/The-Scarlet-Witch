@@ -18,21 +18,21 @@ Player.prototype.getHero = function(){
 
 Player.prototype.connectKeyboard = function(){
 	if (!this.humanAfterAll){
-		if (this.controller.type != CONTROL_KEYBOARD){
-			this.controller.swap();
-		}
-
 		this.connect();
+	}
+
+	if (this.controller.type != CONTROL_KEYBOARD){
+		this.controller.swap();
 	}
 }
 
 Player.prototype.connectGamepad = function(){
 	if (!this.humanAfterAll){
-		if (this.controller.type != CONTROL_GAMEPAD){
-			this.controller.swap();
-		}
-
 		this.connect();
+	}
+
+	if (this.controller.type != CONTROL_GAMEPAD){
+		this.controller.swap();
 	}
 }
 

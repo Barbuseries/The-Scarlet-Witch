@@ -40,7 +40,7 @@
                  "name":"",
                  "properties":
                     {
-                     "sprite":"mob_1",
+                     "sprite":"lancer_1",
                      "type":"enemy"
                     },
                  "rotation":0,
@@ -103,11 +103,11 @@
         }, 
         {
          "firstgid":338,
-         "image":"..\/..\/assets\/Characters\/Ennemies\/mob_1.png",
+         "image":"..\/..\/assets\/Characters\/Ennemies\/lancer_1.png",
          "imageheight":1344,
          "imagewidth":832,
          "margin":0,
-         "name":"mob_1",
+         "name":"lancer_1",
          "properties":
             {
 

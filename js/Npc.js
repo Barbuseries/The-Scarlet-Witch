@@ -19,9 +19,6 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 		.allowBreak = false;
 	this.animations.add("spellCastBoth", [27, 28, 29, 30, 31, 32, 26], 15)
 		.allowBreak = false;
-	/**************/
-	/* A tester ! */
-	/******************************************************************************/
 	this.animations.add("spellChargeLeft", [14, 15, 16], 8)
 		.allowBreak = false;
 	this.animations.add("spellChargeRight", [40, 41, 42], 8)
@@ -35,6 +32,11 @@ var Npc = function(game, x, y, spritesheet, name, initFunction, updateFunction,
 	this.animations.add("spellReleaseBoth", [29, 30, 32, 26], 15)
 		.allowBreak = false;
 	this.animations.add("shieldBoth", [78, 79, 80, 81, 82, 83, 84, 85], 15);
+	/**************/
+	/* A tester ! */
+	/******************************************************************************/
+	this.animations.add("thrustLeft", [66, 67, 68, 69, 70, 71, 72, 65], 15);
+	this.animations.add("thrustRight", [92, 93, 94, 95, 96, 97, 98, 91], 15);
 	/******************************************************************************/
 	this.animations.add("swordRight", [195, 196, 197, 198, 199, 200, 200, 195], 15)
 		.allowBreak = false;
@@ -124,8 +126,12 @@ Npc.prototype.goLeft = function(control, factor){
 	if (typeof(factor) != "number"){
         factor = 1;
     }
+
+	if (control instanceof Control){
+		factor = 1;
+	}
 	
-	this.body.maxVelocity.x = this.SPEED * factor;
+	this.body.maxVelocity.x = this.SPEED * Math.abs(factor);
 
 	this.orientationH = -1;
 
@@ -157,7 +163,11 @@ Npc.prototype.goRight = function(control, factor){
         factor = 1;
     }
 
-	this.body.maxVelocity.x = this.SPEED * factor;
+	if (control instanceof Control){
+		factor = 1;
+	}
+
+	this.body.maxVelocity.x = this.SPEED * Math.abs(factor);
 
 	this.orientationH = 1;
 
@@ -497,6 +507,33 @@ Npc.prototype.die = function(){
 
 	this.animations.play("death", null, false, true);
 	this._dying = true;
+
+	if (this.textBox != null){
+		this.textBox.destroy();
+		this.textBox = null;
+		
+		this.UNBIASED_OPION.destroy();
+		this.UNBIASED_OPION = null;
+	}
+}
+
+Npc.prototype.KONAMICODE = function(){
+	var textBox = new TextBox(this.game, this.x + this.width, this.y - 90,
+							  100, 90, "ground2", "ground2");
+
+	var UNBIASED_OPION = new Sentence(this.game, "IS3N 4 EVA !!", MOOD_FRIGHTENED,
+									   -1, -1, 90);
+	UNBIASED_OPION.phaserText.align = "doublecenter";
+
+	textBox.addSentence(UNBIASED_OPION);
+
+	textBox.createAnimation("toggle", "right", "top", 1000, 1,
+							Phaser.Easing.Quadratic.Out);
+
+	textBox.fitWidthToSentence(0, -1, 2, 100);
+	textBox.fitDurationToSentence(0, 1000);
+
+	textBox.toggle();
 }
 /******************************************************************************/
 /* Npc */

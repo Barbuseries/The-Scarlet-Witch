@@ -33,7 +33,7 @@ var Hero = function(game, x, y, name, level){
 	this.allStats.experience.setGrowth(function(){
 		var level = this.entity.allStats.level.get();
 
-		return (level == 99 ) ? 0 : this.entity.allStats.level.get() * 10;
+		return (level == 99 ) ? Infinity : this.entity.allStats.level.get() * 10;
 	}, -1, [], true);
 
 	this.onSwapMode = new Phaser.Signal();
@@ -173,7 +173,7 @@ var Lucy = function(game, x, y, level){
 	this.allStats.special.set(1, 1);
 	this.allStats.special.setGrowth(function(){
 		return this._basicValue + 5 * this.entity.allStats.level.get() +
-			5 * this.entity.allStats.mainStat.get();
+			8 * this.entity.allStats.mainStat.get();
 	}, -1, [], true);
 
 	this.allStats.mainStat.onUpdate.add(this.allStats.special.grow,
@@ -182,14 +182,14 @@ var Lucy = function(game, x, y, level){
 	this.allStats.attack.setBasic(2);
 	this.allStats.attack.set(1, 1);
 	this.allStats.attack.setGrowth(function(){
-		return this._basicValue + this.entity.allStats.level.get() +
-			0.3 * this.entity.allStats.mainStat.get();
+		return this._basicValue + 0.5 * this.entity.allStats.level.get() +
+			0.7 * this.entity.allStats.mainStat.get();
 	}, -1, [], true);
 
 
 	this.allStats.defense.setGrowth(function(){
 		return this._basicValue + 0.125 * this.entity.allStats.level.get() +
-			0.1 * this.entity.allStats.endurance.get();
+			0.20 * this.entity.allStats.endurance.get();
 	}, -1, [], true);
 
 
@@ -324,13 +324,13 @@ var Barton = function(game, x, y, level){
 	this.allStats.attack.set(1, 1);
 	this.allStats.attack.setGrowth(function(){
 		return this._basicValue + 0.5 * this.entity.allStats.level.get() +
-			this.entity.allStats.mainStat.get();
+			0.6 * this.entity.allStats.mainStat.get();
 	}, -1, [], true);
 
 
 	this.allStats.defense.setGrowth(function(){
 		return this._basicValue + 0.1 * this.entity.allStats.level.get() +
-			0.5 * this.entity.allStats.endurance.get();
+			0.33 * this.entity.allStats.endurance.get();
 	}, -1, [], true);
 
 	this.allStats.dodge.setBasic(2);

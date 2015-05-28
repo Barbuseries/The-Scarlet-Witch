@@ -6,7 +6,7 @@ var Level = function(mapName, platformTileset, backgroundName,
 	}
 
 	if (typeof(nextLevelCheckpoint) != "number"){
-		nextLevelCheckpoint = 0;
+		nextLevelCheckpoint = -1;
 	}
 
 	//Phaser.State.call(this);
@@ -27,7 +27,7 @@ var Level = function(mapName, platformTileset, backgroundName,
 	this.nextLevel = nextLevel;
 	this.nextLevelCheckpoint = nextLevelCheckpoint;
 
-	this.checkpoint = 0;
+	this.checkpoint = -1;
 
 	this.onGameOver = null;
 	this.checkGameOverFuncion = null;
@@ -373,6 +373,18 @@ Level.prototype.update = function(){
 
 	this.gameOvered = !this.completed && this.checkGameOver();
 	this.completed = !this.gameOvered && this.checkComplete();
+	
+	if (BasicGame.konamiCode.code == THIS_IS_NOT_THE_KONAMI_CODE){
+		this.allEnemies.forEach(function(item){
+			item.KONAMICODE();
+		});
+
+		this.allHeroes.forEach(function(item){
+			item.KONAMICODE();
+		});
+
+		BasicGame.konamiCode.code = "";
+	}
 }
 
 Level.prototype.tagPlatforms = function(){

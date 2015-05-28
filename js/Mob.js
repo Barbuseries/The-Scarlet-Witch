@@ -200,7 +200,7 @@ Mob.prototype.suffer = function(brutDamages, damageRange, criticalChance, elemen
 
 		finalDefense = (finalDefense > 1) ? 1 : finalDefense;
 
-		actualDamage *= (1 - this.allStats.defense.get() / 100);
+		actualDamage *= (1 - finalDefense);
 	}
 
 	if (actualDamage == 0){
@@ -755,6 +755,128 @@ var createArcher = function(game, x, y, spriteSheet, level){
 	var newArcher;
 
 	function initArcher(){
+		this.allStats.health.setMax(20);
+		this.allStats.health.setBasic(20);
+		this.allStats.health.set(1, 1);
+
+		this.allStats.health.setGrowth(function(){
+			return this._basicValue + 5 * this.entity.allStats.level.get() +
+				3 * this.entity.allStats.endurance.get();
+		}, -1, [], true);
+
+		this.allStats.attack.setBasic(5);
+		this.allStats.attack.set(1, 1);
+		this.allStats.attack.setGrowth(function(){
+			return this._basicValue + 0.2 * this.entity.allStats.level.get() +
+				0.3 * this.entity.allStats.mainStat.get();
+		}, -1, [], true);
+
+		this.allStats.defense.setGrowth(function(){
+		return this._basicValue;
+		}, -1, [], true);
+
+		this.allStats.dodge.setBasic(2);
+		this.allStats.dodge.set(1, 1);
+		this.allStats.dodge.setGrowth(function(){
+			return 0.1 * (this._basicValue + 0.1 * this.entity.allStats.level.get() +
+						  0.2 * this.entity.allStats.agility.get());
+		}, -1, [], true);
+
+		this.allStats.criticalRate.setBasic(5);
+		this.allStats.criticalRate.set(1, 1);
+		this.allStats.criticalRate.setGrowth(function(){
+			return 0.5 * (this._basicValue + 0.125 * this.entity.allStats.level.get() +
+						  0.3 * this.entity.allStats.agility.get());
+		}, -1, [], true);
+
+		this.allStats.attackSpeed.setGrowth(function(){
+			return this._basicValue - this.entity.allStats.level.get() -
+				2 * this.entity.allStats.agility.get();
+		}, -1, [], true);
+
+		this.allStats.special.addMax(100);
+		this.allStats.special.set(1, 1);
+		
+		this.allStats.agility.add(2 * level);
+		this.allStats.mainStat.add(level);
+		this.allStats.endurance.add(Math.sqrt(level) * 5);
+
+		this.allSkills[0] = {
+			firstSkill: new ArrowSkill(this, 1,
+									   ["platform", "hero"]),
+			
+			secondSkill: new MultArrowSkill(this, 1,
+										   ["platform", "hero"], 10)
+		}
+	}
+
+	return createMob(game, x, y, spriteSheet, "Archer", level, "enemy",
+					 initArcher, null, null);
+}
+
+var createLancer = function(game, x, y, spriteSheet, level){
+	var newLancer;
+
+	function initLancer(){
+		this.allStats.health.setMax(40);
+		this.allStats.health.setBasic(40);
+		this.allStats.health.set(1, 1);
+		this.allStats.health.setGrowth(function(){
+			return this._basicValue + 5 * this.entity.allStats.level.get() +
+				6 * this.entity.allStats.endurance.get();
+		}, -1, [], true);
+
+		this.allStats.attack.setBasic(5);
+		this.allStats.attack.set(1, 1);
+		this.allStats.attack.setGrowth(function(){
+			return this._basicValue + 0.2 * this.entity.allStats.level.get() +
+				0.3 * this.entity.allStats.mainStat.get();
+		}, -1, [], true);
+
+		this.allStats.defense.setGrowth(function(){
+			return this._basicValue;
+		}, -1, [], true);
+
+		this.allStats.dodge.setBasic(2);
+		this.allStats.dodge.set(1, 1);
+		this.allStats.dodge.setGrowth(function(){
+			return 0.1 * (this._basicValue + 0.1 * this.entity.allStats.level.get() +
+						  0.2 * this.entity.allStats.agility.get());
+		}, -1, [], true);
+
+		this.allStats.criticalRate.setBasic(5);
+		this.allStats.criticalRate.set(1, 1);
+		this.allStats.criticalRate.setGrowth(function(){
+			return 0.5 * (this._basicValue + 0.125 * this.entity.allStats.level.get() +
+						  0.3 * this.entity.allStats.agility.get());
+		}, -1, [], true);
+
+		this.allStats.attackSpeed.setGrowth(function(){
+			return this._basicValue - 2 * this.entity.allStats.level.get() -
+				2 * this.entity.allStats.agility.get();
+		}, -1, [], true);
+
+		this.allStats.special.addMax(100);
+		this.allStats.special.set(1, 1);
+
+		this.allStats.agility.add(level);
+		this.allStats.mainStat.add(1.5 * level);
+		this.allStats.endurance.add(1.1 * level);
+
+		this.allSkills[0] = {
+			firstSkill: new ThrustSkill(this, 1,
+									   ["hero"])
+		}
+	}
+
+	return createMob(game, x, y, spriteSheet, "Lancer", level, "enemy",
+					 initLancer, null, null);
+}
+
+var createBoss = function(game, x, y, spriteSheet, level){
+	var newBoss;
+
+	function initBoss(){
 		this.allStats.health.setMax(40);
 		this.allStats.health.setBasic(40);
 		this.allStats.health.set(1, 1);
@@ -798,15 +920,32 @@ var createArcher = function(game, x, y, spriteSheet, level){
 		this.allStats.special.set(1, 1);
 
 		this.allSkills[0] = {
-			firstSkill: new ArrowSkill(this, 1,
-									   ["platform", "hero"])
+			firstSkill: new ThrustSkill(this, 3,
+									   ["hero"]),
+
+			secondSkill: new SlashSkill(this, 3,
+										["hero"]),
+			
+			thirdSkill: new ArrowSkill(this, 3,
+									  ["hero"]),
+
+			fourthSkill: new HeroicStrikeSkill(this, 3,
+											  ["hero"]),
+			
+			fifthSkill: new DashSkill(this, 3),
+
+			sixthSkill: new ShieldSkill(this, 3),
+
+			seventhSkill: new MultArrowSkill(this, 3,
+											["hero"])
 		}
+
+		this.allResistances[Elements.PHYSIC] = 0.9;
 	}
 
-	return createMob(game, x, y, spriteSheet, "Archer", level, "enemy",
-					 initArcher, null, null);
+	return createMob(game, x, y, spriteSheet, "Boss", level * 1.5, "enemy",
+					 initBoss, null, null);
 }
-
 /******************************************************************************/
 /* Common Mobs */
 /***************/

@@ -34,7 +34,7 @@ var GameSave = function(index){
 	this.level = {
 		key: "",
 
-		checkpoint: 0
+		checkpoint: -1
 	};
 
 	this.misc = {
@@ -95,8 +95,8 @@ GameSave.prototype.reload = function(){
 			checkpoint.tint = H_RED;
 		}
 		else{
-			heroes[j].x = 0;
-			heroes[j].y = 0;
+			heroes[j].x = (1 + j) * 50;
+			heroes[j].y = 27 * 32;
 		}
 
 		player.setHero(heroes[j]);

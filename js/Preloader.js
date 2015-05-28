@@ -98,7 +98,8 @@ BasicGame.Preloader.prototype.preload =  function(){
     this.load.spritesheet("lucy", heroesDir + "lucy_full.png", 64, 64);
 	this.load.spritesheet("barton", heroesDir + "barton_full.png", 64, 64);
 	this.load.spritesheet("archer_1", ennemiesDir + "archer_1.png", 64, 64);
-	this.load.spritesheet("mob_1", ennemiesDir + "mob_1.png", 64, 64);
+	this.load.spritesheet("lancer_1", ennemiesDir + "lancer_1.png", 64, 64);
+	this.load.spritesheet("boss_1", ennemiesDir + "boss_1.png", 64, 64);
 
 
 	// Audio

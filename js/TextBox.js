@@ -1294,7 +1294,9 @@ TextBox.prototype.kill = function(){
 	this.onStartClose = null;
 	this.onEndClose = null;
 
-    this.parent.remove(this, true);
+	try{
+		Phaser.Group.prototype.destroy(this);
+	}catch(err){};
 }
 
 TextBox.prototype.destroy = function(){
@@ -1302,7 +1304,9 @@ TextBox.prototype.destroy = function(){
 
     this._del();
 
-    this.parent.remove(this, true);
+    try{
+		Phaser.Group.prototype.destroy(this);
+	}catch(err){};
 }
 
 TextBox.prototype._del = function(){
@@ -1530,6 +1534,8 @@ Sentence.prototype.startReading = function(){
 }
 
 Sentence.prototype.stopReading = function(forceStop){
+	if (this.phaserText == null) return;
+
     if ((typeof(forceStop) != "number") &&
         (typeof(forceStop) != "boolean")) forceStop = false;
 

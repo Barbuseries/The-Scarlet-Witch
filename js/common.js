@@ -282,6 +282,18 @@ var createFromTiledObject = function(element, group) {
 								BasicGame.gameSave.heroes.barton.level);
 		},
 		
+		lancer: function(group, element){
+			return createLancer(group.game, element.x, element.y,
+								element.properties.sprite,
+								BasicGame.gameSave.heroes.barton.level);
+		},
+		
+		boss: function(group, element){
+			return createBoss(group.game, element, element.y,
+							  element.properties.sprite,
+							  BasicGame.gameSave.heroes.barton.level);
+		},
+		
 		item: function(group, element){
 			return null;
 		},

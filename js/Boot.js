@@ -1,3 +1,5 @@
+var THIS_IS_NOT_THE_KONAMI_CODE = "UUDDLRLRBAStSe";
+
 var BasicGame = {
 	allGameSaves: [],
 
@@ -37,6 +39,74 @@ var BasicGame = {
 
 	pauseBackground: null,
 	pauseText: null,
+
+	konamiCode: {
+		code: "",
+		timer: null
+	},
+	
+	konamiCodeRestartTimer: function(){
+		if (this.konamiCode.timer != null){
+			this.konamiCode.timer.stop();
+			this.konamiCode.timer.destroy();
+			this.konamiCode.timer = null;
+		}
+
+		this.konamiCode.timer = this.game.time.create();
+		this.konamiCode.timer.add(1000, function(){
+			this.konamiCode.code = "";
+		}, this);
+
+		this.konamiCode.timer.start();
+	},
+
+	konamiCodeUp: function(){
+		this.konamiCode.code += "U";
+
+		this.konamiCodeRestartTimer();
+	},
+	
+	konamiCodeDown: function(){
+		this.konamiCode.code += "D";
+
+		this.konamiCodeRestartTimer();
+	},
+	
+	konamiCodeLeft: function(){
+		this.konamiCode.code += "L";
+		
+		this.konamiCodeRestartTimer();
+	},
+
+	konamiCodeRight: function(){
+		this.konamiCode.code += "R";
+
+		this.konamiCodeRestartTimer();
+	},
+
+	konamiCodeA: function(){
+		this.konamiCode.code += "A";
+
+		this.konamiCodeRestartTimer();
+	},
+
+	konamiCodeB: function(){
+		this.konamiCode.code += "B";
+
+		this.konamiCodeRestartTimer();
+	},
+
+	konamiCodeStart: function(){
+		this.konamiCode.code += "St";
+
+		this.konamiCodeRestartTimer();
+	},
+
+	konamiCodeSelect: function(){
+		this.konamiCode.code += "Se";
+
+		this.konamiCodeRestartTimer();
+	},
 
 	mute: function(control){
 		control.manager.game.sound.mute = !control.manager.game.sound.mute;
@@ -142,10 +212,12 @@ var BasicGame = {
 
 		if (menuHero1Open){
 			heroP2.menu.toggle();
+			heroP2.game.world.bringToTop(heroP2.menu);
 		}
 
 		if (menuHero2Open){
 			heroP1.menu.toggle();
+			heroP1.game.world.bringToTop(heroP1.menu);
 		}
 	}
 };
@@ -174,7 +246,7 @@ BasicGame.Boot.prototype.init = function(){
 
     }
 	
-	this.game.input.onDown.add(this.goFullscreen, this);
+	this.game.input.onDown.addOnce(this.goFullscreen, this);
 
 	BasicGame.game = this;
 
@@ -217,7 +289,7 @@ BasicGame.Boot.prototype.create = function(){
 	
 	this.bootTween.start();
 
-	this.game.input.onDown.addOnce(this.nextLogo, this);
+	this.game.input.onDown.add(this.nextLogo, this);
 }
 
 BasicGame.Boot.prototype.nextLogo = function(){
@@ -267,14 +339,8 @@ BasicGame.Boot.prototype.startPreload = function(){
 	var gamepad = Phaser.Gamepad;
 	
 	var commonMaped = {
-		goLeft: gamepad.XBOX360_DPAD_LEFT,
-		goRight: gamepad.XBOX360_DPAD_RIGHT,
-		goDown: gamepad.XBOX360_DPAD_DOWN,
-		goUp: gamepad.XBOX360_DPAD_UP,
 		menu_select: gamepad.XBOX360_A,
 		menu_toggle: gamepad.XBOX360_START,
-		menu_next: gamepad.XBOX360_DPAD_DOWN,
-		menu_previous: gamepad.XBOX360_DPAD_UP,
 		jump: gamepad.XBOX360_A,
 		reduceJump: gamepad.XBOX360_A,
 		castFirst: gamepad.XBOX360_X,
@@ -288,8 +354,14 @@ BasicGame.Boot.prototype.startPreload = function(){
 		releaseFourth: gamepad.XBOX360_RIGHT_BUMPER,
 		releaseFifth: gamepad.XBOX360_RIGHT_TRIGGER,
 		swapMode: gamepad.XBOX360_LEFT_BUMPER,
-		swapHeroes: gamepad.XBOX360_BACK
-	}
+		swapHeroes: gamepad.XBOX360_BACK,
+		goLeft: gamepad.XBOX360_DPAD_LEFT,
+		goRight: gamepad.XBOX360_DPAD_RIGHT,
+		goDown: gamepad.XBOX360_DPAD_DOWN,
+		goUp: gamepad.XBOX360_DPAD_UP,
+		menu_next: gamepad.XBOX360_DPAD_DOWN,
+		menu_previous: gamepad.XBOX360_DPAD_UP
+	};
 
 	var padMaped = {
 		pad_goLeft: {
@@ -315,7 +387,18 @@ BasicGame.Boot.prototype.startPreload = function(){
 			min: 0.1,
 			max: 1
 		}
-	}
+	};
+
+	var konamiMaped = {
+		konamiCodeUp: gamepad.XBOX360_DPAD_UP,
+		konamiCodeDown: gamepad.XBOX360_DPAD_DOWN,
+		konamiCodeLeft: gamepad.XBOX360_DPAD_LEFT,
+		konamiCodeRight: gamepad.XBOX360_DPAD_RIGHT,
+		konamiCodeA: gamepad.XBOX360_A,
+		konamiCodeB: gamepad.XBOX360_B,
+		konamiCodeStart: gamepad.XBOX360_START,
+		konamiCodeSelect: gamepad.XBOX360_BACK
+	};
 
 	BasicGame.allPlayers.p1 = new Player(this.game, "1");
 	BasicGame.allPlayers.p1.isMain = true;
@@ -376,7 +459,11 @@ BasicGame.Boot.prototype.startPreload = function(){
 		.bindControl(-1, keyboard.ESC, -1,
 					"returnToTitle", "onDown", "system")
 		.bindControl(-1, keyboard.SHIFT, -1,
-					 "pause", "onDown", "SYSTEM", BasicGame);
+					 "pause", "onDown", "SYSTEM", BasicGame)
+	    .bindControl(-1, keyboard.F1, -1,
+					 "connectKeyboard", "onDown", [], BasicGame.allPlayers.p1)
+		.bindControl(-1, -1, gamepad.XBOX360_START,
+					 "connectGamepad", "onDown", [], BasicGame.allPlayers.p1);
 
 	BasicGame.allPlayers.p2.controller
 		.bindControl("menu_toggle", keyboard.NUMPAD_MULTIPLY, -1,
@@ -421,7 +508,7 @@ BasicGame.Boot.prototype.startPreload = function(){
 					 "releaseThird", "onUp", "action")
 		.bindControl(-1, keyboard.NUMPAD_6, -1,
 					 "releaseFourth", "onUp", "action")
-		.bindControl(-1, keyboard.NUMPAD_7, -1,
+		.bindControl(-1, keyboard.NUMPAD_3, -1,
 					 "releaseFifth", "onUp", "action")
 		.bindControl(-1, keyboard.NUMPAD_ADD, -1,
 					 "swapMode", "onDown", "action")
@@ -432,9 +519,6 @@ BasicGame.Boot.prototype.startPreload = function(){
 		.bindControl(-1, -1, gamepad.XBOX360_START,
 					 "connectGamepad", "onDown", [], BasicGame.allPlayers.p2);
 
-	
-	BasicGame.allPlayers.p2.controller.get("connectKeyboard").transcendental = true;
-	BasicGame.allPlayers.p2.controller.get("connectGamepad").transcendental = true;
 
 	for(var i in BasicGame.allPlayers){
 		for(var j in commonMaped){
@@ -445,13 +529,22 @@ BasicGame.Boot.prototype.startPreload = function(){
 		for(var j in padMaped){
 			var functionName = j.substr(j.indexOf("_") + 1, j.length);
 			
-			BasicGame.allPlayers[i].controller.bindPadControl(j, padMaped.axis,
-															  padMaped.min,
-															  padMaped.max,
+			BasicGame.allPlayers[i].controller.bindPadControl(j, padMaped[j].axis,
+															  padMaped[j].min,
+															  padMaped[j].max,
 															  functionName,
 															  "update",
 															  "movement");
 		}
+
+		for(var j in konamiMaped){
+			BasicGame.allPlayers[i].controller.bindControl(-1, -1, konamiMaped[j],
+														   j, "onDown", "konami",
+														   BasicGame);
+		}
+			
+		BasicGame.allPlayers[i].controller.get("connectKeyboard").transcendental = true;
+		BasicGame.allPlayers[i].controller.get("connectGamepad").transcendental = true;
 	}
 
 	var optionsSave = localStorage.getItem("options");
@@ -474,26 +567,4 @@ BasicGame.Boot.prototype.startPreload = function(){
 	this.state.start("Preloader");
 }
 
-/*Implémentation des Checkpoints.
-    
-Nouveau système d'augmentation des stats.
 
-Nouveau binding de touches :
-
-- Mode : SPACEBAR
-- Valider : ENTER
-- Pause : SHIFT (droit ou gauche)
-
-Mode 2 joueurs clavier :
-
-- Déplacement avec les flêches.
-- Sorts : 1, 4, 5, 6, 3
-- Mode : +
-- Héros : -
-- Menu : *
-- Valider : / (parce que, en tout cas sur mon ordi,
-NUMPAD_ENTER équivaut à ENTER)
-
-La manette est censée marcher (Bouttons et Joysticks).
-
-Bonne nuit.*/

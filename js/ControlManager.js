@@ -24,7 +24,14 @@ var ControlManager = function(game, type, target, pad){
 	game.input.gamepad.start();
 	
 	this.pad = game.input.gamepad[pad];
-	this.pad.addCallbacks(this, {onDisconnect: this.swap});
+	
+	var self = this;
+	
+	function swap(){
+		self.swap();
+	}
+
+	this.pad.addCallbacks(self, {onDisconnect: swap});
 
 	this.keyboard = game.input.keyboard;
 
@@ -42,6 +49,11 @@ var ControlManager = function(game, type, target, pad){
 	};
 
 	this.onUpdate = new Phaser.Signal();
+	this.onPadConnect = new Phaser.Signal();
+
+	this.pad.addCallbacks(this, {onConnect: function(){
+		self.onPadConnect.dispatch();
+	}})
 }
 
 // Call each control's function with "update" as signal.
@@ -126,14 +138,13 @@ ControlManager.prototype.bindControl = function(controlName, keyboardCode,
 	}
 
 	function setAfterCheck(){
-		manager.bindControl(controlName, -1, gamepadCode, functionName, signal,
-							allTags, target, fps);
+		manager.get(controlName).change(-1, gamepadCode);
 
-		this.pad.addCallbacks(this, {onConnect: null});
+		//manager.pad.addCallbacks(manager, {onConnect: null});
 	}
 	
 	if (!this.pad.connected){
-		this.pad.addCallbacks(this, {onConnect: setAfterCheck});
+		this.onPadConnect.addOnce(setAfterCheck);
 	}
 	
 	// If the control already exists, unbind it.
@@ -204,11 +215,12 @@ ControlManager.prototype.bindPadControl = function(padControlName, axis, min, ma
 		manager.bindPadControl(padControlName, axis, min, max, functionName, signal,
 							   allTags, target, fps);
 
-		this.pad.addCallbacks(this, {onConnect: null});
+		//manager.pad.addCallbacks(manager, {onConnect: null});
 	}
 
 	if (!this.pad.connected){
-		this.pad.addCallbacks(this, {onConnect: setAfterCheck});
+		this.onPadConnect.addOnce(setAfterCheck);
+
 		return this;
 	}
 
@@ -399,8 +411,12 @@ ControlManager.prototype.getByTag = function(allTags, allNeeded){
 		for (controlName in this.allControls){
 			var control = this.allControls[controlName];
 
-			if (control.allTags.indexOf(allTags) != -1){
-				returnControls.push(control);
+			try{
+				if (control.allTags.indexOf(allTags) != -1){
+					returnControls.push(control);
+				}
+			}catch(err){
+				console.log(controlName, this);
 			}
 		}
 	}
@@ -576,6 +592,16 @@ ControlManager.prototype.swap = function(cache){
 		if (!this.pad.connected){
 			this.type = CONTROL_KEYBOARD;
 		}
+	}
+}
+
+ControlManager.prototype.destroy = function(){
+	if (this.onUpdate != null){
+		this.onUpdate.dispose();
+		this.onUpdate = null;
+		
+		this.onPadConnect.dispose();
+		this.onPadConnect = null;
 	}
 }
 /******************************************************************************/
@@ -840,12 +866,8 @@ var Control = function(manager, keyboardCode, gamepadCode, functionName, signal,
 
 	this.inputKeyboard = manager.keyboard.addKey(keyboardCode);
 
-	try{
-		this.inputGamepad = manager.pad.getButton(gamepadCode);
-	}
-	catch(err){
-		this.inputGamepad = null;
-	}
+	
+	this.inputGamepad = manager.pad.getButton(gamepadCode);
 
 	this.keyboardCode = keyboardCode;
 	this.gamepadCode = gamepadCode;
@@ -966,6 +988,7 @@ Control.prototype.change = function(keyboardCode, gamepadCode, signal, cache){
 	var allTags = this.allTags;
 	var cached = this._cached;
 	var fps = this.fps;
+	var transcendental = this.transcendental;
 
 	if (cache){
 		cached.keyboardCode.push(this.keyboardCode);
@@ -978,17 +1001,18 @@ Control.prototype.change = function(keyboardCode, gamepadCode, signal, cache){
 				 allTags, target, fps);
 
 	this._cached = cached;
+	this.transcendental = transcendental;
 }
 
 Control.prototype.executeKeyboard = function(){
-	if ((this.manager.connected && this.manager.type == CONTROL_KEYBOARD) ||
+	if (((this.manager.connected)&&  (this.manager.type == CONTROL_KEYBOARD)) ||
 		this.transcendental){
 		this.execute(CONTROL_KEYBOARD);
 	}
 }
 
 Control.prototype.executeGamepad = function(){
-	if ((this.manager.connected && this.manager.type == CONTROL_GAMEPAD) ||
+	if (((this.manager.connected) && (this.manager.type == CONTROL_GAMEPAD)) ||
 		this.transcendental){
 		this.execute(CONTROL_GAMEPAD);
 	}
@@ -1027,7 +1051,6 @@ Control.prototype.execute = function(type){
 		break;
 	}
 
-
 	if (toFire){
 		actualFunction.call(target, this);
 
@@ -1065,10 +1088,6 @@ Control.prototype.removeSignal = function(){
 		break;
 		
 	case "onFloat":
-		if (this.inputKeyboard != null){
-			this.inputKeyboard.onFloat.remove(this.executeKeyboard, this);
-		}
-		
 		if (this.inputGamepad != null){
 			this.inputGamepad.onFloat.remove(this.executeGamepad, this);
 		}
@@ -1121,6 +1140,9 @@ var PadControl = function(manager, axis, min, max, functionName, signal,
 
 	this.setSignal(signal);
 }
+
+PadControl.prototype = Object.create(ControlSqueletton.prototype);
+PadControl.prototype.constructor = PadControl;
 
 PadControl.prototype.setSignal = function(signal, cache){
 	this.removeSignal();
@@ -1218,19 +1240,21 @@ PadControl.prototype.execute = function(){
 
 	var actualFunction = this.getFunction();
 
+	if (actualFunction == null){
+		return;
+	}
+
 	var target = (this.target == -1) ? this.manager.target : this.target;
 
 
 	if ((pad.axis(this.axis) >= this.min) && (pad.axis(this.axis) <= this.max)){
 
-		if (toFire){
-			actualFunction.call(target, this, pad.axis(this.axis));
-
-			if (this.fps){
-				this._fps = FPS / this.fps;
-				
-				this._canFire = false;
-			}
+		actualFunction.call(target, this, pad.axis(this.axis));
+		
+		if (this.fps){
+			this._fps = FPS / this.fps;
+			
+			this._canFire = false;
 		}
 	}
 }
