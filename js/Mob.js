@@ -967,7 +967,7 @@ var createBoss = function(game, x, y, spriteSheet, level){
 			
 			fifthSkill: new DashSkill(this, 3),
 
-			sixthSkill: new ShieldSkill(this, 3),
+			//sixthSkill: new ShieldSkill(this, 3),
 
 			seventhSkill: new MultArrowSkill(this, 3,
 											["hero"])
