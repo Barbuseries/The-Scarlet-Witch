@@ -269,6 +269,8 @@ BasicGame.Boot.prototype.preload = function(){
 }
 
 BasicGame.Boot.prototype.create = function(){
+	this.game.canvas.oncontextmenu = function (e) { e.preventDefault(); }
+
     this.logoGroup = this.game.add.group();
 
 	this.logoGroup.create(0, 0, "phaserLogo");
@@ -333,261 +335,263 @@ BasicGame.Boot.prototype.startPreload = function(){
 		logo.kill();
 	});
 
-	var keyboard = Phaser.Keyboard;
-	var gamepad = Phaser.Gamepad;
-	
-	var commonMaped = {
-		menu_select: gamepad.XBOX360_A,
-		menu_toggle: gamepad.XBOX360_START,
-		jump: gamepad.XBOX360_A,
-		reduceJump: gamepad.XBOX360_A,
-		castFirst: gamepad.XBOX360_X,
-		castSecond: gamepad.XBOX360_Y,
-		castThird: gamepad.XBOX360_B,
-		castFourth: gamepad.XBOX360_RIGHT_BUMPER,
-		castFifth: gamepad.XBOX360_RIGHT_TRIGGER,
-		releaseFirst: gamepad.XBOX360_X,
-		releaseSecond: gamepad.XBOX360_Y,
-		releaseThird: gamepad.XBOX360_B,
-		releaseFourth: gamepad.XBOX360_RIGHT_BUMPER,
-		releaseFifth: gamepad.XBOX360_RIGHT_TRIGGER,
-		swapMode: gamepad.XBOX360_LEFT_BUMPER,
-		swapHeroes: gamepad.XBOX360_BACK,
-		goLeft: gamepad.XBOX360_DPAD_LEFT,
-		goRight: gamepad.XBOX360_DPAD_RIGHT,
-		goDown: gamepad.XBOX360_DPAD_DOWN,
-		goUp: gamepad.XBOX360_DPAD_UP,
-		menu_next: gamepad.XBOX360_DPAD_DOWN,
-		menu_previous: gamepad.XBOX360_DPAD_UP
-	};
-
-	var padMaped = {
-		pad_goLeft: {
-			axis: gamepad.XBOX360_STICK_LEFT_X,
-			min: -1,
-			max: -0.5
-		},
-
-		pad_goRight: {
-			axis: gamepad.XBOX360_STICK_LEFT_X,
-			min: 0.5,
-			max: 1
-		},
+	if (!GAME_COMPLETED){
+		var keyboard = Phaser.Keyboard;
+		var gamepad = Phaser.Gamepad;
 		
-		pad_goUp: {
-			axis: gamepad.XBOX360_STICK_LEFT_Y,
-			min: 0.5,
-			max: 1
-		},
-		
-		pad_goDown: {
-			axis: gamepad.XBOX360_STICK_LEFT_Y,
-			min: -1,
-			max: -0.5
-		},
+		var commonMaped = {
+			menu_select: gamepad.XBOX360_A,
+			menu_toggle: gamepad.XBOX360_START,
+			jump: gamepad.XBOX360_A,
+			reduceJump: gamepad.XBOX360_A,
+			castFirst: gamepad.XBOX360_X,
+			castSecond: gamepad.XBOX360_Y,
+			castThird: gamepad.XBOX360_B,
+			castFourth: gamepad.XBOX360_RIGHT_BUMPER,
+			castFifth: gamepad.XBOX360_RIGHT_TRIGGER,
+			releaseFirst: gamepad.XBOX360_X,
+			releaseSecond: gamepad.XBOX360_Y,
+			releaseThird: gamepad.XBOX360_B,
+			releaseFourth: gamepad.XBOX360_RIGHT_BUMPER,
+			releaseFifth: gamepad.XBOX360_RIGHT_TRIGGER,
+			swapMode: gamepad.XBOX360_LEFT_BUMPER,
+			swapHeroes: gamepad.XBOX360_BACK,
+			goLeft: gamepad.XBOX360_DPAD_LEFT,
+			goRight: gamepad.XBOX360_DPAD_RIGHT,
+			goDown: gamepad.XBOX360_DPAD_DOWN,
+			goUp: gamepad.XBOX360_DPAD_UP,
+			menu_next: gamepad.XBOX360_DPAD_DOWN,
+			menu_previous: gamepad.XBOX360_DPAD_UP
+		};
 
-		pad_orientLeft: {
-			axis: gamepad.XBOX360_STICK_RIGHT_X,
-			min: -1,
-			max: -0.5
-		},
+		var padMaped = {
+			pad_goLeft: {
+				axis: gamepad.XBOX360_STICK_LEFT_X,
+				min: -1,
+				max: -0.5
+			},
 
-		pad_orientRight: {
-			axis: gamepad.XBOX360_STICK_RIGHT_X,
-			min: 0.5,
-			max: 1
-		},
-
-		pad_menu_previous: {
-			axis: gamepad.XBOX360_STICK_LEFT_Y,
-			min: -1,
-			max: -0.5
-		},
-
-		pad_menu_next: {
-			axis: gamepad.XBOX360_STICK_LEFT_Y,
-			min: 0.5,
-			max: 1
-		}
-	};
-
-	var konamiMaped = {
-		konamiCodeUp: gamepad.XBOX360_DPAD_UP,
-		konamiCodeDown: gamepad.XBOX360_DPAD_DOWN,
-		konamiCodeLeft: gamepad.XBOX360_DPAD_LEFT,
-		konamiCodeRight: gamepad.XBOX360_DPAD_RIGHT,
-		konamiCodeA: gamepad.XBOX360_A,
-		konamiCodeB: gamepad.XBOX360_B,
-		konamiCodeStart: gamepad.XBOX360_START,
-		konamiCodeSelect: gamepad.XBOX360_BACK
-	};
-
-	BasicGame.allPlayers.p1 = new Player(this.game, "1");
-	BasicGame.allPlayers.p1.isMain = true;
-	BasicGame.allPlayers.p1.humanAfterAll = true;
-	BasicGame.allPlayers.p1.controller.connected = true;
-
-	BasicGame.allPlayers.p2 = new Player(this.game, "2");
-
-	BasicGame.allPlayers.p1.controller
-		.bindControl("menu_toggle", keyboard.M, -1,
-					 "toggle", "onDown", "menu")
-		.bindControl("menu_next", keyboard.S, -1,
-					 "goNext", "down", "menu", -1, 6)
-		.bindControl("menu_previous", keyboard.Z, -1,
-					 "goPrevious", "down", "menu", -1, 6)
-		.bindControl("menu_select", keyboard.ENTER, -1,
-					 "select", "onDown", "menu")
-		.bindControl(-1, keyboard.Q, -1,
-					 "goLeft", "down", "movement")
-		.bindControl(-1, keyboard.D, -1,
-					 "goRight", "down", "movement")
-		.bindControl(-1, keyboard.Z, -1,
-					 "goUp", "down", "movement")
-		.bindControl(-1, keyboard.S, -1,
-					 "goDown", "down", "movement")
-		.bindControl(-1, keyboard.Z, -1,
-					 "jump", "down", "movement")
-		.bindControl(-1, keyboard.Z, -1,
-					 "reduceJump", "onDown", "movement")
-		.bindControl(-1, keyboard.J, -1,
-					 "orientLeft", "down", "movement")
-		.bindControl(-1, keyboard.L, -1,
-					 "orientRight", "down", "movement")
-		.bindControl(-1, keyboard.Y, -1,
-					 "castFirst", "down", "action")
-		.bindControl(-1, keyboard.U, -1,
-					 "castSecond", "down", "action")
-		.bindControl(-1, keyboard.I, -1,
-					 "castThird", "down", "action")
-		.bindControl(-1, keyboard.O, -1,
-					 "castFourth", "down", "action")
-		.bindControl(-1, keyboard.P, -1,
-					 "castFifth", "down", "action")
-		.bindControl(-1, keyboard.Y, -1,
-					 "releaseFirst", "onUp", "action")
-		.bindControl(-1, keyboard.U, -1,
-					 "releaseSecond", "onUp", "action")
-		.bindControl(-1, keyboard.I, -1,
-					 "releaseThird", "onUp", "action")
-		.bindControl(-1, keyboard.O, -1,
-					 "releaseFourth", "onUp", "action")
-		.bindControl(-1, keyboard.P, -1,
-					 "releaseFifth", "onUp", "action")
-		.bindControl(-1, keyboard.SPACEBAR, -1,
-					 "swapMode", "onDown", "action")
-		.bindControl(-1, keyboard.TAB, -1,
-					 "swapHeroes", "onDown", ["system" ,"action"])
-		.bindControl(-1, keyboard.ESC, -1,
-					"returnToTitle", "onDown", "system")
-		.bindControl(-1, keyboard.SHIFT, -1,
-					 "pause", "onDown", "SYSTEM", BasicGame)
-	    .bindControl(-1, keyboard.F1, -1,
-					 "connectKeyboard", "onDown", [], BasicGame.allPlayers.p1)
-		.bindControl(-1, -1, gamepad.XBOX360_START,
-					 "connectGamepad", "onDown", [], BasicGame.allPlayers.p1);
-
-	BasicGame.allPlayers.p2.controller
-		.bindControl("menu_toggle", keyboard.NUMPAD_MULTIPLY, -1,
-					 "toggle", "onDown", "menu")
-		.bindControl("menu_next", keyboard.DOWN, -1,
-					 "goNext", "down", "menu", -1, 6)
-		.bindControl("menu_previous", keyboard.UP, -1,
-					 "goPrevious", "down", "menu", -1, 6)
-		.bindControl("menu_select", keyboard.NUMPAD_DIVIDE, -1,
-					 "select", "onDown", "menu")
-		.bindControl(-1, keyboard.LEFT, -1,
-					 "goLeft", "down", "movement")
-		.bindControl(-1, keyboard.RIGHT, -1,
-					 "goRight", "down", "movement")
-		.bindControl(-1, keyboard.UP, -1,
-					 "goUp", "down", "movement")
-		.bindControl(-1, keyboard.DOWN, -1,
-					 "goDown", "down", "movement")
-		.bindControl(-1, keyboard.UP, -1,
-					 "jump", "down", "movement")
-		.bindControl(-1, keyboard.UP, -1,
-					 "reduceJump", "onDown", "movement")
-		.bindControl(-1, keyboard.NUMPAD_7, -1,
-					 "orientLeft", "down", "movement")
-		.bindControl(-1, keyboard.NUMPAD_9, -1,
-					 "orientRight", "down", "movement")
-		.bindControl(-1, keyboard.NUMPAD_1, -1,
-					 "castFirst", "down", "action")
-		.bindControl(-1, keyboard.NUMPAD_4, -1,
-					 "castSecond", "down", "action")
-		.bindControl(-1, keyboard.NUMPAD_5, -1,
-					 "castThird", "down", "action")
-		.bindControl(-1, keyboard.NUMPAD_6, -1,
-					 "castFourth", "down", "action")
-		.bindControl(-1, keyboard.NUMPAD_3, -1,
-					 "castFifth", "down", "action")
-		.bindControl(-1, keyboard.NUMPAD_1, -1,
-					 "releaseFirst", "onUp", "action")
-		.bindControl(-1, keyboard.NUMPAD_4, -1,
-					 "releaseSecond", "onUp", "action")
-		.bindControl(-1, keyboard.NUMPAD_5, -1,
-					 "releaseThird", "onUp", "action")
-		.bindControl(-1, keyboard.NUMPAD_6, -1,
-					 "releaseFourth", "onUp", "action")
-		.bindControl(-1, keyboard.NUMPAD_3, -1,
-					 "releaseFifth", "onUp", "action")
-		.bindControl(-1, keyboard.NUMPAD_ADD, -1,
-					 "swapMode", "onDown", "action")
-		.bindControl(-1, keyboard.NUMPAD_SUBTRACT, -1,
-					 "swapHeroes", "onDown", ["system" ,"action"])
-		.bindControl(-1, keyboard.INSERT, -1,
-					 "connectKeyboard", "onDown", [], BasicGame.allPlayers.p2)
-		.bindControl(-1, -1, gamepad.XBOX360_START,
-					 "connectGamepad", "onDown", [], BasicGame.allPlayers.p2);
-
-
-	for(var i in BasicGame.allPlayers){
-		var controller = BasicGame.allPlayers[i].controller;
-
-		for(var j in commonMaped){
-			controller.get(j).change(-1, commonMaped[j]);
-		}
-		
-		for(var j in padMaped){
-			var functionName = (j == "pad_menu_next") ? "goNext" :
-				(j == "pad_menu_previous") ? "goPrevious" : 
-				j.substr(j.indexOf("_") + 1, j.length);
-			var tag = (j.indexOf("menu") != -1) ? "menu" : "movement";
-			var fps = 0;
+			pad_goRight: {
+				axis: gamepad.XBOX360_STICK_LEFT_X,
+				min: 0.5,
+				max: 1
+			},
 			
-			if (tag == "menu"){
-				fps = 6;
+			pad_goUp: {
+				axis: gamepad.XBOX360_STICK_LEFT_Y,
+				min: 0.5,
+				max: 1
+			},
+			
+			pad_goDown: {
+				axis: gamepad.XBOX360_STICK_LEFT_Y,
+				min: -1,
+				max: -0.5
+			},
+
+			pad_orientLeft: {
+				axis: gamepad.XBOX360_STICK_RIGHT_X,
+				min: -1,
+				max: -0.5
+			},
+
+			pad_orientRight: {
+				axis: gamepad.XBOX360_STICK_RIGHT_X,
+				min: 0.5,
+				max: 1
+			},
+
+			pad_menu_previous: {
+				axis: gamepad.XBOX360_STICK_LEFT_Y,
+				min: -1,
+				max: -0.5
+			},
+
+			pad_menu_next: {
+				axis: gamepad.XBOX360_STICK_LEFT_Y,
+				min: 0.5,
+				max: 1
+			}
+		};
+
+		var konamiMaped = {
+			konamiCodeUp: gamepad.XBOX360_DPAD_UP,
+			konamiCodeDown: gamepad.XBOX360_DPAD_DOWN,
+			konamiCodeLeft: gamepad.XBOX360_DPAD_LEFT,
+			konamiCodeRight: gamepad.XBOX360_DPAD_RIGHT,
+			konamiCodeA: gamepad.XBOX360_A,
+			konamiCodeB: gamepad.XBOX360_B,
+			konamiCodeStart: gamepad.XBOX360_START,
+			konamiCodeSelect: gamepad.XBOX360_BACK
+		};
+
+		BasicGame.allPlayers.p1 = new Player(this.game, "1");
+		BasicGame.allPlayers.p1.isMain = true;
+		BasicGame.allPlayers.p1.humanAfterAll = true;
+		BasicGame.allPlayers.p1.controller.connected = true;
+
+		BasicGame.allPlayers.p2 = new Player(this.game, "2");
+
+		BasicGame.allPlayers.p1.controller
+			.bindControl("menu_toggle", keyboard.M, -1,
+						 "toggle", "onDown", "menu")
+			.bindControl("menu_next", keyboard.S, -1,
+						 "goNext", "down", "menu", -1, 6)
+			.bindControl("menu_previous", keyboard.Z, -1,
+						 "goPrevious", "down", "menu", -1, 6)
+			.bindControl("menu_select", keyboard.ENTER, -1,
+						 "select", "onDown", "menu")
+			.bindControl(-1, keyboard.Q, -1,
+						 "goLeft", "down", "movement")
+			.bindControl(-1, keyboard.D, -1,
+						 "goRight", "down", "movement")
+			.bindControl(-1, keyboard.Z, -1,
+						 "goUp", "down", "movement")
+			.bindControl(-1, keyboard.S, -1,
+						 "goDown", "down", "movement")
+			.bindControl(-1, keyboard.Z, -1,
+						 "jump", "down", "movement")
+			.bindControl(-1, keyboard.Z, -1,
+						 "reduceJump", "onDown", "movement")
+			.bindControl(-1, keyboard.J, -1,
+						 "orientLeft", "down", "movement")
+			.bindControl(-1, keyboard.L, -1,
+						 "orientRight", "down", "movement")
+			.bindControl(-1, keyboard.Y, -1,
+						 "castFirst", "down", "action")
+			.bindControl(-1, keyboard.U, -1,
+						 "castSecond", "down", "action")
+			.bindControl(-1, keyboard.I, -1,
+						 "castThird", "down", "action")
+			.bindControl(-1, keyboard.O, -1,
+						 "castFourth", "down", "action")
+			.bindControl(-1, keyboard.P, -1,
+						 "castFifth", "down", "action")
+			.bindControl(-1, keyboard.Y, -1,
+						 "releaseFirst", "onUp", "action")
+			.bindControl(-1, keyboard.U, -1,
+						 "releaseSecond", "onUp", "action")
+			.bindControl(-1, keyboard.I, -1,
+						 "releaseThird", "onUp", "action")
+			.bindControl(-1, keyboard.O, -1,
+						 "releaseFourth", "onUp", "action")
+			.bindControl(-1, keyboard.P, -1,
+						 "releaseFifth", "onUp", "action")
+			.bindControl(-1, keyboard.SPACEBAR, -1,
+						 "swapMode", "onDown", "action")
+			.bindControl(-1, keyboard.TAB, -1,
+						 "swapHeroes", "onDown", ["system" ,"action"])
+			.bindControl(-1, keyboard.ESC, -1,
+						 "returnToTitle", "onDown", "system")
+			.bindControl(-1, keyboard.SHIFT, -1,
+						 "pause", "onDown", "SYSTEM", BasicGame)
+			.bindControl(-1, keyboard.F1, -1,
+						 "connectKeyboard", "onDown", [], BasicGame.allPlayers.p1)
+			.bindControl(-1, -1, gamepad.XBOX360_START,
+						 "connectGamepad", "onDown", [], BasicGame.allPlayers.p1);
+
+		BasicGame.allPlayers.p2.controller
+			.bindControl("menu_toggle", keyboard.NUMPAD_MULTIPLY, -1,
+						 "toggle", "onDown", "menu")
+			.bindControl("menu_next", keyboard.DOWN, -1,
+						 "goNext", "down", "menu", -1, 6)
+			.bindControl("menu_previous", keyboard.UP, -1,
+						 "goPrevious", "down", "menu", -1, 6)
+			.bindControl("menu_select", keyboard.NUMPAD_DIVIDE, -1,
+						 "select", "onDown", "menu")
+			.bindControl(-1, keyboard.LEFT, -1,
+						 "goLeft", "down", "movement")
+			.bindControl(-1, keyboard.RIGHT, -1,
+						 "goRight", "down", "movement")
+			.bindControl(-1, keyboard.UP, -1,
+						 "goUp", "down", "movement")
+			.bindControl(-1, keyboard.DOWN, -1,
+						 "goDown", "down", "movement")
+			.bindControl(-1, keyboard.UP, -1,
+						 "jump", "down", "movement")
+			.bindControl(-1, keyboard.UP, -1,
+						 "reduceJump", "onDown", "movement")
+			.bindControl(-1, keyboard.NUMPAD_7, -1,
+						 "orientLeft", "down", "movement")
+			.bindControl(-1, keyboard.NUMPAD_9, -1,
+						 "orientRight", "down", "movement")
+			.bindControl(-1, keyboard.NUMPAD_1, -1,
+						 "castFirst", "down", "action")
+			.bindControl(-1, keyboard.NUMPAD_4, -1,
+						 "castSecond", "down", "action")
+			.bindControl(-1, keyboard.NUMPAD_5, -1,
+						 "castThird", "down", "action")
+			.bindControl(-1, keyboard.NUMPAD_6, -1,
+						 "castFourth", "down", "action")
+			.bindControl(-1, keyboard.NUMPAD_3, -1,
+						 "castFifth", "down", "action")
+			.bindControl(-1, keyboard.NUMPAD_1, -1,
+						 "releaseFirst", "onUp", "action")
+			.bindControl(-1, keyboard.NUMPAD_4, -1,
+						 "releaseSecond", "onUp", "action")
+			.bindControl(-1, keyboard.NUMPAD_5, -1,
+						 "releaseThird", "onUp", "action")
+			.bindControl(-1, keyboard.NUMPAD_6, -1,
+						 "releaseFourth", "onUp", "action")
+			.bindControl(-1, keyboard.NUMPAD_3, -1,
+						 "releaseFifth", "onUp", "action")
+			.bindControl(-1, keyboard.NUMPAD_ADD, -1,
+						 "swapMode", "onDown", "action")
+			.bindControl(-1, keyboard.NUMPAD_SUBTRACT, -1,
+						 "swapHeroes", "onDown", ["system" ,"action"])
+			.bindControl(-1, keyboard.INSERT, -1,
+						 "connectKeyboard", "onDown", [], BasicGame.allPlayers.p2)
+			.bindControl(-1, -1, gamepad.XBOX360_START,
+						 "connectGamepad", "onDown", [], BasicGame.allPlayers.p2);
+
+
+		for(var i in BasicGame.allPlayers){
+			var controller = BasicGame.allPlayers[i].controller;
+
+			for(var j in commonMaped){
+				controller.get(j).change(-1, commonMaped[j]);
 			}
 			
-			controller.bindPadControl(j, padMaped[j].axis, padMaped[j].min,
-									  padMaped[j].max, functionName,
-									  "update", tag, -1, fps);
+			for(var j in padMaped){
+				var functionName = (j == "pad_menu_next") ? "goNext" :
+					(j == "pad_menu_previous") ? "goPrevious" : 
+					j.substr(j.indexOf("_") + 1, j.length);
+				var tag = (j.indexOf("menu") != -1) ? "menu" : "movement";
+				var fps = 0;
+				
+				if (tag == "menu"){
+					fps = 6;
+				}
+				
+				controller.bindPadControl(j, padMaped[j].axis, padMaped[j].min,
+										  padMaped[j].max, functionName,
+										  "update", tag, -1, fps);
+			}
+
+			for(var j in konamiMaped){
+				controller.bindControl(-1, -1, konamiMaped[j], j, "onDown", "konami",
+									   BasicGame);
+			}
+			
+			controller.get("connectKeyboard").transcendental = true;
+			controller.get("connectGamepad").transcendental = true;
 		}
 
-		for(var j in konamiMaped){
-			controller.bindControl(-1, -1, konamiMaped[j], j, "onDown", "konami",
-								   BasicGame);
+		var optionsSave = localStorage.getItem("options");
+
+		if (optionsSave == null){
+			BasicGame.optionsSave = new OptionsSave();
+			
+			BasicGame.optionsSave.save();
+
+			BasicGame.optionsSave.hardSave();
 		}
-		
-		controller.get("connectKeyboard").transcendental = true;
-		controller.get("connectGamepad").transcendental = true;
-	}
+		else{
+			BasicGame.optionsSave = JSON.parse(optionsSave);
+			BasicGame.optionsSave.__proto__ = OptionsSave.prototype;
 
-	var optionsSave = localStorage.getItem("options");
-
-	if (optionsSave == null){
-		BasicGame.optionsSave = new OptionsSave();
-		
-		BasicGame.optionsSave.save();
-
-		BasicGame.optionsSave.hardSave();
-	}
-	else{
-		BasicGame.optionsSave = JSON.parse(optionsSave);
-		BasicGame.optionsSave.__proto__ = OptionsSave.prototype;
-
-		BasicGame.optionsSave.load();
+			BasicGame.optionsSave.load();
+		}
 	}
 
 	this.game.input.onDown.removeAll();

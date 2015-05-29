@@ -24,7 +24,6 @@ BasicGame.ToBeContinued.prototype.create = function(){
 
 	this.TOBECONTINUED.text = this.game.add.text(centerX, centerY, "TO BE CONTINUED...");
 	this.TOBECONTINUED.text.fill = WHITE;
-	this.TOBECONTINUED.text.fontWeight = "bold";
 	this.TOBECONTINUED.text.alpha = 0;
 	this.TOBECONTINUED.text.anchor.setTo(0.5);
 

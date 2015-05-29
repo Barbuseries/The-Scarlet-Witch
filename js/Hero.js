@@ -258,7 +258,7 @@ var Lucy = function(game, x, y, level){
 			this.manaRegen.removeAll();
 
 			this.manaRegen.loop(this.allStats.attackSpeed.get() * 2, function(){
-				this.special.add(0.01, 1);
+				this.special.add(0.05, 1);
 			}, this.allStats);
 		}
 	}, this);

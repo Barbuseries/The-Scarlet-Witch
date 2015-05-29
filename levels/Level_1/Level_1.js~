@@ -53,9 +53,7 @@ BasicGame.allLevels.Level_1.prototype.preload = function(){
 BasicGame.allLevels.Level_1.prototype.create = function(){
 	Level.prototype.create.call(this);
 
-	this.map.setCollisionBetween(0, 23);
-	this.map.setCollisionBetween(25, 63);
-
+	this.map.setCollisionBetween(0, 63);
 	this.tagPlatforms();
 
 	this.initPathFinders();

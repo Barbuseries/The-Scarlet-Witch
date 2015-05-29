@@ -54,15 +54,34 @@ BasicGame.allLevels.Level_3.prototype.preload = function(){
 			}
 		});
 	}, this);
+
+	this.music = this.game.add.audio("mainTheme");
+	this.music.volume = 0;
 }
 
 BasicGame.allLevels.Level_3.prototype.create = function(){
 	Level.prototype.create.call(this);
 
-	this.map.setCollisionBetween(0, 63);
+	this.map.setCollisionBetween(0, 23);
+	this.map.setCollisionBetween(25, 63);
+
 	this.tagPlatforms();
 
 	this.initPathFinders();
 
 	this.initPlayers();
+}
+
+BasicGame.allLevels.Level_3.prototype.update = function(){
+	Level.prototype.update.call(this);
+
+	var maxDistance = 0;
+
+	this.allHeroes.forEach(function(item){
+		if (item.x > maxDistance){
+			maxDistance = item.x
+		}
+	});
+
+	this.music.volume = maxDistance / this.map.widthInPixels * BasicGame.volume.music;
 }

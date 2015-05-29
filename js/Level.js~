@@ -60,7 +60,6 @@ var Level = function(mapName, platformTileset, backgroundName,
 	this.toKill = [];
 
 	this.ready = false;
-	this.music = null;
 }
 
 /*Level.prototype = Object.create(Phaser.State.prototype);
@@ -489,10 +488,6 @@ Level.prototype.create = function(){
 	this.allHeroes.forEach(function(item){
 		this.game.world.bringToTop(item.statusUi);
 	}, this);
-
-	if (this.music != null){
-		this.music.play("", 0, BasicGame.volume.music, true);
-	}
 }
 
 Level.prototype.initPlayers = function(){
@@ -592,10 +587,6 @@ Level.prototype.goToState = function(state){
 	this.allTweens.closing.background = this.game.add.tween(this.background)
 		.to({alpha: 0}, 2000, Phaser.Easing.Quadratic.Out);
 	
-	if (this.music != null){
-		this.music.fadeOut(2000);
-	}
-
 	for(var i in this.allTweens.closing){
 		this.allTweens.closing[i].start();
 	}
@@ -619,11 +610,6 @@ Level.prototype.goToState = function(state){
 		for(var i in BasicGame.allPlayers){
 			BasicGame.allPlayers[i].menu.destroy();
 			BasicGame.allPlayers[i].menu = null;
-		}
-
-		if (this.music != null){
-			this.music.destroy();
-			this.music = null;
 		}
 
 		this.game.state.start(state);

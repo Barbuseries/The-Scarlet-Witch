@@ -1198,7 +1198,8 @@ var DeathSkill = function (user, level, targetTags, unlockAt) {
 
 		function collideProcess(obstacle){
 			return (this.activated &&
-					(this.targetTags.indexOf(obstacle.tag) != -1));
+					(this.targetTags.indexOf(obstacle.tag) != -1) &&
+					!obstacle.isBoss);
 		}
 
 		function damageFunction(obstacle){
@@ -1618,7 +1619,7 @@ var SlashSkill = function(user, level, targetTags, unlockAt){
 
 		function damageFunction(obstacle){
 			var damage = self.user.allStats.attack.get() * 
-				(1 + factor + user.allStats.fury.get(1));
+				(1 + factor + user.allStats.special.get(1));
 			var damageRange = [0.9, 1.1];
 			var criticalRate = self.user.allStats.criticalRate.get();
 			
@@ -2669,7 +2670,7 @@ var PoweredArrowSkill = function(user, level, targetTags, unlockAt){
 		function damageFunction(obstacle){
 			// Les dégâts sont aussi en fonction de la distance parcourue.
 			var damage = self.user.allStats.attack.get() *
-				Math.pow((1 + factor + (1 - (this.lifespan - 1200) / 800)), 1.5);
+				Math.pow((1 + factor + (1 - (this.lifespan - 1200) / 800)), 1.01);
 			var damageRange = [0.9, 1.1];
 			var criticalRate = self.user.allStats.criticalRate.get();
 

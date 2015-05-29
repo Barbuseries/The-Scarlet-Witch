@@ -582,15 +582,11 @@ var PlayerMenu = function(player){
 	player.controller.setTargetByTag(this, "menu");
 
 	this.toggle = function(){
-		try{
-			if ((BasicGame.allPlayers.p1.menu.state ==
-				 Interface.State.CLOSED) &&
-				(BasicGame.allPlayers.p2.menu.state ==
-				 Interface.State.CLOSED)){
-				Menu.prototype.toggle.call(this);
-			}
-		}catch(err){
-			
+		if ((BasicGame.allPlayers.p1.menu.state ==
+			 Interface.State.CLOSED) &&
+			(BasicGame.allPlayers.p2.menu.state ==
+			 Interface.State.CLOSED)){
+			Menu.prototype.toggle.call(this);
 		}
 	}
 

@@ -256,7 +256,7 @@ var getFromGroupIf = function(group, callback){
 }
 
 var collideProcessCheckpoint = function(hero, checkpoint){
-	if (checkpoint.index > BasicGame.gameSave.level.checkpoint){
+	//if (checkpoint.index > BasicGame.gameSave.level.checkpoint){
 		var oldCheckpoint = getFromGroupIf(checkpoint.parent, function(){
 			return this.index == BasicGame.gameSave.level.checkpoint;
 		});
@@ -269,7 +269,7 @@ var collideProcessCheckpoint = function(hero, checkpoint){
 		BasicGame.gameSave.save();
 		
 		checkpoint.tint = H_RED;
-	}
+	//}
 
 	return false;
 }
@@ -316,7 +316,7 @@ var createFromTiledObject = function(element, group) {
 		},
 		
 		boss: function(group, element){
-			return createBoss(group.game, element, element.y,
+			return createBoss(group.game, element.x, element.y,
 							  element.properties.sprite,
 							  BasicGame.gameSave.heroes.barton.level);
 		},

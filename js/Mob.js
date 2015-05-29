@@ -142,6 +142,7 @@ var Mob = function(game, x, y, spritesheet, name, level, tag, initFunction,
 	this._textDamageDir = 1;
 
 	this.onDeath.add(this.giveExp, this);
+	this.isBoss = false;
 }
 
 Mob.prototype = Object.create(Npc.prototype);
@@ -561,7 +562,19 @@ Mob.prototype._useSkill = function(){
 
 					if (skill.chargeTime.get() == 0){
 						if (distanceSquared <= (skill.range * skill.range)){
-							this.cast(skillName, null, 0.5);
+							var layer = BasicGame.level.game.platforms;
+
+							var raycastLine = new Phaser.Line();
+
+							raycastLine.start.set(this.x, this.y);
+							raycastLine.end.set(target.x, target.y);
+
+							var raycast = layer.getRayCastTiles(raycastLine, 4,
+																false, false);
+
+							if (raycast.length == 0){
+								this.cast(skillName, null, 0.5);
+							}
 						}
 					}
 					else if (distanceSquared > (skill.range * skill.range)) {
@@ -586,7 +599,19 @@ Mob.prototype._useSkill = function(){
 
 					if (skill.chargeTime.get() == 0){
 						if (distanceSquared <= (skill.range * skill.range)){
-							this.cast(skillName, null, 0.5);
+							var layer = BasicGame.level.game.platforms;
+
+							var raycastLine = new Phaser.Line();
+
+							raycastLine.start.set(this.x, this.y);
+							raycastLine.end.set(target.x, target.y);
+
+							var raycast = layer.getRayCastTiles(raycastLine, 4,
+																false, false);
+
+							if (raycast.length == 0){
+								this.cast(skillName, null, 0.5);
+							}
 						}
 					}
 					else if (distanceSquared > (skill.range * skill.range)) {
@@ -798,7 +823,7 @@ var createArcher = function(game, x, y, spriteSheet, level){
 				2 * this.entity.allStats.agility.get();
 		}, -1, [], true);
 
-		this.allStats.special.addMax(100);
+		this.allStats.special.addMax(99999);
 		this.allStats.special.set(1, 1);
 		
 		this.allStats.agility.add(2 * level);
@@ -860,7 +885,7 @@ var createLancer = function(game, x, y, spriteSheet, level){
 				2 * this.entity.allStats.agility.get();
 		}, -1, [], true);
 
-		this.allStats.special.addMax(100);
+		this.allStats.special.addMax(99999);
 		this.allStats.special.set(1, 1);
 
 		this.allStats.agility.add(level);
@@ -881,31 +906,31 @@ var createBoss = function(game, x, y, spriteSheet, level){
 	var newBoss;
 
 	function initBoss(){
-		this.allStats.health.setMax(40);
-		this.allStats.health.setBasic(40);
+		this.allStats.health.setMax(100);
+		this.allStats.health.setBasic(100);
 		this.allStats.health.set(1, 1);
 		this.allStats.health.setGrowth(function(){
-			return 0.5 * (this._basicValue + 10 * this.entity.allStats.level.get() +
-						  3 * this.entity.allStats.endurance.get());
+			return this._basicValue + 20 * this.entity.allStats.level.get() +
+				30 * this.entity.allStats.endurance.get();
 		}, -1, [], true);
 
 		this.allStats.attack.setBasic(5);
 		this.allStats.attack.set(1, 1);
 		this.allStats.attack.setGrowth(function(){
-			return 0.5 * (this._basicValue + this.entity.allStats.level.get() +
-						  0.5 * this.entity.allStats.mainStat.get());
+			return this._basicValue + 0.3 * this.entity.allStats.level.get() +
+				0.5 * this.entity.allStats.mainStat.get();
 		}, -1, [], true);
 
 		this.allStats.defense.setGrowth(function(){
-		return 0.2 * (this._basicValue + 0.5 * this.entity.allStats.level.get() +
-					  0.1 * this.entity.allStats.endurance.get());
+			return this._basicValue + 0.1 * this.entity.allStats.level.get() +
+				0.33 * this.entity.allStats.endurance.get();
 		}, -1, [], true);
 
 		this.allStats.dodge.setBasic(2);
 		this.allStats.dodge.set(1, 1);
 		this.allStats.dodge.setGrowth(function(){
-			return 0.1 * (this._basicValue + 0.1 * this.entity.allStats.level.get() +
-						  0.2 * this.entity.allStats.agility.get());
+			return this._basicValue + 0.1 * this.entity.allStats.level.get() +
+				0.2 * this.entity.allStats.agility.get();
 		}, -1, [], true);
 
 		this.allStats.criticalRate.setBasic(5);
@@ -916,12 +941,16 @@ var createBoss = function(game, x, y, spriteSheet, level){
 		}, -1, [], true);
 
 		this.allStats.attackSpeed.setGrowth(function(){
-			return this._basicValue - 4 * this.entity.allStats.level.get() -
-				2 * this.entity.allStats.agility.get();
+			return this._basicValue - 3 * this.entity.allStats.level.get() -
+				4 * this.entity.allStats.agility.get();
 		}, -1, [], true);
 
-		this.allStats.special.addMax(100);
+		this.allStats.special.addMax(99999);
 		this.allStats.special.set(1, 1);
+
+		this.allStats.agility.add(1.5 * level);
+		this.allStats.mainStat.add(1.5 * level);
+		this.allStats.endurance.add(1.5 * level);
 
 		this.allSkills[0] = {
 			firstSkill: new ThrustSkill(this, 3,
@@ -945,6 +974,8 @@ var createBoss = function(game, x, y, spriteSheet, level){
 		}
 
 		this.allResistances[Elements.PHYSIC] = 0.9;
+
+		this.isBoss = true;
 	}
 
 	return createMob(game, x, y, spriteSheet, "Boss", level * 1.5, "enemy",
