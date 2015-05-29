@@ -255,21 +255,20 @@
                  "y":66
                 }, 
                 {
-                 "gid":78,
+                 "gid":624,
                  "height":0,
-                 "id":30,
+                 "id":39,
                  "name":"",
                  "properties":
                     {
-                     "sprite":"archer_1",
-                     "type":"enemy"
+
                     },
                  "rotation":0,
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":4020,
-                 "y":68
+                 "x":4026,
+                 "y":64
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -426,7 +425,7 @@
          "x":0,
          "y":0
         }],
- "nextobjectid":39,
+ "nextobjectid":40,
  "orientation":"orthogonal",
  "properties":
     {
@@ -483,8 +482,8 @@
         {
          "firstgid":611,
          "image":"..\/..\/assets\/Characters\/Ennemies\/boss_1.png",
-         "imageheight":2112,
-         "imagewidth":1536,
+         "imageheight":1344,
+         "imagewidth":832,
          "margin":0,
          "name":"boss_1",
          "properties":
