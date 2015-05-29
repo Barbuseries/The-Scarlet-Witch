@@ -890,7 +890,8 @@
                  "name":"",
                  "properties":
                     {
-
+                     "sprite":"boss_1",
+                     "type":"enemy"
                     },
                  "rotation":0,
                  "type":"",
@@ -906,7 +907,8 @@
                  "name":"",
                  "properties":
                     {
-
+                     "sprite":"boss_1",
+                     "type":"enemy"
                     },
                  "rotation":0,
                  "type":"",
@@ -922,7 +924,8 @@
                  "name":"",
                  "properties":
                     {
-
+                     "sprite":"boss_1",
+                     "type":"enemy"
                     },
                  "rotation":0,
                  "type":"",
@@ -938,7 +941,8 @@
                  "name":"",
                  "properties":
                     {
-
+                     "sprite":"boss_1",
+                     "type":"enemy"
                     },
                  "rotation":0,
                  "type":"",
@@ -954,7 +958,8 @@
                  "name":"",
                  "properties":
                     {
-
+                     "sprite":"boss_1",
+                     "type":"enemy"
                     },
                  "rotation":0,
                  "type":"",
