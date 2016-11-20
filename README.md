@@ -195,7 +195,7 @@ Division - Confirm
 
 Echap - Quit
 
-## Know issues
+## Known issues
 ### Chrome/Chromium
 #### Black screen
 Under Cookies (Settings -> Advanced Settings -> Content Settrings), enable third-application cookies.
