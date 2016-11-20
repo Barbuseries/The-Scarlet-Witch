@@ -187,7 +187,7 @@ Plus - Swap skills set
 
 Minus - Swap characters
 
-Multiplication - Open/clos menu
+Multiplication - Open/close menu
 
 Left Maj. - Pause
 
