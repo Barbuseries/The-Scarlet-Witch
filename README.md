@@ -44,7 +44,7 @@ Tab - Changer de personnage
 
 M - Ouvrir/fermer le menu
 
-Maj. Gauche - Mettre en pause
+Maj. - Mettre en pause
 
 Entrée - Valider
 
@@ -84,8 +84,6 @@ Plus - Changer de palette de compétences
 Moins - Changer de personnage
 
 Multiplication - Ouvrir/fermer le menu
-
-Maj. Gauche - Mettre en pause
 
 Division - Valider
 
@@ -148,7 +146,7 @@ Tab - Swap characters
 
 M - Open/close menu
 
-Left Maj. - Pause
+Shift - Pause
 
 Enter - Confirm
 
@@ -188,8 +186,6 @@ Plus - Swap skills set
 Minus - Swap characters
 
 Multiplication - Open/close menu
-
-Left Maj. - Pause
 
 Division - Confirm
 
